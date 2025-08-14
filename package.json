@@ -1,5 +1,5 @@
 {
-  "name": "koishi-plugin-adapter-yunhu",
+  "name": "koishi-plugin-adapter-yunhupro",
   "description": "云湖适配器",
   "version": "0.0.1",
   "main": "lib/index.js",
@@ -17,7 +17,7 @@
   "author": "WindyPear-Team(original_author) > FLY1919",
   "repository": {
     "type": "git",
-    "url": "https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu.git"
+    "url": "https://github.com/FLY1919/adapter-yunhuPro.git"
   },
   "homepage": "",
   "peerDependencies": {
