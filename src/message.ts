@@ -3,15 +3,24 @@ import { decodeMessage } from './utils'
 import * as Yunhu from './types'
 import { Context, h, Dict, MessageEncoder } from 'koishi'
 
+
+namespace sendWay{
+    const image = ["image", "markdown", "html"]
+    const video = ["video", "markdown", "html"]
+    const file = ["file", "markdown", "html"]
+    const text = ["text", "markdown", "html"]
+    
+}
+
 export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, YunhuBot<C>> {
     // 使用 payload 存储待发送的消息
     private payload: Dict
-    private lockType: string
+    private sendType: 'text' | 'image' | 'video' | 'file' | 'markdown' | 'html'
 
     // 在 prepare 中初始化 payload
     async prepare() {
         let [recvId, recvType] = this.channelId.split(':');
-        this.lockType = 'text';
+        this.sendType = 'text';
         this.payload = {
             recvId,
             recvType,
@@ -77,12 +86,15 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 this.payload.contentType = 'text'
             } 
             else if (type === 'img' || type === 'image') {
+                await this.flush()
+                // 暂时如此处理图片
                 // 处理图片元素
                 try {
                     // 尝试上传图片获取imageKey
                     const imgkey = await this.bot.internal.uploadImage(attrs.src)
                     this.payload.content.imageKey = imgkey
                     this.payload.contentType = 'image'
+                    await this.flush()
                 } catch (error) {
                     this.bot.logger.error(`图片上传失败: ${error}`)
                     // 降级为文本处理
@@ -149,11 +161,13 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 // 处理其他元素的子元素
                 await this.render(children)
             }
+
         } catch (error) {
             // this.bot.logger.error(`处理消息元素失败: ${error? error?.message : '未知错误'}`)
             // 出错时尝试降级处理
             this.payload.content.text += `[元素处理失败]`
             this.payload.contentType = 'text'
         }
+        
     }
 }

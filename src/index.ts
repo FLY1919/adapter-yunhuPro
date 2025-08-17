@@ -19,7 +19,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
   public internal: Internal
   
   constructor(ctx: C, config: YunhuBot.Config) {
-    // 修复错误1: 添加适配器名称作为第三个参数
+    // 添加适配器名称作为第三个参数
     super(ctx, config, 'yunhu')
     
     this.platform = 'yunhu'
@@ -51,8 +51,10 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
     bot.ctx.server.post(bot.config.path, async (ctx) => {
       ctx.status = 200
       
-      // 修复错误2: 使用类型断言获取请求体
+      // 使用类型断言获取请求体
       const payload: Yunhu.YunhuEvent = (ctx.request as any).body
+      logger.info('Received payload:')
+      logger.info(payload)
 
       // 确保机器人处于在线状态
       if (bot.status !== Universal.Status.ONLINE) {

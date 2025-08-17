@@ -25,6 +25,8 @@ export const decodeMessage = (message: Yunhu.Message): Universal.Message => {
 
   // 处理文本内容
   if (message.content.text) {
+    //待加入markdown处理
+    //message.contentType as 'text' | 'markdown' 
     elements.push(h.text(message.content.text))
   }
 
@@ -121,7 +123,9 @@ export function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, inpu
 
       // 转换消息内容为Koishi格式
       session.event.message = decodeMessage(message)
+      logger.info(`已转换为koishi消息格式:`)
       logger.info(session)
+      
       break;
     }
 
