@@ -2,16 +2,26 @@ import { Context, h, HTTP, Dict, Logger } from 'koishi'
 import { FormData, File } from 'formdata-node'
 import axios, { AxiosRequestConfig } from 'axios'
 import * as Types from './types'
+import { createHash } from 'crypto';
 import { 
   resolveResource, 
   validateImage, 
   compressImage, 
   updateFileExtension,
   ResourceType,
-  FormatType
+  FormatType,
+  getExtension
 } from './utils'
+import { Worker } from 'worker_threads';
+import os from 'os';
+
+// 获取CPU核心数，用于确定工作线程数量
+const CPU_CORES = os.cpus().length;
+
+const IMAGE_URL = "https://chat-img.jwznb.com/"
 
 const logger = new Logger('yunhu')
+
 
 // 上传基类
 abstract class BaseUploader {
@@ -66,50 +76,114 @@ class ImageUploader extends BaseUploader {
     super(http, token, apiendpoint, 'image')
   }
 
-  async upload(image: string | Buffer | any): Promise<string> {
-    const form = new FormData()
-    
+  // 使用工作线程池进行图片压缩
+  private async compressImageInWorker(buffer: Buffer, mimeType: string): Promise<{ buffer: Buffer, mimeType: string }> {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(__filename, {
+        workerData: { buffer, mimeType, maxSize: this.MAX_SIZE }
+      });
+
+      worker.on('message', (result) => {
+        if (result.error) {
+          reject(new Error(result.error));
+        } else {
+          resolve(result);
+        }
+        worker.terminate();
+      });
+
+      worker.on('error', reject);
+      worker.on('exit', (code) => {
+        if (code !== 0) reject(new Error(`工作线程异常退出，退出码: ${code}`));
+      });
+    });
+  }
+
+  // 处理图片的公共方法
+  private async processImage(image: string | Buffer | any): Promise<{ 
+    buffer: Buffer, 
+    fileName: string, 
+    mimeType: string,
+    hash?: string
+  }> {
     // 解析资源
     const { buffer, fileName, mimeType } = await resolveResource(
       image, 
       'image.png', 
       'image/png', 
       this.http
-    )
+    );
     
     // 验证图片格式
-    const { mimeType: validMimeType, format } = await validateImage(buffer)
-    let finalMimeType = validMimeType
-    let finalBuffer = buffer
+    const { mimeType: validMimeType } = await validateImage(buffer);
+    let finalMimeType = validMimeType;
+    let finalBuffer = buffer;
     
     // 更新文件扩展名
-    let finalFileName = updateFileExtension(fileName, validMimeType)
+    let finalFileName = updateFileExtension(fileName, validMimeType);
     
     // 记录验证后的图片信息
-    const originalSize = buffer.length
-    const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
-    logger.info(`验证后的图片: 类型=${validMimeType}, 大小=${originalMB}MB`)
+    const originalSize = buffer.length;
+    const originalMB = (originalSize / (1024 * 1024)).toFixed(2);
+    logger.info(`验证后的图片: 类型=${validMimeType}, 大小=${originalMB}MB`);
     
-    // 压缩超过限制的图片
+    // 如果图片需要压缩且大小超过限制，使用工作线程进行压缩
     if (originalSize > this.MAX_SIZE) {
-      const result = await compressImage(buffer, validMimeType, this.MAX_SIZE)
-      finalBuffer = result.buffer
-      finalMimeType = result.mimeType
+      logger.info(`图片超过大小限制，启动压缩工作线程...`);
+      const result = await this.compressImageInWorker(buffer, validMimeType);
+      finalBuffer = result.buffer;
+      finalMimeType = result.mimeType;
       
       // 更新文件扩展名
-      finalFileName = updateFileExtension(finalFileName, finalMimeType)
+      finalFileName = updateFileExtension(finalFileName, finalMimeType);
     }
 
     // 最终大小验证
     if (finalBuffer.length > this.MAX_SIZE) {
-      const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2)
-      throw new Error(`图片大小${sizeMB}MB超过10MB限制`)
+      const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2);
+      throw new Error(`图片大小${sizeMB}MB超过10MB限制`);
     }
 
-    // 创建文件对象并上传
-    const file = new File([finalBuffer], finalFileName, { type: finalMimeType })
-    form.append('image', file)
-    return this.sendFormData(form)
+    return {
+      buffer: finalBuffer,
+      fileName: finalFileName,
+      mimeType: finalMimeType
+    };
+  }
+
+  async upload(image: string | Buffer | any): Promise<string> {
+    const { buffer, fileName, mimeType } = await this.processImage(image);
+    
+    const form = new FormData();
+    const file = new File([buffer], fileName, { type: mimeType });
+    form.append('image', file);
+    
+    return this.sendFormData(form);
+  }
+
+  async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
+    const result = await this.processImage(image);
+    const { buffer, fileName, mimeType } = result;
+    
+    const form = new FormData();
+    const file = new File([buffer], fileName, { type: mimeType });
+    form.append('image', file);
+    
+    // 计算图片哈希用于生成URL
+    const hash = createHash('md5');
+    hash.update(buffer);
+    const imageHash = hash.digest('hex');
+    const extension = getExtension(mimeType);
+    
+    // 并行执行上传和URL生成
+    const [imagekey] = await Promise.all([
+      this.sendFormData(form),
+    ]);
+    
+    return {
+      imageurl: `${IMAGE_URL}${imageHash}.${extension}`,
+      imagekey
+    };
   }
 }
 
@@ -183,10 +257,13 @@ export default class Internal {
     this.fileUploader = new FileUploader(http, token, apiendpoint)
   }
 
-  sendMessage(payload: Dict) {
+  async sendMessage(payload: Dict) {
     return this.http.post(`/bot/send?token=${this.token}`, payload)
   }
 
+  async uploadImageUrl(image: string | Buffer | any): Promise<Dict> {
+    return this.imageUploader.uploadGetUrl(image)
+  }
   async uploadImage(image: string | Buffer | any): Promise<string | undefined> {
     return this.imageUploader.upload(image)
   }
@@ -198,10 +275,11 @@ export default class Internal {
   async uploadFile(fileData: string | Buffer | any): Promise<string> {
     return this.fileUploader.upload(fileData)
   }
-
-  async deleteMessage(chatId: string, msgId: string) {
-    const chatType = chatId.split(':')[1]
-    const payload = { msgId, chatId, chatType }
+  //注意chatid 以下未修改
+  async deleteMessage(channelId: string, messageId: string) {
+    const chatType = channelId.split(':')[1]
+    const chatId = channelId.split(':')[0]
+    const payload = { msgId: messageId, chatId, chatType }
     logger.info(`撤回消息: ${JSON.stringify(payload)}`)
     return this.http.post(`/bot/recall?token=${this.token}`, payload)
   }

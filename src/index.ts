@@ -12,12 +12,12 @@ const YUNHU_ENDPOINT = 'https://chat-go.jwzhd.com'
 const YUNHU_API_PATH = '/open-apis/v1'
 
 export const name = 'yunhu'
-
 class YunhuBot<C extends Context = Context> extends Bot<C> {
   static inject = ['server']
   static MessageEncoder = YunhuMessageEncoder
   public internal: Internal
-  
+  private Encoder: YunhuMessageEncoder<C>
+
   constructor(ctx: C, config: YunhuBot.Config) {
     // 添加适配器名称作为第三个参数
     super(ctx, config, 'yunhu')
@@ -32,6 +32,16 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     
     // 初始化内部接口
     this.internal = new Internal(http, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`)
+    this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
+    //抱歉我实现不能
+    this.deleteMessage = async (channelId: string, messageId: string) => {
+      try {
+        return this.internal.deleteMessage(channelId, messageId)
+      } catch (error) {
+        logger.error('撤回消息失败:', error)
+        throw error
+      }
+    }
     
     // 注册服务器插件
     ctx.plugin(YunhuServer, this)
