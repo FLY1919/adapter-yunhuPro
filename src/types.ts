@@ -180,3 +180,4 @@ export interface CompressResult {
   buffer: Buffer
   mimeType: string
 }
+

@@ -4,6 +4,10 @@ import { adaptSession } from './utils'
 import { } from '@koishijs/plugin-server'
 import Internal from './internal'
 import { YunhuMessageEncoder } from './message'
+import { execSync } from 'child_process'
+import path from 'path'
+import ffmpeg from 'fluent-ffmpeg'
+import { FfmpegThreadPool } from './thread-pool';
 
 const logger = new Logger('yunhu')
 
@@ -17,6 +21,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
   static MessageEncoder = YunhuMessageEncoder
   public internal: Internal
   private Encoder: YunhuMessageEncoder<C>
+  private ffmpegPath: string
 
   constructor(ctx: C, config: YunhuBot.Config) {
     // 添加适配器名称作为第三个参数
@@ -25,15 +30,19 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     this.platform = 'yunhu'
     this.selfId = config.token
     
+    // 设置 FFmpeg 路径
+    this.ffmpegPath = this.resolveFfmpegPath(config)
+    
     // 创建HTTP实例
     const http = ctx.http.extend({
       endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
     })
     
     // 初始化内部接口
-    this.internal = new Internal(http, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`)
+    this.internal = new Internal(http, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ffmpegPath)
     this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
-    //抱歉我实现不能
+    
+    // 实现消息撤回功能
     this.deleteMessage = async (channelId: string, messageId: string) => {
       try {
         return this.internal.deleteMessage(channelId, messageId)
@@ -45,6 +54,131 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     
     // 注册服务器插件
     ctx.plugin(YunhuServer, this)
+    
+    // 注册关闭钩子
+    ctx.on('dispose', () => {
+      this.internal.shutdown();
+    });
+  }
+  
+  /**
+   * 解析 FFmpeg 路径
+   * @param config 配置对象
+   * @returns FFmpeg 可执行文件路径
+   */
+  private resolveFfmpegPath(config: YunhuBot.Config): string {
+    // 1. 如果配置中提供了路径，直接使用
+    if (config.ffmpegPath) {
+      if (this.isValidFfmpegPath(config.ffmpegPath)) {
+        logger.info(`使用配置的 FFmpeg 路径: ${config.ffmpegPath}`)
+        return config.ffmpegPath
+      } else {
+        logger.warn(`配置的 FFmpeg 路径无效: ${config.ffmpegPath}`)
+      }
+    }
+    
+    // 2. 尝试使用 ffmpeg-static 包
+    try {
+      const ffmpegStatic = require('ffmpeg-static')
+      if (ffmpegStatic) {
+        logger.info(`使用 ffmpeg-static 提供的 FFmpeg: ${ffmpegStatic}`)
+        return ffmpegStatic
+      }
+    } catch (error) {
+      logger.warn('ffmpeg-static 未安装或不可用')
+    }
+    
+    // 3. 尝试在系统 PATH 中查找 ffmpeg
+    try {
+      const systemFfmpeg = this.findFfmpegInPath()
+      if (systemFfmpeg) {
+        logger.info(`在系统 PATH 中找到 FFmpeg: ${systemFfmpeg}`)
+        return systemFfmpeg
+      }
+    } catch (error) {
+      logger.warn('在系统 PATH 中查找 FFmpeg 失败')
+    }
+    
+    // 4. 尝试在常见安装位置查找
+    const commonPaths = this.getCommonFfmpegPaths()
+    for (const possiblePath of commonPaths) {
+      if (this.isValidFfmpegPath(possiblePath)) {
+        logger.info(`在常见位置找到 FFmpeg: ${possiblePath}`)
+        return possiblePath
+      }
+    }
+    
+    // 5. 最终尝试使用默认名称
+    logger.warn('无法找到有效的 FFmpeg 路径，将尝试使用默认名称')
+    return 'ffmpeg'
+  }
+  
+  /**
+   * 检查 FFmpeg 路径是否有效
+   * @param path 路径
+   * @returns 是否有效
+   */
+  private isValidFfmpegPath(path: string): boolean {
+    try {
+      // 检查文件是否存在
+      require('fs').accessSync(path, require('fs').constants.X_OK)
+      
+      // 检查版本信息
+      const versionOutput = execSync(`"${path}" -version`, { encoding: 'utf-8' })
+      return versionOutput.includes('ffmpeg version')
+    } catch (error) {
+      return false
+    }
+  }
+  
+  /**
+   * 在系统 PATH 中查找 FFmpeg
+   * @returns FFmpeg 路径或 null
+   */
+  private findFfmpegInPath(): string | null {
+    try {
+      const which = process.platform === 'win32' ? 'where' : 'which'
+      const path = execSync(`${which} ffmpeg`, { encoding: 'utf-8' }).trim()
+      if (path) return path
+    } catch (error) {
+      // 忽略错误
+    }
+    return null
+  }
+  
+  /**
+   * 获取常见的 FFmpeg 安装路径
+   * @returns 路径数组
+   */
+  private getCommonFfmpegPaths(): string[] {
+    const paths = []
+    
+    // Windows 常见路径
+    if (process.platform === 'win32') {
+      paths.push(
+        path.join('C:', 'Program Files', 'ffmpeg', 'bin', 'ffmpeg.exe'),
+        path.join('C:', 'ffmpeg', 'bin', 'ffmpeg.exe'),
+        path.join(process.env.ProgramFiles, 'ffmpeg', 'bin', 'ffmpeg.exe')
+      )
+    } 
+    // macOS 常见路径
+    else if (process.platform === 'darwin') {
+      paths.push(
+        '/usr/local/bin/ffmpeg',
+        '/opt/homebrew/bin/ffmpeg',
+        '/usr/bin/ffmpeg'
+      )
+    }
+    // Linux 常见路径
+    else {
+      paths.push(
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        '/opt/ffmpeg/bin/ffmpeg'
+      )
+    }
+    
+    return paths
   }
 }
 
@@ -94,6 +228,7 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
   }
 }
 
+// 默认导出 YunhuBot 类
 export default YunhuBot
 
 // 配置命名空间
@@ -103,6 +238,7 @@ namespace YunhuBot {
     endpoint?: string;
     path?: string;
     cat?: string;
+    ffmpegPath?: string;
   }
 
   export const Config: Schema<Config> = Schema.object({
@@ -120,6 +256,11 @@ namespace YunhuBot {
     
     cat: Schema.string()
       .default('猫娘')
-      .description('她很可爱，你可以摸摸')
+      .description('她很可爱，你可以摸摸'),
+    
+    ffmpegPath: Schema.string()
+      .description('FFmpeg 可执行文件路径')
+      .default('')
+      .role('path')
   })
 }

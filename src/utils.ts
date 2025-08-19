@@ -6,6 +6,8 @@ import path from 'path'
 import { fileFromPath } from 'formdata-node/file-from-path'
 import { CompressResult, ImageMetadata, ResourceResult } from './types'
 import sharp from 'sharp'
+import ffmpeg from 'fluent-ffmpeg'
+import { PassThrough } from 'stream'
 
 export * from './types'
 
@@ -219,63 +221,80 @@ const VALID_IMAGE_TYPES = [
  * @param http HTTP实例用于获取URL资源
  * @returns 标准化的资源结果
  */
+// ... 文件开头部分保持不变 ...
+
+
 export async function resolveResource(
   resource: string | Buffer | any,
   defaultFileName: string,
   defaultMimeType: string,
   http: HTTP
 ): Promise<ResourceResult> {
-  let fileName = defaultFileName
-  let mimeType = defaultMimeType
-  let buffer: Buffer | null = null
+  let fileName = defaultFileName;
+  let mimeType = defaultMimeType;
+  let dataBuffer: Buffer | null = null; // 修复：重命名变量避免冲突
 
   if (resource && typeof resource === 'object' && resource.type === 'image') {
-    fileName = resource.attrs?.filename || fileName
+    fileName = resource.attrs?.filename || fileName;
     if (resource.attrs?.url) {
-      const response = await http.get(resource.attrs.url, { responseType: 'arraybuffer' })
-      buffer = Buffer.from(response)
+      const response = await http.get(resource.attrs.url, { responseType: 'arraybuffer' });
+      dataBuffer = Buffer.from(response);
     } else if (resource.attrs?.data) {
-      buffer = resource.attrs.data
+      dataBuffer = resource.attrs.data;
     } else {
-      throw new Error('资源元素缺少 url 或 data 属性')
+      throw new Error('资源元素缺少 url 或 data 属性');
     }
   } else if (Buffer.isBuffer(resource)) {
-    buffer = resource
+    dataBuffer = resource;
   } else if (typeof resource === 'string') {
     if (resource.startsWith('data:')) {
-      const parts = resource.split(',')
-      const base64Data = parts[1]
-      const inferredMime = parts[0].match(/data:(.*?);base64/)?.[1]
+      const parts = resource.split(',');
+      const base64Data = parts[1];
+      const inferredMime = parts[0].match(/data:(.*?);base64/)?.[1];
       if (inferredMime) {
-        mimeType = inferredMime
-        fileName = `resource.${mime.extension(inferredMime) || 'dat'}`
+        mimeType = inferredMime;
+        fileName = `resource.${mime.extension(inferredMime) || 'dat'}`;
       }
-      buffer = Buffer.from(base64Data, 'base64')
+      dataBuffer = Buffer.from(base64Data, 'base64');
     } else if (resource.startsWith('http://') || resource.startsWith('https://')) {
-      const response = await http.get(resource, { responseType: 'arraybuffer' })
-      buffer = Buffer.from(new Uint8Array(response))
-      const urlParts = resource.split('/')
-      fileName = urlParts[urlParts.length - 1].split('?')[0]
-      const ext = path.extname(fileName)
+      const response = await http.get(resource, { responseType: 'arraybuffer' });
+      dataBuffer = Buffer.from(new Uint8Array(response));
+      const urlParts = resource.split('/');
+      fileName = urlParts[urlParts.length - 1].split('?')[0];
+      const ext = path.extname(fileName);
       if (ext) {
-        const inferredMime = mime.lookup(ext)
-        if (inferredMime) mimeType = inferredMime
+        const inferredMime = mime.lookup(ext);
+        if (inferredMime) mimeType = inferredMime;
       }
     } else { // 本地文件路径
-      const resolvedPath = path.resolve(resource)
-      fileName = path.basename(resolvedPath)
-      const inferredMime = mime.lookup(resolvedPath)
-      if (inferredMime) mimeType = inferredMime
-      const file = await fileFromPath(resolvedPath)
-      buffer = Buffer.from(await file.arrayBuffer())
+      const resolvedPath = path.resolve(resource);
+      fileName = path.basename(resolvedPath);
+      const inferredMime = mime.lookup(resolvedPath);
+      if (inferredMime) mimeType = inferredMime;
+      const file = await fileFromPath(resolvedPath);
+      dataBuffer = Buffer.from(await file.arrayBuffer());
     }
   } else {
-    throw new Error('资源类型不支持')
+    throw new Error('资源类型不支持');
   }
 
-  if (!buffer) throw new Error('无法获取资源数据')
+  // 修复：使用重命名后的变量
+  if (!dataBuffer) throw new Error('无法获取资源数据');
+  
+  // 添加大小验证
+  if (dataBuffer.length === 0) {
+    throw new Error('资源内容为空');
+  }
+  
+  // 添加最大大小限制
+  const MAX_RESOURCE_SIZE = 500 * 1024 * 1024; // 500MB
+  if (dataBuffer.length > MAX_RESOURCE_SIZE) {
+    const sizeMB = (dataBuffer.length / (1024 * 1024)).toFixed(2);
+    throw new Error(`资源过大 (${sizeMB}MB)，超过${MAX_RESOURCE_SIZE / (1024 * 1024)}MB限制`);
+  }
 
-  return { buffer, fileName, mimeType }
+  // 修复：使用重命名后的变量
+  return { buffer: dataBuffer, fileName, mimeType };
 }
 
 /**
@@ -381,6 +400,97 @@ export async function compressImage(
     throw new Error('图片压缩失败，无法上传')
   }
 }
+
+/**
+ * 压缩视频至指定大小
+ * @param buffer 视频Buffer
+ * @param maxSize 最大尺寸限制 (字节)
+ * @returns 压缩结果
+ */
+
+/**
+ * 压缩视频至指定大小
+ * @param buffer 视频Buffer
+ * @param maxSize 最大尺寸限制 (字节)
+ * @param ffmpegPath FFmpeg可执行文件路径
+ * @returns 压缩结果
+ */
+export async function compressVideo(
+  buffer: Buffer,
+  maxSize: number,
+  ffmpegPath: string
+): Promise<CompressResult> {
+  const originalSize = buffer.length
+  const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
+  logger.info(`原始视频大小: ${originalMB}MB`)
+  
+  try {
+    // 设置 FFmpeg 路径
+    if (ffmpegPath) {
+      ffmpeg.setFfmpegPath(ffmpegPath)
+      logger.info(`使用 FFmpeg 路径: ${ffmpegPath}`)
+    }
+    
+    // 计算目标比特率 (kbps)
+    const targetBitrate = Math.floor((maxSize * 8) / (1024 * 60)) // 假设视频时长约60秒
+    
+    return new Promise((resolve, reject) => {
+      const outputChunks: any[] = []
+      const outputStream = new PassThrough()
+      
+      // 收集压缩后的数据
+      outputStream.on('data', (chunk) => outputChunks.push(chunk))
+      outputStream.on('end', () => {
+        const compressedBuffer = Buffer.concat(outputChunks)
+        const compressedSize = compressedBuffer.length
+        const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
+        
+        if (compressedSize <= maxSize) {
+          logger.info(`视频压缩成功! 大小: ${compressedMB}MB`)
+          resolve({ buffer: compressedBuffer, mimeType: 'video/mp4' })
+        } else {
+          logger.warn(`压缩后视频仍过大: ${compressedMB}MB > ${maxSize / (1024 * 1024)}MB`)
+          reject(new Error(`无法将视频压缩至${maxSize / (1024 * 1024)}MB以下`))
+        }
+      })
+      
+      // 创建FFmpeg进程
+      ffmpeg()
+        .input(new PassThrough().end(buffer))
+        .inputFormat('mp4')
+        .videoCodec('libx264')
+        .audioCodec('aac')
+        .outputOptions([
+          '-preset fast', // 快速压缩预设
+          '-crf 28',      // 高压缩率
+          `-b:v ${targetBitrate}k`,
+          '-maxrate 1000k',
+          '-bufsize 2000k',
+          '-movflags +faststart'
+        ])
+        .on('start', (commandLine) => {
+          logger.info(`启动FFmpeg压缩: ${commandLine}`)
+        })
+        .on('progress', (progress) => {
+          logger.info(`压缩进度: ${progress.percent}%`)
+        })
+        .on('error', (err) => {
+          logger.error('视频压缩失败:', err.message)
+          reject(new Error('视频压缩失败'))
+        })
+        .on('end', () => {
+          logger.info('视频压缩完成')
+        })
+        .output(outputStream, { end: true })
+        .run()
+    })
+  } catch (error: any) {
+    logger.error('视频压缩失败:', error)
+    throw new Error('视频压缩失败，无法上传')
+  }
+}
+
+
 
 /**
  * 获取文件扩展名

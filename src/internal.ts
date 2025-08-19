@@ -3,6 +3,7 @@ import { FormData, File } from 'formdata-node'
 import axios, { AxiosRequestConfig } from 'axios'
 import * as Types from './types'
 import { createHash } from 'crypto';
+import { Buffer } from 'buffer';
 import { 
   resolveResource, 
   validateImage, 
@@ -12,31 +13,44 @@ import {
   FormatType,
   getExtension
 } from './utils'
-import { Worker } from 'worker_threads';
+import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import os from 'os';
+import { FfmpegThreadPool } from './thread-pool'; // 从 thread-pool.ts 导入
+import { FfmpegTask, FfmpegResult } from './ffmpeg'; // 从 ffmpeg.ts 导入
+const logger = new Logger('yunhu')
 
 // 获取CPU核心数，用于确定工作线程数量
 const CPU_CORES = os.cpus().length;
 
 const IMAGE_URL = "https://chat-img.jwznb.com/"
 
-const logger = new Logger('yunhu')
-
+// 图片压缩工作线程任务
+if (!isMainThread) {
+  const { buffer, mimeType, maxSize } = workerData;
+  compressImage(buffer, mimeType, maxSize)
+    .then(result => parentPort?.postMessage(result))
+    .catch(error => parentPort?.postMessage({ error }));
+  process.exit(0);
+}
 
 // 上传基类
 abstract class BaseUploader {
   protected MAX_SIZE: number
+  protected ffmpegPool: FfmpegThreadPool
 
   constructor(
     protected http: HTTP,
     protected token: string,
     protected apiendpoint: string,
-    protected resourceType: ResourceType
+    protected resourceType: ResourceType,
+    ffmpegPool: FfmpegThreadPool
   ) {
     // 设置不同资源类型的最大大小限制
     this.MAX_SIZE = resourceType === 'image' ? 10 * 1024 * 1024 : 
-                  resourceType === 'video' ? 50 * 1024 * 1024 : 
+                  resourceType === 'video' ? 20 * 1024 * 1024 : 
                   100 * 1024 * 1024
+    
+    this.ffmpegPool = ffmpegPool;
   }
 
   protected async sendFormData(form: FormData): Promise<string> {
@@ -72,15 +86,20 @@ abstract class BaseUploader {
 
 // 图片上传器
 class ImageUploader extends BaseUploader {
-  constructor(http: HTTP, token: string, apiendpoint: string) {
-    super(http, token, apiendpoint, 'image')
+  constructor(http: HTTP, token: string, apiendpoint: string, ffmpegPool: FfmpegThreadPool) {
+    super(http, token, apiendpoint, 'image', ffmpegPool)
   }
 
   // 使用工作线程池进行图片压缩
   private async compressImageInWorker(buffer: Buffer, mimeType: string): Promise<{ buffer: Buffer, mimeType: string }> {
     return new Promise((resolve, reject) => {
       const worker = new Worker(__filename, {
-        workerData: { buffer, mimeType, maxSize: this.MAX_SIZE }
+        workerData: { 
+          type: 'image',
+          buffer, 
+          mimeType, 
+          maxSize: this.MAX_SIZE 
+        }
       });
 
       worker.on('message', (result) => {
@@ -189,8 +208,8 @@ class ImageUploader extends BaseUploader {
 
 // 视频上传器
 class VideoUploader extends BaseUploader {
-  constructor(http: HTTP, token: string, apiendpoint: string) {
-    super(http, token, apiendpoint, 'video')
+  constructor(http: HTTP, token: string, apiendpoint: string, ffmpegPool: FfmpegThreadPool) {
+    super(http, token, apiendpoint, 'video', ffmpegPool)
   }
 
   async upload(video: string | Buffer | any): Promise<string> {
@@ -204,13 +223,52 @@ class VideoUploader extends BaseUploader {
       this.http
     )
     
-    // 大小验证
-    if (buffer.length > this.MAX_SIZE) {
-      throw new Error(`视频大小超过${this.MAX_SIZE / (1024 * 1024)}MB限制`)
+    // 记录原始大小
+    const originalSize = buffer.length
+    const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
+    logger.info(`原始视频大小: ${originalMB}MB`)
+    
+    let finalBuffer = buffer
+    
+    // 如果视频需要压缩且大小超过限制，使用线程池进行压缩
+    if (originalSize > this.MAX_SIZE) {
+      logger.info(`视频超过20MB限制，启动压缩任务...`)
+      
+      const task: FfmpegTask = {
+        type: 'compress-video',
+        input: buffer,
+        options: {
+          maxSize: this.MAX_SIZE
+        }
+      };
+      
+      const result = await this.ffmpegPool.executeTask(task);
+      if (result.success && result.output) {
+        finalBuffer = Buffer.isBuffer(result.output)
+          ? result.output
+          : Buffer.from(result.output); 
+        
+        const compressedSize = finalBuffer.length
+        const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
+        logger.info(`压缩后视频大小: ${compressedMB}MB`)
+        
+        if (result.metrics) {
+          const reduction = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+          logger.info(`压缩率: ${reduction}%`);
+        }
+      } else {
+        throw new Error(result.error || 'internal >> 视频压缩失败');
+      }
+    }
+
+    // 最终大小验证
+    if (finalBuffer.length > this.MAX_SIZE) {
+      const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2)
+      throw new Error(`视频大小${sizeMB}MB超过20MB限制`)
     }
 
     // 创建文件对象并上传
-    const file = new File([buffer], fileName, { type: mimeType })
+    const file = new File([finalBuffer], fileName, { type: mimeType })
     form.append('video', file)
     return this.sendFormData(form)
   }
@@ -218,8 +276,8 @@ class VideoUploader extends BaseUploader {
 
 // 文件上传器
 class FileUploader extends BaseUploader {
-  constructor(http: HTTP, token: string, apiendpoint: string) {
-    super(http, token, apiendpoint, 'file')
+  constructor(http: HTTP, token: string, apiendpoint: string, ffmpegPool: FfmpegThreadPool) {
+    super(http, token, apiendpoint, 'file', ffmpegPool)
   }
 
   async upload(fileData: string | Buffer | any): Promise<string> {
@@ -250,14 +308,23 @@ export default class Internal {
   private imageUploader: ImageUploader
   private videoUploader: VideoUploader
   private fileUploader: FileUploader
+  private ffmpegPool: FfmpegThreadPool
 
-  constructor(private http: HTTP, private token: string, private apiendpoint: string) {
-    this.imageUploader = new ImageUploader(http, token, apiendpoint)
-    this.videoUploader = new VideoUploader(http, token, apiendpoint)
-    this.fileUploader = new FileUploader(http, token, apiendpoint)
+  constructor(
+    private http: HTTP, 
+    private token: string, 
+    private apiendpoint: string,
+    private ffmpegPath: string
+  ) {
+    // 创建 FFmpeg 线程池
+    this.ffmpegPool = new FfmpegThreadPool();
+    
+    this.imageUploader = new ImageUploader(http, token, apiendpoint, this.ffmpegPool)
+    this.videoUploader = new VideoUploader(http, token, apiendpoint, this.ffmpegPool)
+    this.fileUploader = new FileUploader(http, token, apiendpoint, this.ffmpegPool)
   }
 
-  async sendMessage(payload: Dict) {
+  sendMessage(payload: Dict) {
     return this.http.post(`/bot/send?token=${this.token}`, payload)
   }
 
@@ -275,11 +342,10 @@ export default class Internal {
   async uploadFile(fileData: string | Buffer | any): Promise<string> {
     return this.fileUploader.upload(fileData)
   }
-  //注意chatid 以下未修改
-  async deleteMessage(channelId: string, messageId: string) {
-    const chatType = channelId.split(':')[1]
-    const chatId = channelId.split(':')[0]
-    const payload = { msgId: messageId, chatId, chatType }
+
+  async deleteMessage(chatId: string, msgId: string) {
+    const chatType = chatId.split(':')[1]
+    const payload = { msgId, chatId, chatType }
     logger.info(`撤回消息: ${JSON.stringify(payload)}`)
     return this.http.post(`/bot/recall?token=${this.token}`, payload)
   }
@@ -317,5 +383,12 @@ export default class Internal {
       ...options
     }
     return this.http.post(`/bot/board-all?token=${this.token}`, payload)
+  }
+  
+  /**
+   * 关闭时清理资源
+   */
+  shutdown() {
+    this.ffmpegPool.shutdown();
   }
 }
