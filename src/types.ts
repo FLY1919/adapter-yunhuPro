@@ -7,6 +7,99 @@ export interface YunhuConfig {
   path?: string;     // 可选，云湖平台推送回调的路径
 }
 
+interface CheckChatInfoRecord {
+  id: number;
+  chatId: string;
+  chatType: number;
+  checkWay: string;
+  reason: string;
+  status: number;
+  createTime: number;
+  updateTime: number;
+  delFlag: number;
+}
+
+interface Medal {
+    id: number;
+    name: string;
+    desc: string;
+    imageUrl: string;
+    sort: number;
+}
+
+interface User {
+    userId: string;
+    nickname: string;
+    avatarUrl: string;
+    registerTime: number;
+    registerTimeText: string;
+    onLineDay: number;
+    continuousOnLineDay: number;
+    medals: Medal[];
+    isVip: number;
+}
+
+export interface UserInfoResponse {
+    code: number;
+    data: {
+        user: User;
+    };
+    msg: string;
+}
+
+interface Bot {
+  id: number;
+  botId: string;
+  nickname: string;
+  nicknameId: number;
+  avatarId: number;
+  avatarUrl: string;
+  token: string;
+  link: string;
+  introduction: string;
+  createBy: string;
+  createTime: number;
+  headcount: number;
+  private: number;
+  checkChatInfoRecord: CheckChatInfoRecord;
+}
+
+interface GroupBotRel {
+  id: number;
+  groupId: string;
+  botId: string;
+  delFlag: number;
+  createTime: number;
+  updateTsime: number;
+  bot: Bot;
+}
+
+interface Group {
+  id: number;
+  groupId: string;
+  name: string;
+  introduction: string;
+  createBy: string;
+  createTime: number;
+  avatarId: number;
+  avatarUrl: string;
+  headcount: number;
+  readHistory: number;
+  category: string;
+  uri: string;
+  groupBotRel: GroupBotRel;
+  checkChatInfoRecord: CheckChatInfoRecord;
+}
+
+interface Data {
+  group: Group;
+}
+
+export interface GroupInfo {
+  code: number;
+  data: Data;
+  msg: string;
+}
 export interface YunhuMessage {
   recvId: string;
   recvType: 'user' | 'group';

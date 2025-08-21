@@ -31,8 +31,17 @@ const HTML = `
     // 使用 payload 存储待发送的消息
     private payload: Dict
     private UpgradeMessage: Dict
-    private sendType: 'text' | 'image' | 'video' | 'file' | 'markdown' | 'html'
+    private sendType: Dict = {
+        "text": false,
+        "image": false,
+        "video": false,
+        "file": false,
+        "markdown": false,
+        "html": false
+    } 
     private html: any
+    private message: Dict = []
+    private children: Dict = []
     // 在 prepare 中初始化 payload
     async changeType (type: 'text' | 'image' | 'video' | 'file' | 'markdown' | 'html'){
         this.payload.contentType = type
@@ -40,6 +49,7 @@ const HTML = `
 
     async prepare() {
         let [recvId, recvType] = this.channelId.split(':');
+        // 初始化 payload
         this.payload = {
             recvId,
             recvType, 
@@ -129,9 +139,10 @@ const HTML = `
         
         try {
             if (type === 'text') {
+                this.message.push( { type, attrs, children } )
                 // 处理文本元素
                 if ( this.payload.contentType === 'text'){
-                    this.payload.content.text += h.escape(attrs.content)  
+                    this.payload.content.text += attrs.content
                 }else if(this.payload.contentType === 'markdown'){
                     this.payload.content.text += h.escape(attrs.content)
                 }else if(this.payload.contentType === 'html'){
@@ -142,6 +153,7 @@ const HTML = `
                 
             } 
             else if (type === 'img' || type === 'image') {
+                this.message.push( { type, attrs, children } )
                 await this.flush()
                 // 暂时如此处理图片
                 // 处理图片元素
@@ -160,22 +172,26 @@ const HTML = `
                 }
             }
             else if (type === 'at') {
+                this.message.push( { type, attrs, children } )
                 // 处理@用户元素
                 this.payload.content.text += `@${attrs.name || attrs.id} `
                 this.payload.contentType = 'text'
             }
             else if (type === 'br') {
+                this.message.push( { type, attrs, children } )
                 // 处理换行符
                 this.payload.content.text += '\n'
                 this.payload.contentType = 'text'
             }
             else if (type === 'p') {
+                this.message.push( { type, attrs, children } )
                 // 处理段落
                 await this.render(children)
                 this.payload.content.text += '\n\n'
                 this.payload.contentType = 'text'
             }
             else if (type === 'a') {
+                this.message.push( { type, attrs, children } )
                 // 处理链接
                 await this.render(children)
                 if (attrs.href) {
@@ -184,6 +200,7 @@ const HTML = `
                 this.payload.contentType = 'text'
             }
             else if (type === 'file') {
+                this.message.push( { type, attrs, children } )
                 await this.flush()
                 try {
                     // 尝试上传文件获取fileKey
@@ -199,6 +216,7 @@ const HTML = `
                 await this.flush()
             }
             else if (type === 'video') {
+                this.message.push( { type, attrs, children } )
                 // 处理视频
                 try {
                     // 尝试上传视频获取videoKey
@@ -216,12 +234,30 @@ const HTML = `
                 
             }
             else if (type === 'markdown') {
-                this.payload.content.text += h.escape(attrs.content)
+                this.message.push( { type, attrs, children } )
+                await this.flush()
+                this.payload.content.text = h.escape(attrs.content)
                 this.payload.contentType = 'markdown'
+                await this.flush()
+            }
+            else if (type === 'html'){
+                this.message.push( { type, attrs, children } )
+                await this.flush()
+                this.payload.content.text = h.escape(attrs.content)
+                this.payload.contentType = 'html'
+                await this.flush()
+            }
+            else if (type === 'message'){
+                this.message.push( { type, attrs, children } )
+                await this.flush()
+                await this.render(children)
+                await this.flush()
             }
             else {
-                // 处理其他元素的子元素
-                await this.render(children)
+                // 处理未知元素
+                this.bot.logger.warn(`未知消息元素类型: ${type}`)
+                this.payload.content.text += `[未知元素: ${type}] `
+                this.payload.contentType = 'text'
             }
 
         } catch (error) {

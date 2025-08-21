@@ -8,12 +8,15 @@ import { execSync } from 'child_process'
 import path from 'path'
 import ffmpeg from 'fluent-ffmpeg'
 import { FfmpegThreadPool } from './thread-pool';
+import { config } from 'process'
 
 const logger = new Logger('yunhu')
 
 // 默认的云湖 API 地址
 const YUNHU_ENDPOINT = 'https://chat-go.jwzhd.com'
+const YUNHU_ENDPOINT_WEB = 'https://chat-web-go.jwzhd.com'
 const YUNHU_API_PATH = '/open-apis/v1'
+const YUNHU_API_PATH_WEB = '/v1'
 
 export const name = 'yunhu'
 class YunhuBot<C extends Context = Context> extends Bot<C> {
@@ -37,11 +40,57 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     const http = ctx.http.extend({
       endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
     })
+    // 爬虫/抓包接口
+    const httpWeb = ctx.http.extend({
+      endpoint: `${this.config.endpointweb}${YUNHU_API_PATH_WEB}`,
+    })
     
     // 初始化内部接口
-    this.internal = new Internal(http, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ffmpegPath)
+    this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ffmpegPath)
     this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
-    
+    this.getGuildMember = async (guildId: string, userId: string) => {
+      try {
+        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse
+        return {
+          "id": _payload.data.user.userId,
+          "name": _payload.data.user.nickname,
+          'avatar': _payload.data.user.avatarUrl,
+          "tag": _payload.data.user.nickname,
+          "isBot": false
+        }
+      } catch (error) {
+        logger.error('获取群成员信息失败:', error)
+        throw error
+      }
+    }
+    this.getUser = async (userId: string) => {
+      try {
+        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse
+        return {
+          "id": _payload.data.user.userId,
+          "name": _payload.data.user.nickname,
+          'avatar': _payload.data.user.avatarUrl,
+          "tag": _payload.data.user.nickname,
+          "isBot": false
+        }
+      }catch (error){
+        logger.error('获取用户信息失败:', error)
+        throw error
+      }
+    }
+    this.getGuild = async (guildId: string) => {
+      try {
+        const _payload = await this.internal.getGuild(guildId) as Yunhu.GroupInfo
+        return {
+          "id": _payload.data.group.groupId,
+          "name": _payload.data.group.name,
+          'avatar': _payload.data.group.avatarUrl
+        }
+      }catch (error){
+        logger.error('获取群聊消息失败:', error)
+        throw error
+      }
+    }
     // 实现消息撤回功能
     this.deleteMessage = async (channelId: string, messageId: string) => {
       try {
@@ -183,15 +232,84 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
 }
 
 class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
+  // 根据文件扩展名获取内容类型
+  private getContentType(extension: string): string {
+    const typeMap = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'ico': 'image/x-icon',
+      'css': 'text/css',
+      'js': 'application/javascript',
+      'json': 'application/json',
+      'html': 'text/html',
+      'htm': 'text/html'
+    }
+    
+    return typeMap[extension] || 'application/octet-stream'
+  }
   async connect(bot: YunhuBot) {
     await this.initialize(bot)
     
+    // 爬虫/抓包接口
+
     // 设置消息事件监听
     this.ctx.on('send', (session) => {
       logger.info(`New message: ${session.messageId} in channel: ${session.channelId}`)
     })
 
     // 注册Webhook路由
+    bot.ctx.server.get(`${bot.config.path_host}`, async (ctx) => {
+      ctx.status = 200;
+      const targetUrl = ctx.query?.url as string | undefined;
+
+      if (!targetUrl) {
+        ctx.status = 400;
+        ctx.body = 'Missing URL parameter. Usage: /pic?url=目标URL';
+        return;
+      }
+
+      // Decode the URL (query parameters are automatically encoded)
+      let decodedUrl: string;
+      try {
+        decodedUrl = decodeURIComponent(targetUrl);
+        if (!decodedUrl.startsWith('http')) {
+          ctx.status = 400;
+          ctx.body = 'Invalid URL. Must start with http or https.';
+          return;
+        }
+      } catch (e) {
+        ctx.status = 400;
+        ctx.body = 'Invalid URL encoding.';
+        return;
+      }
+
+      try {
+        // Use Koishi's HTTP client to make the request
+        const response = await this.ctx.http.get(decodedUrl, {
+          headers: {
+            'Referer': 'www.yhchat.com/', // Set the required Referer for anti-leeching
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+          responseType: 'arraybuffer',
+        });
+
+        // Set the correct content type
+        const extension = decodedUrl.split('.').pop()?.toLowerCase() || '';
+        const contentType = this.getContentType(extension);
+        ctx.set('Content-Type', contentType);
+        ctx.body = Buffer.from(response);
+      } catch (error) {
+        logger.error(`Proxy request failed: ${error.message}`);
+        ctx.status = 500;
+        ctx.body = `Proxy Error: ${error.message}`;
+      }
+    });
+    
+    // 处理Webhook请求
     bot.ctx.server.post(bot.config.path, async (ctx) => {
       ctx.status = 200
       
@@ -208,7 +326,7 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
       // 转换并分发会话
       const session = adaptSession(bot, payload)
       if (session) {
-        bot.dispatch(session)
+        bot.dispatch(await session)
       }
       
       // 返回成功响应
@@ -236,6 +354,9 @@ namespace YunhuBot {
   export interface Config {
     token: string;
     endpoint?: string;
+    endpointweb?: string;
+    _host:string;
+    path_host:string;
     path?: string;
     cat?: string;
     ffmpegPath?: string;
@@ -249,6 +370,9 @@ namespace YunhuBot {
     endpoint: Schema.string()
       .default(YUNHU_ENDPOINT)
       .description('云湖 API 地址，默认无需修改'),
+    endpointweb: Schema.string()
+      .default(YUNHU_ENDPOINT_WEB)
+      .description('云湖 API 地址，默认无需修改'),
     
     path: Schema.string()
       .default('/yunhu')
@@ -257,7 +381,13 @@ namespace YunhuBot {
     cat: Schema.string()
       .default('猫娘')
       .description('她很可爱，你可以摸摸'),
-    
+    _host: Schema.string()
+      .default('http://127.0.0.1:5140/pic')
+      .description('图片反代'),
+    path_host: Schema.string()
+      .default('/pic')
+      .description('图片反代'),
+     
     ffmpegPath: Schema.string()
       .description('FFmpeg 可执行文件路径')
       .default('')

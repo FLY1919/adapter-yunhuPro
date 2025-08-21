@@ -89,8 +89,9 @@ function transformElements(elements: any[]) {
 }
 
 // 适配会话，将云湖事件转换为Koishi会话
-export function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, input: Yunhu.YunhuEvent) {
+export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, input: Yunhu.YunhuEvent) {
   const session = bot.session()
+  const Internal = bot.internal
   session.setInternal(bot.platform, input)
 
   switch (input.header.eventType) {
@@ -102,7 +103,46 @@ export function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, inpu
       session.userId = sender.senderId
       session.event.user.name = sender.senderNickname
       session.event.user.nick = sender.senderNickname
+      session.event.user.id = sender.senderId
+      const level = ()=>{ 
+        if (sender.senderUserLevel === 'owner') {
+          return 0x1FFFFFFFFF
+        }else if (sender.senderUserLevel === 'administrator'){
+          return 0x8
+        }else if (sender.senderUserLevel === 'member'){
+          return 2048
+        }else{
+          return 0
+        }
+      }
+      const UserInfo = await Internal.getUser(session.userId)
+      session.event.role = {
+        "id": chat.chatId,
+        "name": UserInfo.data.user.nickname, 
+        "permissions": BigInt(level()), 
+        "color": null, 
+        "position": null, 
+        "hoist": false,
+        "mentionable": false
+      }
+      session.author.user = {
+        "id": session.userId,
+        "name": UserInfo.data.user.nickname,
+        "nick": UserInfo.data.user.nickname,
+        "avatar": bot.config._host+ "?url=" + UserInfo.data.user.avatarUrl,
+        "isBot": false // 云湖目前没有提供isBot字段，暂时设为false
+      }
+      session.event.member = {
+        "user": session.author.user,
+        "name": UserInfo.data.user.nickname,
+        "nick": UserInfo.data.user.nickname,
+        "avatar":bot.config._host + "?url=" + UserInfo.data.user.avatarUrl
+      }
 
+      session.author.name = UserInfo.data.user.nickname
+      session.author.nick = UserInfo.data.user.nickname
+      // session.author.isBot = UserInfo.data.user.isBot
+      session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊
       if (message.chatType === 'bot') {
         session.channelId = `${sender.senderId}:user`
@@ -119,7 +159,7 @@ export function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, inpu
       session.timestamp = message.sendTime
       // session.quote.id = message.parentId? message.parentId : undefined
 
-      const logger = new Logger('yunhu')
+      
       // logger.info(message)
       
 
@@ -500,6 +540,7 @@ export async function compressVideo(
 export function getExtension(mimeType: string): string {
   return mime.extension(mimeType) || 'dat'
 }
+
 
 /**
  * 更新文件名扩展

@@ -332,7 +332,7 @@ async function compressVideo(input: string | Buffer | Uint8Array, options: any):
  * @returns 缩略图结果
  */
 async function extractThumbnail(input: string | Buffer, options: any): Promise<FfmpegResult> {
-  const { time = '00:00:01' } = options;
+  const { time = '00:00:00' } = options;
   
   // 如果是 Buffer，保存到临时文件
   let inputPath: string;

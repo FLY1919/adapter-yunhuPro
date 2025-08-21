@@ -312,6 +312,7 @@ export default class Internal {
 
   constructor(
     private http: HTTP, 
+    private httpWeb: HTTP,
     private token: string, 
     private apiendpoint: string,
     private ffmpegPath: string
@@ -349,6 +350,43 @@ export default class Internal {
     logger.info(`撤回消息: ${JSON.stringify(payload)}`)
     return this.http.post(`/bot/recall?token=${this.token}`, payload)
   }
+  async getGuild(guildId: string): Promise<Types.GroupInfo>  {
+    const payload = { "groupId":guildId }
+    return this.httpWeb.post(`/group/group-info`, payload)
+  }
+
+  async getUser(userId: string): Promise<Types.UserInfoResponse>{
+    return this.httpWeb.get(`/user/homepage?userId=${userId}`)
+  }
+
+// 获取图片并转换为Base64
+  async getImageAsBase64(url: string): Promise<string> {
+    try {
+      // 设置请求头，包括Referer
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        headers: {
+          'Referer': 'www.yhchat.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+
+      // 获取图片MIME类型
+      const contentType = response.headers['content-type'];
+      if (!contentType || !contentType.startsWith('image/')) {
+        throw new Error('响应不是有效的图片类型');
+      }
+
+      // 将ArrayBuffer转换为Base64
+      const base64 = Buffer.from(response.data, 'binary').toString('base64');
+      
+      // 返回Data URL格式
+      return `data:${contentType};base64,${base64}`;
+    } catch (error) {
+      console.error('获取图片失败:', error);
+      throw new Error(`无法获取图片: ${error.message}`);
+    }
+  } 
 
   async setBoard(
     chatId: string,
