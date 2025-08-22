@@ -1,5 +1,9 @@
 {
   "koishi": {
+    "description":{
+       "zn":"云湖适配器",
+        "en":"Yunhu Adapter"
+    },
     "service": {
       "required": [
         "sever"
@@ -8,7 +12,7 @@
   },
   "name": "koishi-plugin-adapter-yunhupro",
   "description": "云湖适配器",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
