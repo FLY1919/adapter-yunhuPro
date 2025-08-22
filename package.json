@@ -57,7 +57,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "bump": "koishi-bump",
     "pub": "npm run build && npm publish"
   },
   "bugs": {
