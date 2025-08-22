@@ -154,7 +154,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       }
 
       // 设置消息内容和元数据
-      session.content = message.content.text || ''
+      session.content = message.commandName || '' + message.content.text || ''
       session.messageId = message.msgId
       session.timestamp = message.sendTime
       // session.quote.id = message.parentId? message.parentId : undefined
