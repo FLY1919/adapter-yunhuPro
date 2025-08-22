@@ -23,7 +23,9 @@
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "adapter",
+    "yunhu"
   ],
   "author": "WindyPear-Team(original_author) > FLY1919",
   "repository": {

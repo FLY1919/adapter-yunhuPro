@@ -5,9 +5,9 @@
 > ~~原作者没时间~~,我也没时间（
 本文档介绍了用于 Koishi 框架的云湖 (Yunhu) 官方适配器。此适配器允许您的 Koishi 机器人接收和发送云湖平台的消息。
 [![Stylelint](https://img.shields.io/badge/stylelint-enabled-brightgreen.svg)]
-(https://stylelint.io/)
-[![npm version](https://img.shields.io/npm/v/@fly_hx/koishi-plugin-adapter-yunhupro)]
-(https://badge.fury.io/js/@fly_hx/koishi-plugin-adapter-yunhupro)
+(https://stylelint.io/)/
+[![npm version](https://img.shields.io/npm/v/@fly_hx/koishi-plugin-adapter-yunhupro)]/
+(https://badge.fury.io/js/@fly_hx/koishi-plugin-adapter-yunhupro)/
 [![npm downloads](https://img.shields.io/npm/l/@fly_hx/koishi-plugin-adapter-yunhupro)]
 (https://github.com/username/project/README)
 
