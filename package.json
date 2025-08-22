@@ -1,18 +1,19 @@
 {
   "koishi": {
-    "description":{
-       "zn":"云湖适配器",
-        "en":"Yunhu Adapter"
+    "description": {
+      "zn": "云湖适配器",
+      "en": "Yunhu Adapter"
     },
     "service": {
       "required": [
         "sever"
-      ]
+      ],
+      "implements": "adapter"
     }
   },
   "name": "koishi-plugin-adapter-yunhupro",
   "description": "云湖适配器",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,12 +28,12 @@
     "adapter",
     "yunhu"
   ],
-  "author": "WindyPear-Team(original_author) > FLY1919",
+  "author": "WindyPear-Team (original_author)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FLY1919/adapter-yunhuPro.git"
+    "url": "git+https://github.com/FLY1919/adapter-yunhuPro.git"
   },
-  "homepage": "",
+  "homepage": "https://github.com/FLY1919/adapter-yunhuPro#readme",
   "peerDependencies": {
     "koishi": "^4.18.7"
   },
@@ -53,5 +54,13 @@
   "devDependencies": {
     "@types/fluent-ffmpeg": "^2",
     "@types/mime-types": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "bump": "koishi-bump",
+    "pub": "npm run build && npm publish"
+  },
+  "bugs": {
+    "url": "https://github.com/FLY1919/adapter-yunhuPro/issues"
   }
 }
