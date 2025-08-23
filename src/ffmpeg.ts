@@ -231,34 +231,17 @@ async function compressVideo(input: string | Buffer | Uint8Array, options: any):
   // 创建输出路径
   const outputPath = path.join(os.tmpdir(), `compressed-video-${Date.now()}.mp4`);
   
-  // 检查 libx264 是否可用，否则使用 mpeg4 作为回退
-  const videoCodec = 'libx265';
-  let codecAvailable = true;
-  try {
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg()
-        .addInput(inputPath)
-        .videoCodec(videoCodec)
-        .on('error', () => reject())
-        .on('end', () => resolve())
-        .outputOptions('-frames:v', '1')
-        .outputOptions('-f', 'null')
-        .saveToFile(os.tmpdir() + `/probe-${Date.now()}.null`);
-    });
-  } catch {
-    codecAvailable = false;
-    logger.warn('libx265 不可用，使用 mpeg4 作为回退');
-  }
+
 
   // 执行压缩
   await new Promise<void>((resolve, reject) => {
     let lastPercent = 0;
     ffmpeg(inputPath)
-      .videoCodec(codecAvailable ? 'libx265' : 'mpeg4')
+      .videoCodec( 'mpeg4')
       .videoBitrate(targetBitrate)
-      .outputOptions('-preset', 'slower')
+      .outputOptions('-preset', 'fast')
       .outputOptions('-movflags', 'faststart')
-      .outputOptions('-maxrate', `${targetBitrate}k`)
+      .outputOptions('-maxrate', `${targetBitrate}k`,)
       .outputOptions('-bufsize', `${targetBitrate * 2}k`)
       .outputOptions("-crf", "20")
       .size('?x360') // 最大高度360p，保持宽高比

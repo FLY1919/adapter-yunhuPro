@@ -3,22 +3,29 @@
     "rootDir": "src",
     "outDir": "lib",
     "target": "es2022",
-    "module": "esnext",
+    "module": "commonjs", // 改为 commonjs 用于 Node.js 环境
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false, // 改为 false 以生成 JS 文件
     "composite": true,
     "incremental": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node", // 改为 node 解析策略
     "jsx": "react-jsx",
     "jsxImportSource": "@satorijs/element",
     "types": [
       "node",
       "yml-register/types"
-    ]
+    ],
+    // 添加以下选项以确保生成多个文件
+    "preserveConstEnums": true,
+    "sourceMap": true
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
   ]
 }

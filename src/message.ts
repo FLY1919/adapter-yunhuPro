@@ -37,6 +37,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
     private html: any
     private message: Dict = []
     private childer: any = undefined
+    private temp: Dict = {}
 
     // 辅助函数：递归提取所有HTML内容
     private escapeAttributeValue(value: string): string {
@@ -348,7 +349,10 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 })
             }
         }
-        else {
+        else if( element.type === 'h1' || element.type === 'h2' || element.type === 'h3' || element.type === 'h4' || element.type === 'h5' || element.type === 'h6'){
+            //注意子元素处理
+
+        } else{
             // 处理未知元素
             this.bot.logger.warn(`未知消息元素类型: ${element.type}`)
             if (this.sendType === 'text') {
@@ -567,6 +571,17 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.childer = this.memrize.pop()
                 }
             }
+            else if (type === 'h1' || type === 'h2' || type === 'h3' || type === 'h4' || type === 'h5' || type === 'h6') {
+                if (this.sendType == undefined) {
+                    this.sendType = 'markdown'
+                } else if (this.sendType === 'image') {
+                    this.sendType = 'markdown'
+                } else if (this.sendType === 'text') {
+                    this.sendType = 'markdown'
+                } 
+
+
+            }
             else {
                 // 处理未知元素
                 if (this.sendType == undefined) {
@@ -576,7 +591,8 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 }
                 this.bot.logger.warn(`未知消息元素类型: ${type}`)
                 const _element: Dict = {'type':'text', 'attrs':{'content': `[未知元素: ${type}] `} }
-                this.message.push(_element) 
+                this.message.push(_element)
+                await this.render(children)
             }
 
         } catch (error) {

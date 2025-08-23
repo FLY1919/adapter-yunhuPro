@@ -32,10 +32,13 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     
     this.platform = 'yunhu'
     this.selfId = config.token
-    
+
+    if (config.ffmpeg) {
     // 设置 FFmpeg 路径
-    this.ffmpegPath = this.resolveFfmpegPath(config)
-    
+      this.ffmpegPath = this.resolveFfmpegPath(config)
+    } else (
+      this.ffmpegPath = ''
+    )
     // 创建HTTP实例
     const http = ctx.http.extend({
       endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
@@ -46,7 +49,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     })
     
     // 初始化内部接口
-    this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ffmpegPath)
+    this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ffmpegPath, config.ffmpeg)
     this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
     this.getGuildMember = async (guildId: string, userId: string) => {
       try {
@@ -346,9 +349,6 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
   }
 }
 
-// 默认导出 YunhuBot 类
-export default YunhuBot
-
 // 配置命名空间
 namespace YunhuBot {
   export interface Config {
@@ -360,13 +360,17 @@ namespace YunhuBot {
     path?: string;
     cat?: string;
     ffmpegPath?: string;
+    ffmpeg?: boolean;
   }
 
   export const Config: Schema<Config> = Schema.object({
     token: Schema.string()
       .required()
       .description('机器人 Token'),
-    
+    ffmpeg: Schema.boolean()
+      .default(false)
+      .role('boolean')
+      .description('FFmpeg 是否启用视频压缩功能，启用后可发送视频消息，默认关闭'),
     endpoint: Schema.string()
       .default(YUNHU_ENDPOINT)
       .description('云湖 API 地址，默认无需修改'),
@@ -394,3 +398,6 @@ namespace YunhuBot {
       .role('path')
   })
 }
+
+// 默认导出 YunhuBot 类
+export default YunhuBot

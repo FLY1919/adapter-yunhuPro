@@ -17,6 +17,7 @@ import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import os from 'os';
 import { FfmpegThreadPool } from './thread-pool'; // 从 thread-pool.ts 导入
 import { FfmpegTask, FfmpegResult } from './ffmpeg'; // 从 ffmpeg.ts 导入
+import YunhuBot from '.';
 const logger = new Logger('yunhu')
 
 // 获取CPU核心数，用于确定工作线程数量
@@ -208,7 +209,13 @@ class ImageUploader extends BaseUploader {
 
 // 视频上传器
 class VideoUploader extends BaseUploader {
-  constructor(http: HTTP, token: string, apiendpoint: string, ffmpegPool: FfmpegThreadPool) {
+  constructor(
+    http: HTTP, 
+    token: string, 
+    apiendpoint: string, 
+    ffmpegPool: FfmpegThreadPool,
+    private enableFfmpeg: boolean // 添加是否启用 FFmpeg 的配置
+  ) {
     super(http, token, apiendpoint, 'video', ffmpegPool)
   }
 
@@ -230,41 +237,47 @@ class VideoUploader extends BaseUploader {
     
     let finalBuffer = buffer
     
-    // 如果视频需要压缩且大小超过限制，使用线程池进行压缩
+    // 如果视频需要压缩且大小超过限制，并且启用了 FFmpeg，使用线程池进行压缩
     if (originalSize > this.MAX_SIZE) {
-      logger.info(`视频超过20MB限制，启动压缩任务...`)
-      
-      const task: FfmpegTask = {
-        type: 'compress-video',
-        input: buffer,
-        options: {
-          maxSize: this.MAX_SIZE
-        }
-      };
-      
-      const result = await this.ffmpegPool.executeTask(task);
-      if (result.success && result.output) {
-        finalBuffer = Buffer.isBuffer(result.output)
-          ? result.output
-          : Buffer.from(result.output); 
+      if (this.enableFfmpeg && this.ffmpegPool) {
+        logger.info(`视频超过20MB限制，启动压缩任务...`)
         
-        const compressedSize = finalBuffer.length
-        const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
-        logger.info(`压缩后视频大小: ${compressedMB}MB`)
+        const task: FfmpegTask = {
+          type: 'compress-video',
+          input: buffer,
+          options: {
+            maxSize: this.MAX_SIZE
+          }
+        };
         
-        if (result.metrics) {
-          const reduction = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-          logger.info(`压缩率: ${reduction}%`);
+        const result = await this.ffmpegPool.executeTask(task);
+        if (result.success && result.output) {
+          finalBuffer = Buffer.isBuffer(result.output)
+            ? result.output
+            : Buffer.from(result.output); 
+          
+          const compressedSize = finalBuffer.length
+          const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
+          logger.info(`压缩后视频大小: ${compressedMB}MB`)
+          
+          if (result.metrics) {
+            const reduction = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+            logger.info(`压缩率: ${reduction}%`);
+          }
+        } else {
+          throw new Error(result.error || 'internal >> 视频压缩失败');
         }
       } else {
-        throw new Error(result.error || 'internal >> 视频压缩失败');
+        // 如果未启用 FFmpeg，直接报错
+        const sizeMB = (originalSize / (1024 * 1024)).toFixed(2)
+        throw new Error(`视频大小${sizeMB}MB超过${this.MAX_SIZE / (1024 * 1024)}MB限制，且FFmpeg功能未启用`);
       }
     }
 
     // 最终大小验证
     if (finalBuffer.length > this.MAX_SIZE) {
       const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2)
-      throw new Error(`视频大小${sizeMB}MB超过20MB限制`)
+      throw new Error(`视频大小${sizeMB}MB超过${this.MAX_SIZE / (1024 * 1024)}MB限制`)
     }
 
     // 创建文件对象并上传
@@ -273,6 +286,7 @@ class VideoUploader extends BaseUploader {
     return this.sendFormData(form)
   }
 }
+
 
 // 文件上传器
 class FileUploader extends BaseUploader {
@@ -311,19 +325,20 @@ export default class Internal {
   private ffmpegPool: FfmpegThreadPool
 
   constructor(
-    private http: HTTP, 
-    private httpWeb: HTTP,
-    private token: string, 
-    private apiendpoint: string,
-    private ffmpegPath: string
-  ) {
-    // 创建 FFmpeg 线程池
-    this.ffmpegPool = new FfmpegThreadPool();
-    
-    this.imageUploader = new ImageUploader(http, token, apiendpoint, this.ffmpegPool)
-    this.videoUploader = new VideoUploader(http, token, apiendpoint, this.ffmpegPool)
-    this.fileUploader = new FileUploader(http, token, apiendpoint, this.ffmpegPool)
-  }
+  private http: HTTP, 
+  private httpWeb: HTTP,
+  private token: string, 
+  private apiendpoint: string,
+  private ffmpegPath: string,
+  private enableFfmpeg: boolean // 添加是否启用 FFmpeg 的配置
+) {
+  // 只有当启用 FFmpeg 时才创建线程池
+  this.ffmpegPool = enableFfmpeg ? new FfmpegThreadPool() : null;
+  
+  this.imageUploader = new ImageUploader(http, token, apiendpoint, this.ffmpegPool)
+  this.videoUploader = new VideoUploader(http, token, apiendpoint, this.ffmpegPool, enableFfmpeg) // 传递 enableFfmpeg
+  this.fileUploader = new FileUploader(http, token, apiendpoint, this.ffmpegPool)
+}
 
   sendMessage(payload: Dict) {
     return this.http.post(`/bot/send?token=${this.token}`, payload)
@@ -427,6 +442,8 @@ export default class Internal {
    * 关闭时清理资源
    */
   shutdown() {
+  if (this.ffmpegPool) {
     this.ffmpegPool.shutdown();
+    }
   }
 }
