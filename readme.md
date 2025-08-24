@@ -24,14 +24,7 @@
 
 您可以通过 npm 或 yarn 安装此适配器：
 
-```bash
-# 使用 npm
-npm install @koishijs/adapter-yunhu
-# 或使用 yarn
-yarn add @koishijs/adapter-yunhu
-# 或使用 pnpm
-pnpm add @koishijs/adapter-yunhu
-```
+
 
 ## 基本配置
 ```typescript
