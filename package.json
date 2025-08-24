@@ -8,7 +8,7 @@
       "required": [
         "sever"
       ],
-      "implements": "adapter"
+      "implements": ["adapter"]
     }
   },
   "name": "koishi-plugin-adapter-yunhupro",
