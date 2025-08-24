@@ -8,12 +8,14 @@
       "required": [
         "sever"
       ],
-      "implements": ["adapter"]
+      "implements": [
+        "adapter"
+      ]
     }
   },
   "name": "koishi-plugin-adapter-yunhupro",
   "description": "云湖适配器",
-  "version": "1.0.7-beta.1",
+  "version": "1.0.7-beta.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
