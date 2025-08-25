@@ -1,13 +1,14 @@
 import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi'
 import * as Yunhu from './types'
-import YunhuBot from './'
+import YunhuBot, { name } from './'
 import * as mime from 'mime-types'
 import path from 'path'
 import { fileFromPath } from 'formdata-node/file-from-path'
 import { CompressResult, ImageMetadata, ResourceResult } from './types'
-import sharp from 'sharp'
+import sharp, { cache } from 'sharp'
 import ffmpeg from 'fluent-ffmpeg'
 import { PassThrough } from 'stream'
+import Internal from './internal'
 
 export * from './types'
 
@@ -22,7 +23,7 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
 })
 
 // 将云湖消息转换为Koishi通用消息格式
-export const decodeMessage = (message: Yunhu.Message): Universal.Message => {
+export const decodeMessage = (message: Yunhu.Message, Internal: Internal): Universal.Message => {
   const elements = []
 
   // 处理文本内容
@@ -33,9 +34,10 @@ export const decodeMessage = (message: Yunhu.Message): Universal.Message => {
   }
 
   // 处理图片内容
-  if (message.content.imageKey) {
-    // 这里可以构造一个图片URL或者使用imageKey作为标识
-    elements.push(h.image(`yunhu:${message.content.imageKey}`))
+  if (message.content.imageUrl) {
+    // 这里可以构造一个图片URL
+    
+    elements.push(h('img', { 'src': message.content.imageUrl, "width": message.content.imageWidth, 'height': message.content.imageHeight }))
   }
 
   // 处理文件内容
@@ -52,8 +54,9 @@ export const decodeMessage = (message: Yunhu.Message): Universal.Message => {
 
   if (message.content.at) {
     // elements.push(h.at(message.content.at))
-    message.content.at.forEach(id => {
-      elements.push(h.at(id))
+    message.content.at.forEach(async id => {
+      const user = Internal.getUser(id)
+      elements.push(h('at', {'id': id , 'name': (await user).data.user.nickname} ))
     });
   }
   if (message.parentId) {
@@ -74,11 +77,11 @@ function transformElements(elements: any[]) {
       return h.text(element)
     } else if (Buffer.isBuffer(element)) {
       // 正确的方式是将data和type作为独立参数传递
-      return h.image(element, 'image/png')
+      return h.image(element, 'image/png', { 'filename': 'image.png', 'cache': false })
     } else if (typeof element === 'object' && element.type === 'image') {
       // 处理已经是图片对象的情况
       if (element.url) {
-        return h.image(element.url)
+        return h('image', {'src':element.url, "filename": element.filename || 'image.png', 'cache': false, "weight": element.weight || 0, "height": element.height || 0})
       } else if (element.data) {
         return h.image(element.data, 'image/png')
       }
@@ -164,7 +167,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       
 
       // 转换消息内容为Koishi格式
-      session.event.message = decodeMessage(message)
+      session.event.message = decodeMessage(message, Internal)
       logger.info(`已转换为koishi消息格式:`)
       logger.info(session)
       

@@ -127,12 +127,18 @@ export interface Message {
 }
 
 export interface Content {
-  text?: string          // contentType 为 text 或 markdown 时用
-  imageKey?: string      // contentType 为 image 时用
-  fileKey?: string       // contentType 为 file 时用
-  videoKey?: string      // contentType 为 video 时用
-  buttons?: Button[]     // 所有类型都可能有
-  at?: string[]        // 所有类型都可能有
+  text?: string;          // contentType 为 text 或 markdown 时使用
+  imageUrl?: string;      // contentType 为 image 时使用（替换 imageKey）
+  fileKey?: string;       // contentType 为 file 时使用
+  videoKey?: string;      // contentType 为 video 时使用
+  buttons?: Button[];     // 所有类型都可能有
+  at?: string[];          // 所有类型都可能有
+
+  // 以下为图像类型特有的可选属性
+  imageName?: string;     // 对应 JSON 中的 imageName
+  etag?: string;          // 对应 JSON 中的 etag
+  imageWidth?: number;    // 对应 JSON 中的 imageWidth
+  imageHeight?: number;   // 对应 JSON 中的 imageHeight
 }
 
 export interface Button {

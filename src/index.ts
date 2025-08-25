@@ -57,7 +57,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
         return {
           "id": _payload.data.user.userId,
           "name": _payload.data.user.nickname,
-          'avatar': _payload.data.user.avatarUrl,
+          'avatar':this.config._host + "?url=" + _payload.data.user.avatarUrl,
           "tag": _payload.data.user.nickname,
           "isBot": false
         }
@@ -72,7 +72,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
         return {
           "id": _payload.data.user.userId,
           "name": _payload.data.user.nickname,
-          'avatar': _payload.data.user.avatarUrl,
+          'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl,
           "tag": _payload.data.user.nickname,
           "isBot": false
         }
@@ -87,7 +87,7 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
         return {
           "id": _payload.data.group.groupId,
           "name": _payload.data.group.name,
-          'avatar': _payload.data.group.avatarUrl
+          'avatar':this.config._host + "?url=" + _payload.data.group.avatarUrl
         }
       }catch (error){
         logger.error('获取群聊消息失败:', error)
