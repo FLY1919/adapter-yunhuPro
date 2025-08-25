@@ -17,7 +17,7 @@
   "contributors": ["FLY1919 <qw687255511@163.com>", "WindyPear-Team <hjrlluobo2h@qq.com>"],
   "description": "云湖适配器",
   "type": "module",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
