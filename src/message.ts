@@ -19,7 +19,7 @@ namespace sendWay{
 */
 
 const HTML = `
-<!DOCTYPE html>
+<!DOCTYPE html>s
 <html> 
 <body>
 </body>
@@ -173,7 +173,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.payload.content.imageKey = img.imagekey
                     this.payload.contentType = 'image'
                 } else if (this.sendType === 'markdown') {
-                    this.payload.content.text += `![美少女大失败](${img.imageurl})`
+                    this.payload.content.text += `\n![美少女大失败](${img.imageurl})\n`
                     this.payload.contentType = 'markdown'
                 } else if (this.sendType === 'html') {
                     await this.Element((body: any) => {
@@ -194,7 +194,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.payload.content.text += `[图片上传失败]`
                 } else if (this.sendType === 'markdown') {
                     this.payload.contentType = 'markdown'
-                    this.payload.content.text += `~~[图片上传失败]~~`
+                    this.payload.content.text += ` ~~[图片上传失败]~~ `
                 } else if (this.sendType === 'html') {
                     const result = await pElementText(`美少女大失败`)
                     result.p.style = 'color: red;'
@@ -218,7 +218,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.payload.content.text += `[文件上传失败]`
                     this.payload.contentType = 'text'
                 } else if (this.sendType === 'markdown') {
-                    this.payload.content.text += `~~[文件上传失败]~~`
+                    this.payload.content.text += ` ~~[文件上传失败]~~ `
                     this.payload.contentType = 'markdown'
                 } else if (this.sendType === 'html') {
                     const result = await pElementText(`美少女大失败`)
@@ -242,7 +242,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.payload.content.text += `[视频上传失败]`
                     this.payload.contentType = 'text'
                 } else if (this.sendType === 'markdown') {
-                    this.payload.content.text += `~~[视频上传失败]~~`
+                    this.payload.content.text += ` ~~[视频上传失败]~~ `
                     this.payload.contentType = 'markdown'
                 } else if (this.sendType === 'html') {
                     const result = await pElementText(`美少女大失败`)
@@ -291,7 +291,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 this.payload.content.text += `@${element.attrs.name || element.attrs.id} `
                 this.payload.contentType = 'text'
             }else if (this.sendType === 'markdown') {
-                this.payload.content.text += `[@${element.attrs.name || element.attrs.id}](https://www.yhchat.com/user/homepage/${element.attrs.id}) `
+                this.payload.content.text += `[@${element.attrs.name || element.attrs.id}](https://www.yhchat.com/user/homepage/${element.attrs.id}) ^^ `
                 this.payload.contentType = 'markdown'
             } else if (this.sendType === 'html') {
                 await this.Element((body: any) => {
@@ -304,7 +304,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         } else if (element.type === 'br') {
             if (this.sendType === 'text' || this.sendType === 'markdown') {
                 this.payload.content.text += '\n'
-                this.payload.contentType = 'text'
+                this.payload.contentType = this.sendType
             } else if (this.sendType === 'html') {
                 await this.Element((body: any) => {
                     const br = this.html.window.document.createElement('br')
@@ -316,7 +316,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             if (this.sendType === 'text') {
                 this.payload.content.text += element.attrs.content || element.attrs.href || ''
             } else if (this.sendType === 'markdown') {
-                this.payload.content.text += `[${element.attrs.content || element.attrs.href || ''}](${element.attrs.href || ''})`
+                this.payload.content.text += ` [${element.attrs.content || element.attrs.href || ''}](${element.attrs.href || ''}) `
             } else if (this.sendType === 'html') {
                 await this.Element((body: any) => {
                     const a = this.html.window.document.createElement('a')
@@ -335,6 +335,9 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             if (this.sendType === 'text') {
                 this.payload.content.text += '\n\n'
                 this.payload.contentType = 'text'
+                for (const child of element.children) {
+                    await this.deal(child, undefined)
+                }
             }
             else if (this.sendType === 'markdown') {
                 this.payload.content.text += '\n\n'
@@ -342,8 +345,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             }
             else if (this.sendType === 'html') {
                 await this.Element((body: any) => {
-                    const p = this.html.window.document.createElement('p')
-                    p.innerHTML = element.attrs.content || ''
+                    const p = this.html.window.document.createElement('br')
                     body.appendChild(p)
                     this.payload.contentType = 'html'
                 })
@@ -351,15 +353,103 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         }
         else if( element.type === 'h1' || element.type === 'h2' || element.type === 'h3' || element.type === 'h4' || element.type === 'h5' || element.type === 'h6'){
             //注意子元素处理
+            const content = this.extractTextContent(element);
+            if (this.sendType === 'markdown'){
+                this.payload.content.text += '\n'
+                const num = Number(this.sendType.charAt(1))
+                var i:number
+                for ( i=num ; i>=1 ;i--){
+                  this.payload.content.text += '#'  
+                }
+                this.payload.content.text += content + '\n'
+                this.payload.contentType = 'markdown'
+            }else if (this.sendType=== 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement(element.type)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+            
+        
+        }
+        else if(element.type === 'strong' || element.type === 'b'){
+            if (this.sendType === 'markdown'){
+                this.payload.content.text += `**${this.extractTextContent(element)}**`
+                this.payload.contentType = 'markdown'
+            }else if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('strong')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+        }else if(element.type === 'i'){
+            if (this.sendType === 'markdown'){
+                this.payload.content.text += `*${this.extractTextContent(element)}*`
+                this.payload.contentType = 'markdown'
+            }else if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('i')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+        }else if(element.type === 's'){
+            if (this.sendType === 'markdown'){
+                this.payload.content.text += `~~${this.extractTextContent(element)}~~`
+                this.payload.contentType = 'markdown'
+            }else if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('s')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+        }else if(element.type === 'code'){
+            if (this.sendType === 'markdown'){
+                this.payload.content.text += '\n'
+                this.payload.content.text += `\`${this.extractTextContent(element)}\``
+                this.payload.content.text += '\n'
+                this.payload.contentType = 'markdown'
+            }else if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('code')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
 
-        } else{
+        }else if(element.type === 'u'){
+            if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('u')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+        }else if(element.type === 'sup'){
+            if (this.sendType === 'html') {
+                await this.Element((body: any) => {
+                    const p = this.html.window.document.createElement('sup')
+                    p.innerHTML = this.extractTextContent(element)
+                    body.appendChild(p)
+                    this.payload.contentType = 'html'
+                })
+            }
+        }else{
             // 处理未知元素
             this.bot.logger.warn(`未知消息元素类型: ${element.type}`)
             if (this.sendType === 'text') {
                 this.payload.content.text += `[未知元素: ${element.type}] `
                 this.payload.contentType = 'text'
             } else if (this.sendType === 'markdown') {
-                this.payload.content.text += `~~[未知元素: ${element.type}]~~ `
+                this.payload.content.text += ` ~~[未知元素: ${element.type}]~~  `
                 this.payload.contentType = 'markdown'
             } else if (this.sendType === 'html') {
                 const result = await pElementText(`未知元素: ${element.type}`)
@@ -369,7 +459,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             }
             await this.render(element.children)
         }
-        if (func) func()
+        if (func) func.call(this)()
     }
     // 发送缓冲区内的消息
     async flush() {
@@ -490,6 +580,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 } else if (this.sendType === 'image') {
                     this.sendType = 'markdown'
                 }
+                await this.render(children)
             }
             else if (type === 'a') {
                 this.message.push([element,this.childer])
@@ -571,7 +662,11 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.childer = this.memrize.pop()
                 }
             }
-            else if (type === 'h1' || type === 'h2' || type === 'h3' || type === 'h4' || type === 'h5' || type === 'h6') {
+            else if (type === 'h1' || type === 'h2' || type === 'h3'
+                 || type === 'h4' || type === 'h5' || type === 'h6'
+                  || type === 'strong' || type === 'b' || type === 'i'
+                  || type === 's' || type === 'code' 
+            ) {
                 if (this.sendType == undefined) {
                     this.sendType = 'markdown'
                 } else if (this.sendType === 'image') {
@@ -579,22 +674,20 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 } else if (this.sendType === 'text') {
                     this.sendType = 'markdown'
                 } 
+                this.message.push([element,this.childer])
 
 
+            }
+            else if (type === 'u' || type === 'sup' || type === 'sub' 
+                
+            ){
+                this.sendType = 'html'
             }
             else {
-                // 处理未知元素
-                if (this.sendType == undefined) {
-                    this.sendType = 'text'
-                } else if (this.sendType === 'image') {
-                    this.sendType = 'markdown'
-                }
                 this.bot.logger.warn(`未知消息元素类型: ${type}`)
-                const _element: Dict = {'type':'text', 'attrs':{'content': `[未知元素: ${type}] `} }
-                this.message.push(_element)
                 await this.render(children)
             }
-
+ 
         } catch (error) {
             // this.bot.logger.error(`处理消息元素失败: ${error? error?.message : '未知错误'}`)
             // 出错时尝试降级处理

@@ -238,6 +238,7 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
   // 根据文件扩展名获取内容类型
   private getContentType(extension: string): string {
     const typeMap = {
+      // Image types
       'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
       'png': 'image/png',
@@ -245,13 +246,50 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
       'webp': 'image/webp',
       'svg': 'image/svg+xml',
       'ico': 'image/x-icon',
+
+      // Video types
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'wmv': 'video/x-ms-wmv',
+      'flv': 'video/x-flv',
+      'm4v': 'video/x-m4v',
+      '3gp': 'video/3gpp',
+
+      // Audio types
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'flac': 'audio/flac',
+      'aac': 'audio/aac',
+
+      // Document types
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'zip': 'application/zip',
+      'rar': 'application/x-rar-compressed',
+      '7z': 'application/x-7z-compressed',
+
+      // Web formats
       'css': 'text/css',
       'js': 'application/javascript',
       'json': 'application/json',
       'html': 'text/html',
       'htm': 'text/html'
     }
-    
+
+    function getContentType(extension: string): string {
+      return typeMap[extension.toLowerCase()] || 'application/octet-stream';
+    }
+
+
     return typeMap[extension] || 'application/octet-stream'
   }
   async connect(bot: YunhuBot) {
@@ -266,51 +304,73 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
 
     // 注册Webhook路由
     bot.ctx.server.get(`${bot.config.path_host}`, async (ctx) => {
-      ctx.status = 200;
-      const targetUrl = ctx.query?.url as string | undefined;
+    ctx.status = 200;
+    const targetUrl = ctx.query?.url as string | undefined;
 
-      if (!targetUrl) {
+    if (!targetUrl) {
+      ctx.status = 400;
+      ctx.body = 'Missing URL parameter. Usage: /proxy?url=目标URL';
+      return;
+    }
+
+    // 解码URL
+    let decodedUrl: string;
+    try {
+      decodedUrl = decodeURIComponent(targetUrl);
+      if (!decodedUrl.startsWith('http')) {
         ctx.status = 400;
-        ctx.body = 'Missing URL parameter. Usage: /pic?url=目标URL';
+        ctx.body = 'Invalid URL. Must start with http or https.';
         return;
       }
+    } catch (e) {
+      ctx.status = 400;
+      ctx.body = 'Invalid URL encoding.';
+      return;
+    }
 
-      // Decode the URL (query parameters are automatically encoded)
-      let decodedUrl: string;
-      try {
-        decodedUrl = decodeURIComponent(targetUrl);
-        if (!decodedUrl.startsWith('http')) {
-          ctx.status = 400;
-          ctx.body = 'Invalid URL. Must start with http or https.';
-          return;
-        }
-      } catch (e) {
-        ctx.status = 400;
-        ctx.body = 'Invalid URL encoding.';
-        return;
+    try {
+      // 获取文件扩展名
+      const urlObj = new URL(decodedUrl);
+      const pathname = urlObj.pathname;
+      const extension = pathname.includes('.') 
+        ? pathname.split('.').pop()?.toLowerCase() || ''
+        : '';
+
+      // 设置请求头
+      const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      };
+      headers['Referer'] = `www.yhchat.com`;
+    
+
+      // 使用Koishi的HTTP客户端发起请求
+      const response = await this.ctx.http.get(decodedUrl, {
+        headers,
+        responseType: 'arraybuffer',
+        timeout: 30000 // 30秒超时
+      });
+
+      // 设置内容类型
+      const contentType = this.getContentType(extension);
+      ctx.set('Content-Type', contentType);
+      
+      // 对于可预览的文件类型，直接在浏览器中显示
+      // 对于其他类型，设置为附件下载
+      if (!contentType.startsWith('image/') && 
+          !contentType.startsWith('video/') && 
+          !contentType.startsWith('audio/') &&
+          !contentType.startsWith('text/')) {
+        const filename = pathname.split('/').pop() || 'file';
+        ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
       }
-
-      try {
-        // Use Koishi's HTTP client to make the request
-        const response = await this.ctx.http.get(decodedUrl, {
-          headers: {
-            'Referer': 'www.yhchat.com/', // Set the required Referer for anti-leeching
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-          responseType: 'arraybuffer',
-        });
-
-        // Set the correct content type
-        const extension = decodedUrl.split('.').pop()?.toLowerCase() || '';
-        const contentType = this.getContentType(extension);
-        ctx.set('Content-Type', contentType);
-        ctx.body = Buffer.from(response);
-      } catch (error) {
-        logger.error(`Proxy request failed: ${error.message}`);
-        ctx.status = 500;
-        ctx.body = `Proxy Error: ${error.message}`;
-      }
-    });
+      
+      ctx.body = Buffer.from(response);
+    } catch (error) {
+      logger.error(`Proxy request failed: ${error.message}`);
+      ctx.status = 500;
+      ctx.body = `Proxy Error: ${error.message}`;
+    }
+  });
     
     // 处理Webhook请求
     bot.ctx.server.post(bot.config.path, async (ctx) => {

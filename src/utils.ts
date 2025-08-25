@@ -9,10 +9,12 @@ import sharp, { cache } from 'sharp'
 import ffmpeg from 'fluent-ffmpeg'
 import { PassThrough } from 'stream'
 import Internal from './internal'
+import { config } from 'process'
 
-export * from './types'
+export * from './types' 
 
 const logger = new Logger('yunhu-utils')
+const URL = "https://chat-img.jwznb.com/"
 
 // 将云湖用户信息转换为Koishi通用用户格式
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
@@ -23,7 +25,7 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
 })
 
 // 将云湖消息转换为Koishi通用消息格式
-export const decodeMessage = (message: Yunhu.Message, Internal: Internal): Universal.Message => {
+export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal, session: Session, config): Promise<Universal.Message> => {
   const elements = []
 
   // 处理文本内容
@@ -60,7 +62,14 @@ export const decodeMessage = (message: Yunhu.Message, Internal: Internal): Unive
     });
   }
   if (message.parentId) {
-    elements.push(h.quote(message.parentId))
+    const send:h[] = []
+    if (message.content.parentImgName){
+      send.push(h('img', { 'src':  config._host + "?url=" + URL + message.content.parentImgName}))
+    }else if ((message.content.parent).split(':')[1]){
+      send.push(h.text((message.content.parent).substring(message.content.parent.indexOf(':')+1)))
+    }
+    elements.push(h('quote',{'id': message.parentId}, send ))
+
   }
 
   return {
@@ -167,7 +176,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       
 
       // 转换消息内容为Koishi格式
-      session.event.message = decodeMessage(message, Internal)
+      session.event.message =await decodeMessage(message, Internal, session, bot.config)
       logger.info(`已转换为koishi消息格式:`)
       logger.info(session)
       

@@ -361,7 +361,8 @@ export default class Internal {
 
   async deleteMessage(chatId: string, msgId: string) {
     const chatType = chatId.split(':')[1]
-    const payload = { msgId, chatId, chatType }
+    const id = chatId.split(':')[0]
+    const payload = { msgId, id, chatType }
     logger.info(`撤回消息: ${JSON.stringify(payload)}`)
     return this.http.post(`/bot/recall?token=${this.token}`, payload)
   }
@@ -372,6 +373,15 @@ export default class Internal {
 
   async getUser(userId: string): Promise<Types.UserInfoResponse>{
     return this.httpWeb.get(`/user/homepage?userId=${userId}`)
+  }
+  
+  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number} = {before:0,after:0}): Promise<any> {
+    const chatType = chatId.split(':')[1]
+    const Id = chatId.split(':')[0]
+    const { before , after} = options
+    logger.warn(chatId)
+    const url =(`/bot/message?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}`)
+    return this.http.get(url)
   }
 
 // 获取图片并转换为Base64
@@ -410,8 +420,9 @@ export default class Internal {
     options: { memberId?: string; expireTime?: number } = {}
   ) {
     const chatType = chatId.split(':')[1]
+    const Id = chatId.split(':')[0]
     const payload = {
-      chatId,
+      Id,
       chatType,
       contentType,
       content,
@@ -428,8 +439,9 @@ export default class Internal {
     options: { expireTime?: number } = {}
   ) {
     const chatType = chatId.split(':')[1]
+    const Id = chatId.split(':')[0]
     const payload = {
-      chatId,
+      Id,
       chatType,
       contentType,
       content,

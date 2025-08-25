@@ -133,7 +133,11 @@ export interface Content {
   videoKey?: string;      // contentType 为 video 时使用
   buttons?: Button[];     // 所有类型都可能有
   at?: string[];          // 所有类型都可能有
-
+  parentId?: string;   // 回复消息的 ID
+  parent?: string;   // 回复消息的 
+  parentImgName?: string; // 回复消息的图片名称
+  parentVideoUrl?: string; // 回复消息的视频链接
+  parentFileName?: string; // 回复消息的文件名称
   // 以下为图像类型特有的可选属性
   imageName?: string;     // 对应 JSON 中的 imageName
   etag?: string;          // 对应 JSON 中的 etag
