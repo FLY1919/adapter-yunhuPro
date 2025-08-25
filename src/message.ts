@@ -335,9 +335,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             if (this.sendType === 'text') {
                 this.payload.content.text += '\n\n'
                 this.payload.contentType = 'text'
-                for (const child of element.children) {
-                    await this.deal(child, undefined)
-                }
+                
             }
             else if (this.sendType === 'markdown') {
                 this.payload.content.text += '\n\n'
