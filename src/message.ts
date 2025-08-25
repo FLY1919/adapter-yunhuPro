@@ -291,7 +291,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 this.payload.content.text += `@${element.attrs.name || element.attrs.id} `
                 this.payload.contentType = 'text'
             }else if (this.sendType === 'markdown') {
-                this.payload.content.text += `[@${element.attrs.name || element.attrs.id}](https://www.yhchat.com/user/homepage/${element.attrs.id}) ^^ `
+                this.payload.content.text += `[@${element.attrs.name || element.attrs.id}](https://www.yhchat.com/user/homepage/${element.attrs.id})酱!  `
                 this.payload.contentType = 'markdown'
             } else if (this.sendType === 'html') {
                 await this.Element((body: any) => {

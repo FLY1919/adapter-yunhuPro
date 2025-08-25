@@ -56,9 +56,9 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
 
   if (message.content.at) {
     // elements.push(h.at(message.content.at))
-    message.content.at.forEach(async id => {
+    message.content.at.forEach( id => {
       const user = Internal.getUser(id)
-      elements.push(h('at', {'id': id , 'name': (await user).data.user.nickname} ))
+      elements.push(h('at', {'id': id , 'name': id} ))
     });
   }
   if (message.parentId) {
