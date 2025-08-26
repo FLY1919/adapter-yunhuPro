@@ -32,6 +32,11 @@ export const decodeMessage = async (
 ): Promise<Universal.Message> => {
   const elements: any[] = [];
   let textContent = message.content.text || '';
+  
+  if (message.content.text === message.commandName) {
+    message.content.text = '';
+  }
+
   // 处理引用回复
   if (message.parentId) {
     const send: h[] = [];
