@@ -56,10 +56,14 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
 
   if (message.content.at) {
     // elements.push(h.at(message.content.at))
-    message.content.at.forEach(async id => {
-      const user = await Internal.getUser(id)
-      elements.push(h.at({'id': id , 'name': user.data.user.nickname}))
-    });
+    await Promise.all(message.content.at.map(async id => {
+    try {
+      const user = await Internal.getUser(id);
+      elements.push(h.at({ 'id': id, 'name': user.data.user.nickname }));
+    } catch (error) {
+      logger.error(`获取用户信息失败: ${id}`, error);
+    }
+  }));
   }
   if (message.parentId) {
     const send:h[] = []
