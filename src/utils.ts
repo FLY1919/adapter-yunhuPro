@@ -32,9 +32,9 @@ export const decodeMessage = async (
 ): Promise<Universal.Message> => {
   const elements: any[] = [];
   let textContent = message.content.text || '';
-  
+
   if (message.content.text === message.commandName) {
-    message.content.text = '';
+    textContent = '';
   }
 
   // 处理引用回复
