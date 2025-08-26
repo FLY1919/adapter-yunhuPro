@@ -32,7 +32,18 @@ export const decodeMessage = async (
 ): Promise<Universal.Message> => {
   const elements: any[] = [];
   let textContent = message.content.text || '';
-
+  // 处理引用回复
+  if (message.parentId) {
+    const send: h[] = [];
+    if (message.content.parentImgName) {
+      send.push(h('img', {
+        src: config._host + "?url=" + URL + message.content.parentImgName
+      }));
+    } else if (message.content.parent && message.content.parent.split(':')[1]) {
+      send.push(h.text(message.content.parent.substring(message.content.parent.indexOf(':') + 1)));
+    }
+    elements.push(h('quote', { id: message.parentId }, send));
+  }
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
     // 获取所有@用户的昵称映射
@@ -75,8 +86,8 @@ export const decodeMessage = async (
     let lastIndex = 0;
     for (const { index, id, name } of atPositions) {
       // 添加@前的文本
-      if (index > lastIndex) {
-        elements.push(h.text(textContent.substring(lastIndex, index)));
+      if (index > lastIndex) { 
+        elements.push(h.text((message.commandName ? message.commandName + ' ' : '') + textContent.substring(lastIndex, index)));
       }
       
       // 添加@元素
@@ -92,7 +103,7 @@ export const decodeMessage = async (
     }
   } else if (textContent) {
     // 如果没有@，直接添加文本
-    elements.push(h.text(textContent));
+    elements.push(h.text((message.commandName ? message.commandName + ' ' : '') + (textContent)));
   }
 
   // 处理图片内容
@@ -111,18 +122,7 @@ export const decodeMessage = async (
     elements.push(h.text('[视频]'));
   }
 
-  // 处理引用回复
-  if (message.parentId) {
-    const send: h[] = [];
-    if (message.content.parentImgName) {
-      send.push(h('img', { 
-        src: config._host + "?url=" + URL + message.content.parentImgName 
-      }));
-    } else if (message.content.parent && message.content.parent.split(':')[1]) {
-      send.push(h.text(message.content.parent.substring(message.content.parent.indexOf(':') + 1)));
-    }
-    elements.push(h('quote', { id: message.parentId }, send));
-  }
+ 
 
   return {
     id: message.msgId,
@@ -224,7 +224,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       }
 
       // 设置消息内容和元数据
-      session.content = message.commandName || '' + message.content.text || ''
+      session.content =  (message.commandName ? message.commandName + ' ' : '') + (message.content.text || '')
       session.messageId = message.msgId
       session.timestamp = message.sendTime
       // session.quote.id = message.parentId? message.parentId : undefined
