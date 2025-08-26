@@ -32,11 +32,22 @@ export const decodeMessage = async (
 ): Promise<Universal.Message> => {
   const elements: any[] = [];
   let textContent = message.content.text || '';
-
-  if (message.content.text ==="/" + message.commandName) {
-    textContent = '';
+  
+  // 判断是否为纯指令消息（文本内容就是斜杠加指令名）
+  const isPureCommand = textContent === '/' + message.commandName;
+  
+  // 设置 session.content
+  if (isPureCommand) {
+    // 纯指令情况：session.content 只包含指令名
+    session.content = message.commandName;
+  } else if (message.commandName) {
+    // 指令加参数情况：session.content 包含指令名和参数
+    session.content = message.commandName + ' ' + textContent;
+  } else {
+    // 普通消息情况
+    session.content = textContent;
   }
-  session.content =  (message.commandName ? message.commandName + ' ' : '') + textContent
+
   // 处理引用回复
   if (message.parentId) {
     const send: h[] = [];
@@ -49,6 +60,7 @@ export const decodeMessage = async (
     }
     elements.push(h('quote', { id: message.parentId }, send));
   }
+  
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
     // 获取所有@用户的昵称映射
@@ -92,7 +104,9 @@ export const decodeMessage = async (
     for (const { index, id, name } of atPositions) {
       // 添加@前的文本
       if (index > lastIndex) { 
-        elements.push(h.text((message.commandName ? message.commandName + ' ' : '') + textContent.substring(lastIndex, index)));
+        // 根据是否为纯指令决定是否添加指令名前缀
+        const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
+        elements.push(h.text(prefix + textContent.substring(lastIndex, index)));
       }
       
       // 添加@元素
@@ -104,16 +118,26 @@ export const decodeMessage = async (
     
     // 添加剩余文本
     if (lastIndex < textContent.length) {
-      elements.push(h.text(textContent.substring(lastIndex)));
+      // 根据是否为纯指令决定是否添加指令名前缀
+      const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
+      elements.push(h.text(prefix + textContent.substring(lastIndex)));
     }
   } else if (textContent) {
-    // 如果没有@，直接添加文本
-    elements.push(h.text((message.commandName ? message.commandName + ' ' : '') + (textContent)));
+    // 如果没有@，根据是否为纯指令决定如何添加文本
+    if (isPureCommand) {
+      // 纯指令情况：显示斜杠加指令名
+      elements.push(h.text('/' + message.commandName));
+    } else if (message.commandName) {
+      // 指令加参数情况：显示指令名加参数
+      elements.push(h.text(message.commandName + ' ' + textContent));
+    } else {
+      // 普通消息情况
+      elements.push(h.text(textContent));
+    }
   }
 
   // 处理图片内容
   if (message.content.imageUrl) {
-    // 这里可以构造一个图片URL
     elements.push(h.image(message.content.imageUrl));
   }
 
@@ -126,8 +150,6 @@ export const decodeMessage = async (
   if (message.content.videoKey) {
     elements.push(h.text('[视频]'));
   }
-
- 
 
   return {
     id: message.msgId,
