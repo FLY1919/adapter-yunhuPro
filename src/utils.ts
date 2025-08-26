@@ -33,10 +33,10 @@ export const decodeMessage = async (
   const elements: any[] = [];
   let textContent = message.content.text || '';
 
-  if (message.content.text === message.commandName) {
+  if (message.content.text ==="/" + message.commandName) {
     textContent = '';
   }
-
+  session.content =  (message.commandName ? message.commandName + ' ' : '') + textContent
   // 处理引用回复
   if (message.parentId) {
     const send: h[] = [];
@@ -229,7 +229,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       }
 
       // 设置消息内容和元数据
-      session.content =  (message.commandName ? message.commandName + ' ' : '') + (message.content.text || '')
+      
       session.messageId = message.msgId
       session.timestamp = message.sendTime
       // session.quote.id = message.parentId? message.parentId : undefined
