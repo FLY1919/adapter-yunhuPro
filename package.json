@@ -16,7 +16,7 @@
   "name": "koishi-plugin-adapter-yunhupro",
   "contributors": ["FLY1919 <qw687255511@163.com>", "WindyPear-Team <hjrlluobo2h@qq.com>"],
   "description": "云湖适配器",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

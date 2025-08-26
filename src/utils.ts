@@ -59,7 +59,7 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
     await Promise.all(message.content.at.map(async id => {
     try {
       const user = await Internal.getUser(id);
-      elements.push(h.at({ 'id': id, 'name': user.data.user.nickname }));
+      elements.push(h.at(id, {'name': user.data.user.nickname }));
     } catch (error) {
       logger.error(`获取用户信息失败: ${id}`, error);
     }
@@ -72,7 +72,7 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
     }else if ((message.content.parent).split(':')[1]){
       send.push(h.text((message.content.parent).substring(message.content.parent.indexOf(':')+1)))
     }
-    elements.push(h.quote({'id': message.parentId}, send ))
+    elements.push(h('quote', {'id': message.parentId}, send ))
 
   }
 
