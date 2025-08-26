@@ -15,93 +15,147 @@ export * from './types'
 
 const logger = new Logger('yunhu-utils')
 const URL = "https://chat-img.jwznb.com/"
-
+ 
 // 将云湖用户信息转换为Koishi通用用户格式
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   id: user.senderId,
   name: user.senderNickname,
-  // 云湖平台目前没有提供isBot和avatar字段
-  isBot: false, // 默认为false，因为sender通常是人类用户
+  isBot: false,
 })
 
 // 将云湖消息转换为Koishi通用消息格式
-export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal, session: Session, config): Promise<Universal.Message> => {
-  const elements = []
+export const decodeMessage = async (
+  message: Yunhu.Message,
+  Internal: Internal,
+  session: Session,
+  config
+): Promise<Universal.Message> => {
+  const elements: any[] = [];
+  let textContent = message.content.text || '';
 
-  // 处理文本内容
-  if (message.content.text) {
-    //待加入markdown处理
-    //message.contentType as 'text' | 'markdown' 
-    elements.push(h.text(message.content.text))
+  // 处理@用户
+  if (message.content.at && message.content.at.length > 0) {
+    // 获取所有@用户的昵称映射
+    const userMap = new Map();
+    await Promise.all(
+      message.content.at.map(async (id) => {
+        try {
+          const user = await Internal.getUser(id);
+          userMap.set(id, user.data.user.nickname);
+        } catch (error) {
+          logger.error(`获取用户信息失败: ${id}`, error);
+        }
+      })
+    );
+
+    // 按文本顺序处理@
+    const atPositions: Array<{ index: number; id: string; name: string }> = [];
+    
+    // 查找所有@位置
+    for (const id of message.content.at) {
+      const name = userMap.get(id);
+      if (name) {
+        const atText = `@${name}`;
+        let startIndex = 0;
+        
+        while (startIndex < textContent.length) {
+          const index = textContent.indexOf(atText, startIndex);
+          if (index === -1) break;
+          
+          atPositions.push({ index, id, name });
+          startIndex = index + atText.length;
+        }
+      }
+    }
+
+    // 按位置排序
+    atPositions.sort((a, b) => a.index - b.index);
+
+    // 分割文本并插入@元素
+    let lastIndex = 0;
+    for (const { index, id, name } of atPositions) {
+      // 添加@前的文本
+      if (index > lastIndex) {
+        elements.push(h.text(textContent.substring(lastIndex, index)));
+      }
+      
+      // 添加@元素
+      elements.push(h.at(id, { name }));
+      
+      // 更新最后索引位置（跳过@文本）
+      lastIndex = index + name.length + 1; // +1 是为了跳过@符号
+    }
+    
+    // 添加剩余文本
+    if (lastIndex < textContent.length) {
+      elements.push(h.text(textContent.substring(lastIndex)));
+    }
+  } else if (textContent) {
+    // 如果没有@，直接添加文本
+    elements.push(h.text(textContent));
   }
 
   // 处理图片内容
   if (message.content.imageUrl) {
     // 这里可以构造一个图片URL
-    
-    elements.push(h('img', { 'src': message.content.imageUrl, "width": message.content.imageWidth, 'height': message.content.imageHeight }))
+    elements.push(h.image(message.content.imageUrl));
   }
 
   // 处理文件内容
   if (message.content.fileKey) {
-    // 可以添加文件元素或者转换为文本提示
-    elements.push(h.text(`[文件]`))
+    elements.push(h.text('[文件]'));
   }
 
   // 处理视频内容
   if (message.content.videoKey) {
-    // 可以添加视频元素或者转换为文本提示
-    elements.push(h.text(`[视频]`))
+    elements.push(h.text('[视频]'));
   }
 
-  if (message.content.at) {
-    // elements.push(h.at(message.content.at))
-    await Promise.all(message.content.at.map(async id => {
-    try {
-      const user = await Internal.getUser(id);
-      elements.push(h.at(id, {'name': user.data.user.nickname }));
-    } catch (error) {
-      logger.error(`获取用户信息失败: ${id}`, error);
-    }
-  }));
-  }
+  // 处理引用回复
   if (message.parentId) {
-    const send:h[] = []
-    if (message.content.parentImgName){
-      send.push(h('img', { 'src':  config._host + "?url=" + URL + message.content.parentImgName}))
-    }else if ((message.content.parent).split(':')[1]){
-      send.push(h.text((message.content.parent).substring(message.content.parent.indexOf(':')+1)))
+    const send: h[] = [];
+    if (message.content.parentImgName) {
+      send.push(h('img', { 
+        src: config._host + "?url=" + URL + message.content.parentImgName 
+      }));
+    } else if (message.content.parent && message.content.parent.split(':')[1]) {
+      send.push(h.text(message.content.parent.substring(message.content.parent.indexOf(':') + 1)));
     }
-    elements.push(h('quote', {'id': message.parentId}, send ))
-
+    elements.push(h('quote', { id: message.parentId }, send));
   }
 
   return {
     id: message.msgId,
-    content: message.content.text || '',
+    content: textContent, // 保留原始文本内容
     elements,
-  }
-}
+  };
+};
 
 // 将消息内容转换为Koishi消息元素
 function transformElements(elements: any[]) {
   return elements.map(element => {
     if (typeof element === 'string') {
-      return h.text(element)
+      return h.text(element);
     } else if (Buffer.isBuffer(element)) {
-      // 正确的方式是将data和type作为独立参数传递
-      return h.image(element, 'image/png', { 'filename': 'image.png', 'cache': false })
+      return h.image(element, 'image/png', {
+        filename: 'image.png',
+        cache: false
+      });
     } else if (typeof element === 'object' && element.type === 'image') {
-      // 处理已经是图片对象的情况
       if (element.url) {
-        return h('image', {'src':element.url, "filename": element.filename || 'image.png', 'cache': false, "weight": element.weight || 0, "height": element.height || 0})
+        return h('image', {
+          src: element.url,
+          filename: element.filename || 'image.png',
+          cache: false,
+          weight: element.weight || 0,
+          height: element.height || 0
+        });
       } else if (element.data) {
-        return h.image(element.data, 'image/png')
+        return h.image(element.data, 'image/png');
       }
-    } else {
-      return h.text(String(element))
     }
-  })
+    return h.text(String(element));
+  });
 }
 
 // 适配会话，将云湖事件转换为Koishi会话
