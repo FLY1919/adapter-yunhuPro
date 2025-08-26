@@ -83,7 +83,8 @@ class YunhuBot<C extends Context = Context> extends Bot<C> {
     }
     this.getGuild = async (guildId: string) => {
       try {
-        const _payload = await this.internal.getGuild(guildId) as Yunhu.GroupInfo
+        const _payload = await this.internal.getGuild(guildId)
+        logger.info(_payload)
         return {
           "id": _payload.data.group.groupId,
           "name": _payload.data.group.name,

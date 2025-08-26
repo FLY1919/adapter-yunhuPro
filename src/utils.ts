@@ -56,9 +56,9 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
 
   if (message.content.at) {
     // elements.push(h.at(message.content.at))
-    message.content.at.forEach( id => {
-      const user = Internal.getUser(id)
-      elements.push(h('at', {'id': id , 'name': id} ))
+    message.content.at.forEach(async id => {
+      const user = await Internal.getUser(id)
+      elements.push(h.at({'id': id , 'name': user.data.user.nickname}))
     });
   }
   if (message.parentId) {
@@ -68,7 +68,7 @@ export const decodeMessage =  async (message: Yunhu.Message, Internal: Internal,
     }else if ((message.content.parent).split(':')[1]){
       send.push(h.text((message.content.parent).substring(message.content.parent.indexOf(':')+1)))
     }
-    elements.push(h('quote',{'id': message.parentId}, send ))
+    elements.push(h.quote({'id': message.parentId}, send ))
 
   }
 
@@ -153,6 +153,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
 
       session.author.name = UserInfo.data.user.nickname
       session.author.nick = UserInfo.data.user.nickname
+      
       // session.author.isBot = UserInfo.data.user.isBot
       session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊
