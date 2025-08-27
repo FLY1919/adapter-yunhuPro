@@ -1,7 +1,7 @@
 {
   "koishi": {
     "description": {
-      "zh": "云湖适配器(喜\n 绝大部分云湖功能已实现(有点小bug \n wwwww",
+      "zh": "云湖适配器(喜",
       "en": "Yunhu Adapter"
     },
     "service": {
@@ -15,7 +15,7 @@
   },
   "name": "koishi-plugin-adapter-yunhupro",
   "contributors": ["FLY1919 <qw687255511@163.com>", "WindyPear-Team <hjrlluobo2h@qq.com>"],
-  "version": "1.1.9",
+  "version": "1.1.10",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

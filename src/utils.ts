@@ -319,7 +319,6 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       session.event.user.name = kickedMember.memberNickname
       session.guildId = chat.chatId
       session.operatorId = operator.operatorId
-      session.subtype = 'kick'
       break;
     }
 
