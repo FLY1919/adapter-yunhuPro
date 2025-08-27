@@ -192,35 +192,21 @@ class VideoUploader extends BaseUploader {
     // 如果视频需要压缩且大小超过限制，使用 ffmpeg 服务进行压缩
     if (originalSize > this.MAX_SIZE) {
       logger.info(`视频超过20MB限制，启动压缩...`)
-      
+      // 使用正确的 FFmpeg 方法处理视频压缩
       try {
-        // 使用 Koishi 的 ffmpeg 服务进行压缩
-        const tempInput = await this.ffmpeg.temp(buffer, 'input.mp4');
-        const tempOutput = await this.ffmpeg.temp(null, 'output.mp4');
-        
-        // 构建 ffmpeg 命令
-        await this.ffmpeg
-          .input(tempInput)
-          .outputOptions([
-            '-c:v', 'libx264',
-            '-crf', '28',
-            '-preset', 'fast',
-            '-c:a', 'aac',
-            '-b:a', '64k'
-          ])
-          .output(tempOutput)
-          .run();
-        
-        // 读取压缩后的视频
-        finalBuffer = await this.ffmpeg.read(tempOutput);
-        
+        // 直接使用 buffer 作为输入
+        finalBuffer = await this.ffmpeg.builder()
+          .input(buffer) // 直接传入 buffer
+          .outputOption('-c:v', 'libx264')
+          .outputOption('-crf', '28')
+          .outputOption('-preset', 'fast')
+          .outputOption('-c:a', 'aac')
+          .outputOption('-b:a', '64k')
+          .run('buffer'); // 直接返回 buffer
+
         const compressedSize = finalBuffer.length
         const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
         logger.info(`压缩后视频大小: ${compressedMB}MB`)
-        
-        // 清理临时文件
-        await this.ffmpeg.clean(tempInput);
-        await this.ffmpeg.clean(tempOutput);
       } catch (error) {
         logger.error('视频压缩失败:', error);
         throw new Error('视频压缩失败，无法上传');
