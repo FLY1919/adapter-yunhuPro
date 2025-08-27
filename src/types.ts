@@ -274,15 +274,6 @@ export interface UploaderOptions {
   maxSize: number
 }
 
-export interface ImageMetadata {
-  format: string
-  mimeType: string
-}
-
-export interface CompressResult {
-  buffer: Buffer
-  mimeType: string
-}
 
 export interface Message {
     msgId: string;
