@@ -4,13 +4,17 @@ import axios, { AxiosRequestConfig } from 'axios'
 import * as Types from './types'
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
-import {  
+import {
   updateFileExtension,
   ResourceType,
   FormatType,
   getExtension,
   resolveResource
 } from './utils'
+import { writeFileSync, readFileSync, unlinkSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
 
 const logger = new Logger('yunhu')
 
@@ -28,14 +32,14 @@ abstract class BaseUploader {
     protected ffmpeg: any // Koishi 的 ffmpeg 服务
   ) {
     // 设置不同资源类型的最大大小限制
-    this.MAX_SIZE = resourceType === 'image' ? 10 * 1024 * 1024 : 
-                  resourceType === 'video' ? 20 * 1024 * 1024 : 
-                  100 * 1024 * 1024
+    this.MAX_SIZE = resourceType === 'image' ? 10 * 1024 * 1024 :
+      resourceType === 'video' ? 20 * 1024 * 1024 :
+        100 * 1024 * 1024
   }
 
   protected async sendFormData(form: FormData): Promise<string> {
     const uploadUrl = `${this.apiendpoint}/${this.resourceType}/upload?token=${this.token}`
-    
+
     const axiosConfig: AxiosRequestConfig = {
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
@@ -48,7 +52,7 @@ abstract class BaseUploader {
       if (res.code !== 1) {
         throw new Error(`${this.resourceType}上传失败：${res.msg}，响应码${res.code}`)
       }
-      
+
       logger.info(`${this.resourceType}上传成功: key=${res.data[this.resourceType + 'Key']}`)
       return res.data[this.resourceType + 'Key']
     } catch (error: any) {
@@ -73,32 +77,32 @@ class ImageUploader extends BaseUploader {
 
   async upload(image: string | Buffer | any): Promise<string> {
     const form = new FormData()
-    
+
     // 解析资源
     const { buffer, fileName, mimeType } = await resolveResource(
-      image, 
-      'image.png', 
-      'image/png', 
+      image,
+      'image.png',
+      'image/png',
       this.http
     )
-    
+
     // 简单验证图片格式
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
-                           'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
-    
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
+
     if (!validImageTypes.includes(mimeType)) {
       throw new Error(`不支持的图片格式: ${mimeType}`)
     }
-    
+
     let finalBuffer = buffer
     let finalMimeType = mimeType
     let finalFileName = updateFileExtension(fileName, mimeType)
-    
+
     // 记录图片信息
     const originalSize = buffer.length
     const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
     logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`)
-    
+
     // 简单的大小检查
     if (originalSize > this.MAX_SIZE) {
       const sizeMB = (originalSize / (1024 * 1024)).toFixed(2)
@@ -112,32 +116,32 @@ class ImageUploader extends BaseUploader {
 
   async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
     const form = new FormData()
-    
+
     // 解析资源
     const { buffer, fileName, mimeType } = await resolveResource(
-      image, 
-      'image.png', 
-      'image/png', 
+      image,
+      'image.png',
+      'image/png',
       this.http
     )
-    
+
     // 简单验证图片格式
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
-                           'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
-    
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
+
     if (!validImageTypes.includes(mimeType)) {
       throw new Error(`不支持的图片格式: ${mimeType}`)
     }
-    
+
     let finalBuffer = buffer
     let finalMimeType = mimeType
     let finalFileName = updateFileExtension(fileName, mimeType)
-    
+
     // 记录图片信息
     const originalSize = buffer.length
     const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
     logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`)
-    
+
     // 简单的大小检查
     if (originalSize > this.MAX_SIZE) {
       const sizeMB = (originalSize / (1024 * 1024)).toFixed(2)
@@ -146,18 +150,18 @@ class ImageUploader extends BaseUploader {
     // 创建文件对象并上传
     const file = new File([finalBuffer], finalFileName, { type: finalMimeType })
     form.append('image', file)
-    
+
     // 计算图片哈希用于生成URL
     const hash = createHash('md5');
     hash.update(buffer);
     const imageHash = hash.digest('hex');
     const extension = getExtension(mimeType);
-    
+
     // 并行执行上传和URL生成
     const [imagekey] = await Promise.all([
       this.sendFormData(form),
     ]);
-    
+
     return {
       imageurl: `${IMAGE_URL}${imageHash}.${extension}`,
       imagekey
@@ -173,43 +177,55 @@ class VideoUploader extends BaseUploader {
 
   async upload(video: string | Buffer | any): Promise<string> {
     const form = new FormData()
-    
+
     // 解析资源
     const { buffer, fileName, mimeType } = await resolveResource(
-      video, 
-      'video.mp4', 
-      'video/mp4', 
+      video,
+      'video.mp4',
+      'video/mp4',
       this.http
     )
-    
+
     // 记录原始大小
     const originalSize = buffer.length
     const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
     logger.info(`原始视频大小: ${originalMB}MB`)
-    
+
     let finalBuffer = buffer
-    
+
     // 如果视频需要压缩且大小超过限制，使用 ffmpeg 服务进行压缩
     if (originalSize > this.MAX_SIZE) {
       logger.info(`视频超过20MB限制，启动压缩...`)
       // 使用正确的 FFmpeg 方法处理视频压缩
+
+
       try {
-        // 直接使用 buffer 作为输入
+        // 创建临时文件
+        const tempInput = join(tmpdir(), `input_${Date.now()}.mp4`);
+        const tempOutput = join(tmpdir(), `output_${Date.now()}.mp4`);
+
+        // 写入原始视频数据
+        writeFileSync(tempInput, buffer);
+
+        // 使用文件路径作为输入
         finalBuffer = await this.ffmpeg.builder()
-          .input(buffer) // 直接传入 buffer
+          .input(tempInput)
           .outputOption('-c:v', 'libx264')
           .outputOption('-crf', '28')
           .outputOption('-preset', 'fast')
           .outputOption('-c:a', 'aac')
           .outputOption('-b:a', '64k')
-          .run('buffer'); // 直接返回 buffer
+          .run('buffer');
+
+        // 清理临时文件
+        unlinkSync(tempInput);
 
         const compressedSize = finalBuffer.length
         const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2)
         logger.info(`压缩后视频大小: ${compressedMB}MB`)
       } catch (error) {
-        logger.error('视频压缩失败:', error);
-        throw new Error('视频压缩失败，无法上传');
+        logger.error('视频压缩失败:', error)
+        throw new Error('视频压缩失败，无法上传')
       }
     }
 
@@ -234,15 +250,15 @@ class FileUploader extends BaseUploader {
 
   async upload(fileData: string | Buffer | any): Promise<string> {
     const form = new FormData()
-    
+
     // 解析资源
     const { buffer, fileName, mimeType } = await resolveResource(
-      fileData, 
-      'file.dat', 
-      'application/octet-stream', 
+      fileData,
+      'file.dat',
+      'application/octet-stream',
       this.http
     )
-    
+
     // 大小验证
     if (buffer.length > this.MAX_SIZE) {
       throw new Error(`文件大小超过${this.MAX_SIZE / (1024 * 1024)}MB限制`)
@@ -262,9 +278,9 @@ export default class Internal {
   private fileUploader: FileUploader
 
   constructor(
-    private http: HTTP, 
+    private http: HTTP,
     private httpWeb: HTTP,
-    private token: string, 
+    private token: string,
     private apiendpoint: string,
     private ffmpeg: any // Koishi 的 ffmpeg 服务
   ) {
@@ -299,25 +315,25 @@ export default class Internal {
     logger.info(`撤回消息: ${JSON.stringify(payload)}`)
     return this.http.post(`/bot/recall?token=${this.token}`, payload)
   }
-  async getGuild(guildId: string): Promise<Types.GroupInfo>  {
-    const payload = { "groupId":guildId }
+  async getGuild(guildId: string): Promise<Types.GroupInfo> {
+    const payload = { "groupId": guildId }
     return this.httpWeb.post(`/group/group-info`, payload)
   }
 
-  async getUser(userId: string): Promise<Types.UserInfoResponse>{
+  async getUser(userId: string): Promise<Types.UserInfoResponse> {
     return this.httpWeb.get(`/user/homepage?userId=${userId}`)
   }
-  
-  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number} = {}): Promise<Types.ApiResponse> {
+
+  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number } = {}): Promise<Types.ApiResponse> {
     const chatType = chatId.split(':')[1]
     const Id = chatId.split(':')[0]
-    const { before , after} = options
+    const { before, after } = options
     logger.warn(chatId)
-    const url =`/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`
+    const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`
     return this.http.get(url)
   }
 
-// 获取图片并转换为Base64
+  // 获取图片并转换为Base64
   async getImageAsBase64(url: string): Promise<string> {
     try {
       // 设置请求头，包括Referer
@@ -337,14 +353,14 @@ export default class Internal {
 
       // 将ArrayBuffer转换为Base64
       const base64 = Buffer.from(response.data, 'binary').toString('base64');
-      
+
       // 返回Data URL格式
       return `data:${contentType};base64,${base64}`;
     } catch (error) {
       console.error('获取图片失败:', error);
       throw new Error(`无法获取图片: ${error.message}`);
     }
-  } 
+  }
 
   async setBoard(
     chatId: string,
@@ -361,7 +377,7 @@ export default class Internal {
       content,
       ...options
     }
-    
+
     return this.http.post(`/bot/board?token=${this.token}`, payload)
   }
 
@@ -382,6 +398,6 @@ export default class Internal {
     }
     return this.http.post(`/bot/board-all?token=${this.token}`, payload)
   }
-  
+
 }
 
