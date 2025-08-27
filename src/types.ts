@@ -284,3 +284,26 @@ export interface CompressResult {
   mimeType: string
 }
 
+export interface Message {
+    msgId: string;
+    parentId?: string;
+    senderId: string;
+    senderType: string;
+    senderNickname: string;
+    contentType: Message['contentType'];
+    content: Content
+    sendTime: number;
+    commandName?: string;
+    commandId?: number;
+}
+
+interface ResponseData {
+    list: Message[];
+    total: number;
+}
+
+export interface ApiResponse {
+    code: number;
+    data: ResponseData;
+    msg: string;
+}

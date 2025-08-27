@@ -375,12 +375,12 @@ export default class Internal {
     return this.httpWeb.get(`/user/homepage?userId=${userId}`)
   }
   
-  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number} = {before:0,after:0}): Promise<any> {
+  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number} = {}): Promise<Types.ApiResponse> {
     const chatType = chatId.split(':')[1]
     const Id = chatId.split(':')[0]
     const { before , after} = options
     logger.warn(chatId)
-    const url =(`/bot/message?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}`)
+    const url =`/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`
     return this.http.get(url)
   }
 

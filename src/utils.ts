@@ -50,17 +50,15 @@ export const decodeMessage = async (
 
   // 处理引用回复
   if (message.parentId) {
-    const send: h[] = [];
-    if (message.content.parentImgName) {
-      send.push(h('img', {
-        src: config._host + "?url=" + URL + message.content.parentImgName
-      }));
-    } else if (message.content.parent && message.content.parent.split(':')[1]) {
-      send.push(h.text(message.content.parent.substring(message.content.parent.indexOf(':') + 1)));
-    }
-    elements.push(h('quote', { id: message.parentId }, send));
+    const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
+    const parentMessage = res.data.list[0];
+    const msg = await decodeMessage(parentMessage, Internal, session, config);
+    const el = h.quote(message.parentId, { id: message.parentId, author: { userId: parentMessage.senderId } })
+    el.children = msg.elements
+    elements.push(el);
+
   }
-  
+
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
     // 获取所有@用户的昵称映射
