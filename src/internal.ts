@@ -15,7 +15,8 @@ import { writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-
+import * as path from 'path';import * as fs from 'fs';
+import { URL } from 'url';
 const logger = new Logger('yunhu')
 
 const IMAGE_URL = "https://chat-img.jwznb.com/"
@@ -75,98 +76,205 @@ class ImageUploader extends BaseUploader {
   }
 
 
-  async upload(image: string | Buffer | any): Promise<string> {
-    const form = new FormData()
+async upload(image: string | Buffer | any): Promise<string> {
+  return this.processUpload(image);
+}
 
-    // 解析资源
-    const { buffer, fileName, mimeType } = await resolveResource(
-      image,
-      'image.png',
-      'image/png',
-      this.http
-    )
+async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
+  return this.processUpload(image, true);
+}
 
-    // 简单验证图片格式
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
+// 私有方法，处理上传逻辑
+private async processUpload(image: string | Buffer | any, returnUrl: boolean = false): Promise<any> {
+  const form = new FormData();
 
-    if (!validImageTypes.includes(mimeType)) {
-      throw new Error(`不支持的图片格式: ${mimeType}`)
-    }
+  // 解析资源
+  const { buffer, fileName, mimeType } = await this.resolveImageResource(image);
 
-    let finalBuffer = buffer
-    let finalMimeType = mimeType
-    let finalFileName = updateFileExtension(fileName, mimeType)
+  // 验证图片格式
+  const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon'];
 
-    // 记录图片信息
-    const originalSize = buffer.length
-    const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
-    logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`)
-
-    // 简单的大小检查
-    if (originalSize > this.MAX_SIZE) {
-      const sizeMB = (originalSize / (1024 * 1024)).toFixed(2)
-      throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`)
-    }
-    // 创建文件对象并上传
-    const file = new File([finalBuffer], finalFileName, { type: finalMimeType })
-    form.append('image', file)
-    return this.sendFormData(form)
+  if (!validImageTypes.includes(mimeType)) {
+    throw new Error(`不支持的图片格式: ${mimeType}`);
   }
 
-  async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
-    const form = new FormData()
+  // 记录图片信息
+  const originalSize = buffer.length;
+  const originalMB = (originalSize / (1024 * 1024)).toFixed(2);
+  logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`);
 
-    // 解析资源
-    const { buffer, fileName, mimeType } = await resolveResource(
-      image,
-      'image.png',
-      'image/png',
-      this.http
-    )
+  // 大小检查
+  if (originalSize > this.MAX_SIZE) {
+    const sizeMB = (originalSize / (1024 * 1024)).toFixed(2);
+    throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
+  }
 
-    // 简单验证图片格式
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon']
+  // 更新文件扩展名
+  const finalFileName = this.updateFileExtension(fileName, mimeType);
+  
+  // 创建文件对象并上传
+  const file = new File([buffer], finalFileName, { type: mimeType });
+  form.append('image', file);
 
-    if (!validImageTypes.includes(mimeType)) {
-      throw new Error(`不支持的图片格式: ${mimeType}`)
-    }
-
-    let finalBuffer = buffer
-    let finalMimeType = mimeType
-    let finalFileName = updateFileExtension(fileName, mimeType)
-
-    // 记录图片信息
-    const originalSize = buffer.length
-    const originalMB = (originalSize / (1024 * 1024)).toFixed(2)
-    logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`)
-
-    // 简单的大小检查
-    if (originalSize > this.MAX_SIZE) {
-      const sizeMB = (originalSize / (1024 * 1024)).toFixed(2)
-      throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`)
-    }
-    // 创建文件对象并上传
-    const file = new File([finalBuffer], finalFileName, { type: finalMimeType })
-    form.append('image', file)
-
+  if (returnUrl) {
     // 计算图片哈希用于生成URL
     const hash = createHash('md5');
     hash.update(buffer);
     const imageHash = hash.digest('hex');
-    const extension = getExtension(mimeType);
+    const extension = this.getExtension(mimeType);
 
-    // 并行执行上传和URL生成
-    const [imagekey] = await Promise.all([
-      this.sendFormData(form),
-    ]);
-
+    const imagekey = await this.sendFormData(form);
+    
     return {
       imageurl: `${IMAGE_URL}${imageHash}.${extension}`,
       imagekey
     };
+  } else {
+    return this.sendFormData(form);
   }
+}
+
+// 解析图片资源
+private async resolveImageResource(image: string | Buffer | any): Promise<{ buffer: Buffer, fileName: string, mimeType: string }> {
+  // 如果是Buffer直接返回
+  if (Buffer.isBuffer(image)) {
+    return {
+      buffer: image,
+      fileName: 'image.png',
+      mimeType: 'image/png'
+    };
+  }
+
+  // 如果是字符串
+  if (typeof image === 'string') {
+    // 检查是否是base64编码
+    if (image.startsWith('data:image/')) {
+      const matches = image.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        return {
+          buffer: Buffer.from(matches[2], 'base64'),
+          fileName: `image.${matches[1]}`,
+          mimeType: `image/${matches[1]}`
+        };
+      }
+    }
+    
+    // 检查是否是文件路径
+    if (image.startsWith('file://') || this.isFilePath(image)) {
+      // 处理file://协议
+      let filePath = image;
+      if (image.startsWith('file://')) {
+        try {
+          // 使用URL类解析file://路径，兼容所有操作系统
+          const urlObj = new URL(image);
+          filePath = urlObj.pathname;
+          
+          // 在Windows上，URL路径会以/开头，如/C:/path/to/file
+          // 需要移除开头的斜杠
+          if (process.platform === 'win32' && filePath.match(/^\/[a-zA-Z]:\//)) {
+            filePath = filePath.substring(1);
+          }
+        } catch (e) {
+          // 如果URL解析失败，回退到简单处理
+          filePath = image.substring(7);
+        }
+      }
+      
+      // 使用path模块解析路径，确保跨平台兼容性
+      const normalizedPath = path.normalize(filePath);
+      
+      // 检查文件是否存在
+      if (!fs.existsSync(normalizedPath)) {
+        throw new Error(`文件不存在: ${normalizedPath}`);
+      }
+      
+      // 读取文件
+      const buffer = await fs.promises.readFile(normalizedPath);
+      const ext = path.extname(normalizedPath).substring(1);
+      
+      return {
+        buffer,
+        fileName: path.basename(normalizedPath),
+        mimeType: this.getMimeTypeFromExtension(ext)
+      };
+    }
+  }
+
+  // 如果是HTTP URL或其他类型，使用原来的resolveResource方法
+  return await resolveResource(
+    image,
+    'image.png',
+    'image/png',
+    this.http
+  );
+}
+
+// 检查字符串是否可能是文件路径
+private isFilePath(str: string): boolean {
+  // 检查是否包含路径分隔符
+  if (str.includes(path.sep)) {
+    return true;
+  }
+  
+  // 检查Windows风格的路径 (C:\ or C:/)
+  if (/^[a-zA-Z]:[\\/]/.test(str)) {
+    return true;
+  }
+  
+  // 检查Unix风格的绝对路径
+  if (str.startsWith('/') || str.startsWith('~')) {
+    return true;
+  }
+  
+  // 检查相对路径
+  if (str.startsWith('./') || str.startsWith('../')) {
+    return true;
+  }
+  
+  return false;
+}
+
+// 根据文件扩展名获取MIME类型
+private getMimeTypeFromExtension(ext: string): string {
+  const mimeMap: { [key: string]: string } = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'tiff': 'image/tiff',
+    'tif': 'image/tiff',
+    'svg': 'image/svg+xml',
+    'ico': 'image/x-icon'
+  };
+  
+  return mimeMap[ext.toLowerCase()] || 'application/octet-stream';
+}
+
+// 根据MIME类型获取文件扩展名
+private getExtension(mimeType: string): string {
+  const extMap: { [key: string]: string } = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/bmp': 'bmp',
+    'image/tiff': 'tiff',
+    'image/svg+xml': 'svg',
+    'image/x-icon': 'ico'
+  };
+  
+  return extMap[mimeType] || 'png';
+}
+
+// 更新文件扩展名以确保与MIME类型匹配
+private updateFileExtension(fileName: string, mimeType: string): string {
+  const extension = this.getExtension(mimeType);
+  const baseName = path.parse(fileName).name; // 使用path.parse获取无扩展名的文件名
+  return `${baseName}.${extension}`;
+}
 }
 
 // 视频上传器
