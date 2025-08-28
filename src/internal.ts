@@ -2,6 +2,7 @@ import { Context, h, HTTP, Dict, Logger } from 'koishi'
 import { FormData, File } from 'formdata-node'
 import axios, { AxiosRequestConfig } from 'axios'
 import * as Types from './types'
+import { fileTypeFromBuffer } from 'file-type'; 
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import {
@@ -136,13 +137,20 @@ private async processUpload(image: string | Buffer | any, returnUrl: boolean = f
 }
 
 // 解析图片资源
+// 解析图片资源
 private async resolveImageResource(image: string | Buffer | any): Promise<{ buffer: Buffer, fileName: string, mimeType: string }> {
   // 如果是Buffer直接返回
   if (Buffer.isBuffer(image)) {
+    // 验证Buffer内容是否为有效图片
+    const mimeType = await this.detectMimeType(image);
+    if (!mimeType.startsWith('image/')) {
+      throw new Error('提供的Buffer不是有效的图片数据');
+    }
+    
     return {
       buffer: image,
-      fileName: 'image.png',
-      mimeType: 'image/png'
+      fileName: `image.${this.getExtension(mimeType)}`,
+      mimeType
     };
   }
 
@@ -152,11 +160,59 @@ private async resolveImageResource(image: string | Buffer | any): Promise<{ buff
     if (image.startsWith('data:image/')) {
       const matches = image.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
       if (matches && matches.length === 3) {
+        const buffer = Buffer.from(matches[2], 'base64');
+        
+        // 验证base64数据是否为有效图片
+        const mimeType = await this.detectMimeType(buffer);
+        if (!mimeType.startsWith('image/')) {
+          throw new Error('提供的base64数据不是有效的图片');
+        }
+        
         return {
-          buffer: Buffer.from(matches[2], 'base64'),
+          buffer,
           fileName: `image.${matches[1]}`,
           mimeType: `image/${matches[1]}`
         };
+      }
+    }
+    
+    // 检查是否是HTTP/HTTPS URL
+    if (image.startsWith('http://') || image.startsWith('https://')) {
+      try {
+        // 使用HTTP客户端下载图片
+        const response = await axios.get(image, {
+          responseType: 'arraybuffer',
+          timeout: 30000 // 30秒超时
+        });
+        
+        const buffer = Buffer.from(response.data);
+        
+        // 验证下载的数据是否为有效图片
+        const mimeType = await this.detectMimeType(buffer);
+        if (!mimeType.startsWith('image/')) {
+          throw new Error('从URL下载的内容不是有效的图片');
+        }
+        
+        // 尝试从URL中提取文件名
+        let fileName = 'image';
+        try {
+          const url = new URL(image);
+          const pathname = url.pathname;
+          if (pathname) {
+            const ext = path.extname(pathname);
+            fileName = path.basename(pathname, ext) || 'image';
+          }
+        } catch (e) {
+          // 如果URL解析失败，使用默认文件名
+        }
+        
+        return {
+          buffer,
+          fileName: `${fileName}.${this.getExtension(mimeType)}`,
+          mimeType
+        };
+      } catch (error) {
+        throw new Error(`无法下载或验证URL图片: ${error.message}`);
       }
     }
     
@@ -191,23 +247,53 @@ private async resolveImageResource(image: string | Buffer | any): Promise<{ buff
       
       // 读取文件
       const buffer = await fs.promises.readFile(normalizedPath);
-      const ext = path.extname(normalizedPath).substring(1);
+      
+      // 验证文件内容是否为有效图片
+      const mimeType = await this.detectMimeType(buffer);
+      if (!mimeType.startsWith('image/')) {
+        throw new Error(`文件不是有效的图片: ${normalizedPath}`);
+      }
       
       return {
         buffer,
         fileName: path.basename(normalizedPath),
-        mimeType: this.getMimeTypeFromExtension(ext)
+        mimeType
       };
     }
   }
 
-  // 如果是HTTP URL或其他类型，使用原来的resolveResource方法
-  return await resolveResource(
+  // 如果是其他类型，使用原来的resolveResource方法
+  const result = await resolveResource(
     image,
     'image.png',
     'image/png',
     this.http
   );
+  
+  // 验证resolveResource返回的内容是否为有效图片
+  const mimeType = await this.detectMimeType(result.buffer);
+  if (!mimeType.startsWith('image/')) {
+    throw new Error('解析的资源不是有效的图片');
+  }
+  
+  return {
+    buffer: result.buffer,
+    fileName: result.fileName,
+    mimeType
+  };
+}
+
+// 检测Buffer的MIME类型
+private async detectMimeType(buffer: Buffer): Promise<string> {
+  // 使用文件魔数检测文件类型
+  const fileType = await fileTypeFromBuffer(buffer);
+  
+  if (fileType) {
+    return fileType.mime;
+  }
+
+  // 默认返回未知类型
+  return 'application/octet-stream';
 }
 
 // 检查字符串是否可能是文件路径
