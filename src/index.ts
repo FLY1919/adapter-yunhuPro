@@ -42,7 +42,6 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
     // 初始化内部接口，传入 ffmpeg 服务
     this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, ctx.ffmpeg)
     this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
-    
     // 实现各种方法
     this.getGuildMember = async (guildId: string, userId: string) => {
       try {
@@ -78,11 +77,20 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
       try {
         const chatType = guildId.split(':')[1]
         const Id = guildId.split(':')[0]
-        const _payload = await this.internal.getGuild(Id)
-        return {
-          "id": _payload.data.group.groupId,
-          "name": _payload.data.group.name,
-          'avatar':this.config._host + "?url=" + _payload.data.group.avatarUrl
+        if (chatType == 'group') {
+          const _payload = await this.internal.getGuild(Id)
+          return {
+            "id": _payload.data.group.groupId + ':' + chatType,
+            "name": _payload.data.group.name,
+            'avatar': this.config._host + "?url=" + _payload.data.group.avatarUrl
+          }
+        } else {
+          const _payload = await this.internal.getUser(Id)
+          return {
+            "id": _payload.data.user.userId + ':' + chatType,
+            "name": _payload.data.user.nickname,
+            'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl
+          }
         }
       }catch (error){
         logger.error('获取群聊消息失败:', error)

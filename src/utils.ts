@@ -230,7 +230,12 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
         "nick": UserInfo.data.user.nickname,
         "avatar":bot.config._host + "?url=" + UserInfo.data.user.avatarUrl
       }
-
+      const guildInfo = await Internal.getGuild(chat.chatId)
+      session.event.guild = {
+        "id": chat.chatId,
+        "name": guildInfo.data.group.name,
+        "avatar": bot.config._host + "?url=" + guildInfo.data.group.avatarUrl,
+      }
       session.author.name = UserInfo.data.user.nickname
       session.author.nick = UserInfo.data.user.nickname
       // session.author.isBot = UserInfo.data.user.isBot
