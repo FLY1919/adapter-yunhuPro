@@ -71,296 +71,381 @@ abstract class BaseUploader {
 }
 
 // 图片上传器
+// 图片上传器
 class ImageUploader extends BaseUploader {
   constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any) {
     super(http, token, apiendpoint, 'image', ffmpeg)
   }
 
-
-async upload(image: string | Buffer | any): Promise<string> {
-  return this.processUpload(image);
-}
-
-async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
-  return this.processUpload(image, true);
-}
-
-// 私有方法，处理上传逻辑
-private async processUpload(image: string | Buffer | any, returnUrl: boolean = false): Promise<any> {
-  const form = new FormData();
-
-  // 解析资源
-  const { buffer, fileName, mimeType } = await this.resolveImageResource(image);
-
-  // 验证图片格式
-  const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
-    'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon'];
-
-  if (!validImageTypes.includes(mimeType)) {
-    throw new Error(`不支持的图片格式: ${mimeType}`);
+  async upload(image: string | Buffer | any): Promise<string> {
+    return this.processUpload(image);
   }
 
-  // 记录图片信息
-  const originalSize = buffer.length;
-  const originalMB = (originalSize / (1024 * 1024)).toFixed(2);
-  logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`);
-
-  // 大小检查
-  if (originalSize > this.MAX_SIZE) {
-    const sizeMB = (originalSize / (1024 * 1024)).toFixed(2);
-    throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
+  async uploadGetUrl(image: string | Buffer | any): Promise<Dict> {
+    return this.processUpload(image, true);
   }
 
-  // 更新文件扩展名
-  const finalFileName = this.updateFileExtension(fileName, mimeType);
-  
-  // 创建文件对象并上传
-  const file = new File([buffer], finalFileName, { type: mimeType });
-  form.append('image', file);
-
-  if (returnUrl) {
-    // 计算图片哈希用于生成URL
-    const hash = createHash('md5');
-    hash.update(buffer);
-    const imageHash = hash.digest('hex');
-    const extension = this.getExtension(mimeType);
-
-    const imagekey = await this.sendFormData(form);
+  // 私有方法，处理上传逻辑
+  private async processUpload(image: string | Buffer | any, returnUrl: boolean = false): Promise<any> {
+    logger.info(`开始处理图片上传，传入参数类型: ${typeof image}`);
     
-    return {
-      imageurl: `${IMAGE_URL}${imageHash}.${extension}`,
-      imagekey
-    };
-  } else {
-    return this.sendFormData(form);
-  }
-}
+    if (Buffer.isBuffer(image)) {
+      logger.info('传入参数是 Buffer 类型');
+    } else if (typeof image === 'string') {
+      logger.info(`传入参数是字符串类型，内容: ${image.substring(0, 100)}...`);
+      
+      if (image.startsWith('data:image/')) {
+        logger.info('检测到 base64 编码的图片数据');
+      } else if (image.startsWith('http://') || image.startsWith('https://')) {
+        logger.info('检测到 HTTP/HTTPS URL');
+      } else if (image.startsWith('file://')) {
+        logger.info('检测到 file:// URL');
+      } else if (this.isFilePath(image)) {
+        logger.info('检测到文件路径');
+      }
+    } else {
+      logger.info(`传入参数是其他类型: ${image?.constructor?.name || '未知类型'}`);
+    }
 
-// 解析图片资源
-// 解析图片资源
-private async resolveImageResource(image: string | Buffer | any): Promise<{ buffer: Buffer, fileName: string, mimeType: string }> {
-  // 如果是Buffer直接返回
-  if (Buffer.isBuffer(image)) {
-    // 验证Buffer内容是否为有效图片
-    const mimeType = await this.detectMimeType(image);
+    const form = new FormData();
+
+    // 解析资源
+    const { buffer, fileName, mimeType } = await this.resolveImageResource(image);
+
+    // 记录检测到的MIME类型
+    logger.info(`检测到的MIME类型: ${mimeType}`);
+
+    // 验证图片格式
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon'];
+
+    if (!validImageTypes.includes(mimeType)) {
+      logger.error(`不支持的图片格式: ${mimeType}`);
+      throw new Error(`不支持的图片格式: ${mimeType}`);
+    }
+
+    // 记录图片信息
+    const originalSize = buffer.length;
+    const originalMB = (originalSize / (1024 * 1024)).toFixed(2);
+    logger.info(`图片: 类型=${mimeType}, 大小=${originalMB}MB`);
+
+    // 大小检查
+    if (originalSize > this.MAX_SIZE) {
+      const sizeMB = (originalSize / (1024 * 1024)).toFixed(2);
+      logger.error(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
+      throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
+    }
+
+    // 更新文件扩展名
+    const finalFileName = this.updateFileExtension(fileName, mimeType);
+    logger.info(`最终文件名: ${finalFileName}`);
+    
+    // 创建文件对象并上传
+    const file = new File([buffer], finalFileName, { type: mimeType });
+    form.append('image', file);
+
+    if (returnUrl) {
+      // 计算图片哈希用于生成URL
+      const hash = createHash('md5');
+      hash.update(buffer);
+      const imageHash = hash.digest('hex');
+      const extension = this.getExtension(mimeType);
+      logger.info(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
+
+      const imagekey = await this.sendFormData(form);
+      const imageUrl = `${IMAGE_URL}${imageHash}.${extension}`;
+      logger.info(`生成的图片URL: ${imageUrl}`);
+      
+      return {
+        imageurl: imageUrl,
+        imagekey
+      };
+    } else {
+      return this.sendFormData(form);
+    }
+  }
+
+  // 解析图片资源
+  private async resolveImageResource(image: string | Buffer | any): Promise<{ buffer: Buffer, fileName: string, mimeType: string }> {
+    logger.info(`开始解析图片资源，类型: ${typeof image}`);
+    
+    // 如果是Buffer直接返回
+    if (Buffer.isBuffer(image)) {
+      logger.info('资源是 Buffer 类型，开始检测MIME类型');
+      // 验证Buffer内容是否为有效图片
+      const mimeType = await this.detectMimeType(image);
+      logger.info(`Buffer 检测到的MIME类型: ${mimeType}`);
+      
+      if (!mimeType.startsWith('image/')) {
+        logger.error('提供的Buffer不是有效的图片数据');
+        throw new Error('提供的Buffer不是有效的图片数据');
+      }
+      
+      return {
+        buffer: image,
+        fileName: `image.${this.getExtension(mimeType)}`,
+        mimeType
+      };
+    }
+
+    // 如果是字符串
+    if (typeof image === 'string') {
+      logger.info(`资源是字符串类型: ${image.substring(0, 50)}...`);
+      
+      // 检查是否是base64编码
+      if (image.startsWith('data:image/')) {
+        logger.info('检测到 base64 编码的图片数据');
+        const matches = image.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const buffer = Buffer.from(matches[2], 'base64');
+          logger.info(`Base64 数据解码成功，长度: ${buffer.length} 字节`);
+          
+          // 验证base64数据是否为有效图片
+          const mimeType = await this.detectMimeType(buffer);
+          logger.info(`Base64 数据检测到的MIME类型: ${mimeType}`);
+          
+          if (!mimeType.startsWith('image/')) {
+            logger.error('提供的base64数据不是有效的图片');
+            throw new Error('提供的base64数据不是有效的图片');
+          }
+          
+          return {
+            buffer,
+            fileName: `image.${matches[1]}`,
+            mimeType: `image/${matches[1]}`
+          };
+        }
+      }
+      
+      // 检查是否是HTTP/HTTPS URL
+      if (image.startsWith('http://') || image.startsWith('https://')) {
+        logger.info('检测到 HTTP/HTTPS URL，开始下载图片');
+        try {
+          // 使用HTTP客户端下载图片
+          const response = await axios.get(image, {
+            responseType: 'arraybuffer',
+            timeout: 30000 // 30秒超时
+          });
+          
+          const buffer = Buffer.from(response.data);
+          logger.info(`URL 下载成功，长度: ${buffer.length} 字节`);
+          
+          // 验证下载的数据是否为有效图片
+          const mimeType = await this.detectMimeType(buffer);
+          logger.info(`URL 下载内容检测到的MIME类型: ${mimeType}`);
+          
+          if (!mimeType.startsWith('image/')) {
+            logger.error('从URL下载的内容不是有效的图片');
+            throw new Error('从URL下载的内容不是有效的图片');
+          }
+          
+          // 尝试从URL中提取文件名
+          let fileName = 'image';
+          try {
+            const url = new URL(image);
+            const pathname = url.pathname;
+            if (pathname) {
+              const ext = path.extname(pathname);
+              fileName = path.basename(pathname, ext) || 'image';
+            }
+          } catch (e) {
+            logger.warn('URL解析失败，使用默认文件名');
+          }
+          
+          return {
+            buffer,
+            fileName: `${fileName}.${this.getExtension(mimeType)}`,
+            mimeType
+          };
+        } catch (error) {
+          logger.error(`无法下载或验证URL图片: ${error.message}`);
+          throw new Error(`无法下载或验证URL图片: ${error.message}`);
+        }
+      }
+      
+      // 检查是否是文件路径
+      if (image.startsWith('file://') || this.isFilePath(image)) {
+        logger.info('检测到文件路径，开始读取文件');
+        // 处理file://协议
+        let filePath = image;
+        if (image.startsWith('file://')) {
+          try {
+            // 使用URL类解析file://路径，兼容所有操作系统
+            const urlObj = new URL(image);
+            filePath = urlObj.pathname;
+            
+            // 在Windows上，URL路径会以/开头，如/C:/path/to/file
+            // 需要移除开头的斜杠
+            if (process.platform === 'win32' && filePath.match(/^\/[a-zA-Z]:\//)) {
+              filePath = filePath.substring(1);
+            }
+          } catch (e) {
+            logger.warn('file:// URL解析失败，回退到简单处理');
+            filePath = image.substring(7);
+          }
+        }
+        
+        // 使用path模块解析路径，确保跨平台兼容性
+        const normalizedPath = path.normalize(filePath);
+        logger.info(`规范化后的文件路径: ${normalizedPath}`);
+        
+        // 检查文件是否存在
+        if (!fs.existsSync(normalizedPath)) {
+          logger.error(`文件不存在: ${normalizedPath}`);
+          throw new Error(`文件不存在: ${normalizedPath}`);
+        }
+        
+        // 读取文件
+        const buffer = await fs.promises.readFile(normalizedPath);
+        logger.info(`文件读取成功，长度: ${buffer.length} 字节`);
+        
+        // 验证文件内容是否为有效图片
+        const mimeType = await this.detectMimeType(buffer);
+        logger.info(`文件内容检测到的MIME类型: ${mimeType}`);
+        
+        if (!mimeType.startsWith('image/')) {
+          logger.error(`文件不是有效的图片: ${normalizedPath}`);
+          throw new Error(`文件不是有效的图片: ${normalizedPath}`);
+        }
+        
+        return {
+          buffer,
+          fileName: path.basename(normalizedPath),
+          mimeType
+        };
+      }
+      
+      logger.warn('无法识别的字符串格式，尝试使用默认解析方法');
+    }
+
+    logger.info('使用默认的 resolveResource 方法解析资源');
+    // 如果是其他类型，使用原来的resolveResource方法
+    const result = await resolveResource(
+      image,
+      'image.png',
+      'image/png',
+      this.http
+    );
+    
+    // 验证resolveResource返回的内容是否为有效图片
+    const mimeType = await this.detectMimeType(result.buffer);
+    logger.info(`resolveResource 检测到的MIME类型: ${mimeType}`);
+    
     if (!mimeType.startsWith('image/')) {
-      throw new Error('提供的Buffer不是有效的图片数据');
+      logger.error('解析的资源不是有效的图片');
+      throw new Error('解析的资源不是有效的图片');
     }
     
     return {
-      buffer: image,
-      fileName: `image.${this.getExtension(mimeType)}`,
+      buffer: result.buffer,
+      fileName: result.fileName,
       mimeType
     };
   }
 
-  // 如果是字符串
-  if (typeof image === 'string') {
-    // 检查是否是base64编码
-    if (image.startsWith('data:image/')) {
-      const matches = image.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
-      if (matches && matches.length === 3) {
-        const buffer = Buffer.from(matches[2], 'base64');
-        
-        // 验证base64数据是否为有效图片
-        const mimeType = await this.detectMimeType(buffer);
-        if (!mimeType.startsWith('image/')) {
-          throw new Error('提供的base64数据不是有效的图片');
-        }
-        
-        return {
-          buffer,
-          fileName: `image.${matches[1]}`,
-          mimeType: `image/${matches[1]}`
-        };
-      }
+  // 检测Buffer的MIME类型
+  private async detectMimeType(buffer: Buffer): Promise<string> {
+    logger.info('开始检测 Buffer 的 MIME 类型');
+    // 使用文件魔数检测文件类型
+    const fileType = await fileTypeFromBuffer(buffer);
+    
+    if (fileType) {
+      logger.info(`file-type 库检测到的 MIME 类型: ${fileType.mime}`);
+      return fileType.mime;
+    }
+
+    logger.warn('file-type 库无法检测到 MIME 类型，返回默认类型');
+    // 默认返回未知类型
+    return 'application/octet-stream';
+  }
+
+  // 检查字符串是否可能是文件路径
+  private isFilePath(str: string): boolean {
+    logger.info(`检查字符串是否为文件路径: ${str}`);
+    
+    // 检查是否包含路径分隔符
+    if (str.includes(path.sep)) {
+      logger.info('字符串包含路径分隔符，可能是文件路径');
+      return true;
     }
     
-    // 检查是否是HTTP/HTTPS URL
-    if (image.startsWith('http://') || image.startsWith('https://')) {
-      try {
-        // 使用HTTP客户端下载图片
-        const response = await axios.get(image, {
-          responseType: 'arraybuffer',
-          timeout: 30000 // 30秒超时
-        });
-        
-        const buffer = Buffer.from(response.data);
-        
-        // 验证下载的数据是否为有效图片
-        const mimeType = await this.detectMimeType(buffer);
-        if (!mimeType.startsWith('image/')) {
-          throw new Error('从URL下载的内容不是有效的图片');
-        }
-        
-        // 尝试从URL中提取文件名
-        let fileName = 'image';
-        try {
-          const url = new URL(image);
-          const pathname = url.pathname;
-          if (pathname) {
-            const ext = path.extname(pathname);
-            fileName = path.basename(pathname, ext) || 'image';
-          }
-        } catch (e) {
-          // 如果URL解析失败，使用默认文件名
-        }
-        
-        return {
-          buffer,
-          fileName: `${fileName}.${this.getExtension(mimeType)}`,
-          mimeType
-        };
-      } catch (error) {
-        throw new Error(`无法下载或验证URL图片: ${error.message}`);
-      }
+    // 检查Windows风格的路径 (C:\ or C:/)
+    if (/^[a-zA-Z]:[\\/]/.test(str)) {
+      logger.info('字符串是 Windows 风格路径');
+      return true;
     }
     
-    // 检查是否是文件路径
-    if (image.startsWith('file://') || this.isFilePath(image)) {
-      // 处理file://协议
-      let filePath = image;
-      if (image.startsWith('file://')) {
-        try {
-          // 使用URL类解析file://路径，兼容所有操作系统
-          const urlObj = new URL(image);
-          filePath = urlObj.pathname;
-          
-          // 在Windows上，URL路径会以/开头，如/C:/path/to/file
-          // 需要移除开头的斜杠
-          if (process.platform === 'win32' && filePath.match(/^\/[a-zA-Z]:\//)) {
-            filePath = filePath.substring(1);
-          }
-        } catch (e) {
-          // 如果URL解析失败，回退到简单处理
-          filePath = image.substring(7);
-        }
-      }
-      
-      // 使用path模块解析路径，确保跨平台兼容性
-      const normalizedPath = path.normalize(filePath);
-      
-      // 检查文件是否存在
-      if (!fs.existsSync(normalizedPath)) {
-        throw new Error(`文件不存在: ${normalizedPath}`);
-      }
-      
-      // 读取文件
-      const buffer = await fs.promises.readFile(normalizedPath);
-      
-      // 验证文件内容是否为有效图片
-      const mimeType = await this.detectMimeType(buffer);
-      if (!mimeType.startsWith('image/')) {
-        throw new Error(`文件不是有效的图片: ${normalizedPath}`);
-      }
-      
-      return {
-        buffer,
-        fileName: path.basename(normalizedPath),
-        mimeType
-      };
+    // 检查Unix风格的绝对路径
+    if (str.startsWith('/') || str.startsWith('~')) {
+      logger.info('字符串是 Unix 风格绝对路径');
+      return true;
     }
+    
+    // 检查相对路径
+    if (str.startsWith('./') || str.startsWith('../')) {
+      logger.info('字符串是相对路径');
+      return true;
+    }
+    
+    logger.info('字符串不是文件路径');
+    return false;
   }
 
-  // 如果是其他类型，使用原来的resolveResource方法
-  const result = await resolveResource(
-    image,
-    'image.png',
-    'image/png',
-    this.http
-  );
-  
-  // 验证resolveResource返回的内容是否为有效图片
-  const mimeType = await this.detectMimeType(result.buffer);
-  if (!mimeType.startsWith('image/')) {
-    throw new Error('解析的资源不是有效的图片');
-  }
-  
-  return {
-    buffer: result.buffer,
-    fileName: result.fileName,
-    mimeType
-  };
-}
-
-// 检测Buffer的MIME类型
-private async detectMimeType(buffer: Buffer): Promise<string> {
-  // 使用文件魔数检测文件类型
-  const fileType = await fileTypeFromBuffer(buffer);
-  
-  if (fileType) {
-    return fileType.mime;
+  // 根据文件扩展名获取MIME类型
+  private getMimeTypeFromExtension(ext: string): string {
+    logger.info(`根据扩展名获取 MIME 类型: ${ext}`);
+    
+    const mimeMap: { [key: string]: string } = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'bmp': 'image/bmp',
+      'tiff': 'image/tiff',
+      'tif': 'image/tiff',
+      'svg': 'image/svg+xml',
+      'ico': 'image/x-icon'
+    };
+    
+    const mimeType = mimeMap[ext.toLowerCase()] || 'application/octet-stream';
+    logger.info(`扩展名 ${ext} 对应的 MIME 类型: ${mimeType}`);
+    
+    return mimeType;
   }
 
-  // 默认返回未知类型
-  return 'application/octet-stream';
-}
-
-// 检查字符串是否可能是文件路径
-private isFilePath(str: string): boolean {
-  // 检查是否包含路径分隔符
-  if (str.includes(path.sep)) {
-    return true;
+  // 根据MIME类型获取文件扩展名
+  private getExtension(mimeType: string): string {
+    logger.info(`根据 MIME 类型获取扩展名: ${mimeType}`);
+    
+    const extMap: { [key: string]: string } = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/bmp': 'bmp',
+      'image/tiff': 'tiff',
+      'image/svg+xml': 'svg',
+      'image/x-icon': 'ico'
+    };
+    
+    const extension = extMap[mimeType] || 'png';
+    logger.info(`MIME 类型 ${mimeType} 对应的扩展名: ${extension}`);
+    
+    return extension;
   }
-  
-  // 检查Windows风格的路径 (C:\ or C:/)
-  if (/^[a-zA-Z]:[\\/]/.test(str)) {
-    return true;
-  }
-  
-  // 检查Unix风格的绝对路径
-  if (str.startsWith('/') || str.startsWith('~')) {
-    return true;
-  }
-  
-  // 检查相对路径
-  if (str.startsWith('./') || str.startsWith('../')) {
-    return true;
-  }
-  
-  return false;
-}
 
-// 根据文件扩展名获取MIME类型
-private getMimeTypeFromExtension(ext: string): string {
-  const mimeMap: { [key: string]: string } = {
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'gif': 'image/gif',
-    'webp': 'image/webp',
-    'bmp': 'image/bmp',
-    'tiff': 'image/tiff',
-    'tif': 'image/tiff',
-    'svg': 'image/svg+xml',
-    'ico': 'image/x-icon'
-  };
-  
-  return mimeMap[ext.toLowerCase()] || 'application/octet-stream';
-}
-
-// 根据MIME类型获取文件扩展名
-private getExtension(mimeType: string): string {
-  const extMap: { [key: string]: string } = {
-    'image/jpeg': 'jpg',
-    'image/png': 'png',
-    'image/gif': 'gif',
-    'image/webp': 'webp',
-    'image/bmp': 'bmp',
-    'image/tiff': 'tiff',
-    'image/svg+xml': 'svg',
-    'image/x-icon': 'ico'
-  };
-  
-  return extMap[mimeType] || 'png';
-}
-
-// 更新文件扩展名以确保与MIME类型匹配
-private updateFileExtension(fileName: string, mimeType: string): string {
-  const extension = this.getExtension(mimeType);
-  const baseName = path.parse(fileName).name; // 使用path.parse获取无扩展名的文件名
-  return `${baseName}.${extension}`;
-}
+  // 更新文件扩展名以确保与MIME类型匹配
+  private updateFileExtension(fileName: string, mimeType: string): string {
+    logger.info(`更新文件扩展名，原文件名: ${fileName}, MIME 类型: ${mimeType}`);
+    
+    const extension = this.getExtension(mimeType);
+    const baseName = path.parse(fileName).name; // 使用path.parse获取无扩展名的文件名
+    const newFileName = `${baseName}.${extension}`;
+    
+    logger.info(`更新后的文件名: ${newFileName}`);
+    return newFileName;
+  }
 }
 
 // 视频上传器
