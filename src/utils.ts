@@ -4,15 +4,15 @@ import YunhuBot, { name } from './'
 import * as mime from 'mime-types'
 import path from 'path'
 import { fileFromPath } from 'formdata-node/file-from-path'
-import {  ResourceResult } from './types'
+import { ResourceResult } from './types'
 
 import Internal from './internal'
 
-export * from './types' 
+export * from './types'
 
 const logger = new Logger('yunhu-utils')
 const URL = "https://chat-img.jwznb.com/"
- 
+
 // 将云湖用户信息转换为Koishi通用用户格式
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   id: user.senderId,
@@ -29,10 +29,10 @@ export const decodeMessage = async (
 ): Promise<Universal.Message> => {
   const elements: any[] = [];
   let textContent = message.content.text || '';
-  
+
   // 判断是否为纯指令消息（文本内容就是斜杠加指令名）
   const isPureCommand = textContent === '/' + message.commandName;
-  
+
   // 设置 session.content
   if (isPureCommand) {
     // 纯指令情况：session.content 只包含指令名
@@ -73,18 +73,18 @@ export const decodeMessage = async (
 
     // 按文本顺序处理@
     const atPositions: Array<{ index: number; id: string; name: string }> = [];
-    
+
     // 查找所有@位置
     for (const id of message.content.at) {
       const name = userMap.get(id);
       if (name) {
         const atText = `@${name}`;
         let startIndex = 0;
-        
+
         while (startIndex < textContent.length) {
           const index = textContent.indexOf(atText, startIndex);
           if (index === -1) break;
-          
+
           atPositions.push({ index, id, name });
           startIndex = index + atText.length;
         }
@@ -98,19 +98,19 @@ export const decodeMessage = async (
     let lastIndex = 0;
     for (const { index, id, name } of atPositions) {
       // 添加@前的文本
-      if (index > lastIndex) { 
+      if (index > lastIndex) {
         // 根据是否为纯指令决定是否添加指令名前缀
         const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
         elements.push(h.text(prefix + textContent.substring(lastIndex, index)));
       }
-      
+
       // 添加@元素
       elements.push(h.at(id, { name }));
-      
+
       // 更新最后索引位置（跳过@文本）
       lastIndex = index + name.length + 1; // +1 是为了跳过@符号
     }
-    
+
     // 添加剩余文本
     if (lastIndex < textContent.length) {
       // 根据是否为纯指令决定是否添加指令名前缀
@@ -196,24 +196,24 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       session.event.user.name = sender.senderNickname
       session.event.user.nick = sender.senderNickname
       session.event.user.id = sender.senderId
-      const level = ()=>{ 
+      const level = () => {
         if (sender.senderUserLevel === 'owner') {
           return 0x1FFFFFFFFF
-        }else if (sender.senderUserLevel === 'administrator'){
+        } else if (sender.senderUserLevel === 'administrator') {
           return 0x8
-        }else if (sender.senderUserLevel === 'member'){
+        } else if (sender.senderUserLevel === 'member') {
           return 2048
-        }else{
+        } else {
           return 0
         }
       }
       const UserInfo = await Internal.getUser(session.userId)
       session.event.role = {
         "id": chat.chatId,
-        "name": UserInfo.data.user.nickname, 
-        "permissions": BigInt(level()), 
-        "color": null, 
-        "position": null, 
+        "name": UserInfo.data.user.nickname,
+        "permissions": BigInt(level()),
+        "color": null,
+        "position": null,
         "hoist": false,
         "mentionable": false
       }
@@ -221,19 +221,22 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
         "id": session.userId,
         "name": UserInfo.data.user.nickname,
         "nick": UserInfo.data.user.nickname,
-        "avatar": bot.config._host+ "?url=" + UserInfo.data.user.avatarUrl,
+        "avatar": bot.config._host + "?url=" + UserInfo.data.user.avatarUrl,
         "isBot": false // 云湖目前没有提供isBot字段，暂时设为false
       }
       session.event.member = {
         "user": session.author.user,
         "name": UserInfo.data.user.nickname,
         "nick": UserInfo.data.user.nickname,
-        "avatar":bot.config._host + "?url=" + UserInfo.data.user.avatarUrl
+        "avatar": bot.config._host + "?url=" + UserInfo.data.user.avatarUrl
       }
-      
+
       session.author.name = UserInfo.data.user.nickname
       session.author.nick = UserInfo.data.user.nickname
       // session.author.isBot = UserInfo.data.user.isBot
+      if (message.parentId) {
+        session.quote = { id: message.parentId };
+      }
       session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊
       if (message.chatType === 'bot') {
@@ -252,20 +255,20 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       }
 
       // 设置消息内容和元数据
-      
+
       session.messageId = message.msgId
       session.timestamp = message.sendTime
       // session.quote.id = message.parentId? message.parentId : undefined
 
-      
+
       // logger.info(message)
-      
+
 
       // 转换消息内容为Koishi格式
-      session.event.message =await decodeMessage(message, Internal, session, bot.config)
+      session.event.message = await decodeMessage(message, Internal, session, bot.config)
       logger.info(`已转换为koishi消息格式:`)
       logger.info(session)
-      
+
       break;
     }
 
