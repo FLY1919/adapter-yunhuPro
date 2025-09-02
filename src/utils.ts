@@ -46,15 +46,34 @@ export const decodeMessage = async (
   }
 
   // 处理引用回复
-  if (message.parentId) {
+// 处理引用回复
+if (message.parentId) {
+  try {
     const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
-    const parentMessage = res.data.list[0];
-    const msg = await decodeMessage(parentMessage, Internal, session, config);
-    const el = h.quote(message.parentId, { id: message.parentId, author: { userId: parentMessage.senderId } })
-    el.children = msg.elements
-    elements.push(el);
-
+    if (res.data.list && res.data.list.length > 0) {
+      const parentMessage = res.data.list[0];
+      // 创建引用元素但不递归解码，避免循环
+      const quoteText = parentMessage.content?.text || '[引用消息]';
+      const el = h.quote(message.parentId, { 
+        id: message.parentId, 
+        author: { 
+          userId: parentMessage.senderId,
+          name: parentMessage.senderNickname || '未知用户'
+        } 
+      });
+      // 添加简化的引用内容
+      el.children = [h.text(quoteText.substring(0, 50) + (quoteText.length > 50 ? '...' : ''))];
+      elements.push(el);
+    }
+  } catch (error) {
+    logger.error('获取引用消息失败:', error);
+    // 即使获取失败也添加一个空的引用标识
+    elements.push(h.quote(message.parentId, { 
+      id: message.parentId,
+      author: { userId: 'unknown' }
+    }));
   }
+}
 
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
