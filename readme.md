@@ -3,8 +3,8 @@
 > **📢 项目来源声明**  
 > 本项目基于 **[@WindyPear](https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu) 2次开发**。    
 > ~~原作者没时间~~,我也没时间（
+> 我是高中生（悲
 本文档介绍了用于 Koishi 框架的云湖 (Yunhu) 官方适配器。此适配器允许您的 Koishi 机器人接收和发送云湖平台的消息。
-
 [![Stylelint](https://img.shields.io/badge/stylelint-enabled-brightgreen.svg)]
 (https://stylelint.io/)/
 
@@ -13,6 +13,13 @@
 
 [![npm downloads](https://img.shields.io/npm/koishi-plugin-adapter-yunhupro)]
 (https://github.com/username/project/README)
+
+## 联系方式
+| 平台 | ID | 状态 |
+|------|---------|------|
+| QQ   |3568242357|可能回复不及时|
+| 云湖 |5546917 | 推荐 |
+| 云湖(group) | 979377259| 推荐| 
 
 ## 特性
 
@@ -67,7 +74,6 @@ export const Config: Schema<Config> = Schema.object({
 -   [x] 用户上下线事件 (`session` 标准事件)
 -   [x] 特有消息元素支持：
     -   [x] `<yunhu:markdown>`
-    -   [x] `<yunhu:html>`
 -   [x] 通过反向代理处理图片资源
 -   [x] **控制台设置指令** (`yh` 指令)
 
@@ -76,17 +82,15 @@ export const Config: Schema<Config> = Schema.object({
 以下云湖平台特定的功能当前版本尚未支持：
 
 -   **设置看板 (Set Kanban)** 相关接口
-
 -   **快捷菜单** (`bot.shortcut.menu`)
 -   **内联按钮** (`button.report.inline`)
 -   **特定关注事件**:
     -   `bot.followed` (机器人被用户关注)
     -   `bot.unfollowed` (机器人被用户取消关注)
-
+**如果你有能力欢迎pr，可能回复不及时**
 ## 注意事项
 
-1.  **引用嵌套**: 注意可能存在引用嵌套会刷新原有引用的特性，在开发相关功能时请留意。
-2.  **图像处理**: 所有图像获取均通过反向代理进行，无需直接处理原始 URL。
+1.  **图像处理**: 所有云湖用户头像获取均通过反向代理进行，无需直接处理原始 URL。
 
 ## 获取帮助
 
