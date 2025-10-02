@@ -12,7 +12,6 @@ const logger = new Logger('yunhu-message')
 export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, YunhuBot<C>> {
     // 使用 payload 存储待发送的消息
     private payload: Dict
-    private memrize: Dict = []
     private sendType: 'text' | 'image' | 'video' | 'file' | 'markdown' | 'html' | undefined = undefined
     private html = ""
     private text = ""
@@ -63,10 +62,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         this.markdown = ""
     }
     let message: Yunhu.Message
-    if (this.message.length === 0) {
-        await reset.call(this)
-        return
-    }
+
     this.payload.contentType = this.sendType
     if (this.sendType === 'text'){
         this.payload.content.text = this.text
@@ -79,7 +75,6 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
 
     await this.addResult(message)
     await reset.call(this)
-    return
 }
 
 
