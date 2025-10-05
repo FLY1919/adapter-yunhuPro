@@ -1,3 +1,4 @@
+import { image } from '@satorijs/element/jsx-runtime'
 import YunhuBot from './'
 //import { decodeMessage } from './utils'
 import * as Yunhu from './types'
@@ -27,6 +28,9 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             recvType,
             contentType: 'text',
             content: {
+                imageKey: undefined,
+                fileKey: undefined,
+                videoKey: undefined,
                 text: ''
             },
             parentId: this.session.quote ? this.session.quote.id : undefined
@@ -197,7 +201,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 // 处理视频
                 try {
                     // 尝试上传视频获取videoKey
-                    const videokey = await this.bot.internal.uploadVideo(attrs.src)
+                    const videokey = await this.bot.internal.uploadVideo(element.attrs.src)
                     this.payload.content.videoKey = videokey
                     await this.flush()
                 } catch (error) {
