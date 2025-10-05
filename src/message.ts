@@ -43,7 +43,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         this.message.push(message)
         const session = this.bot.session()
         session.channelId = this.channelId
-        session.event.message.id = message.event.message.msgId
+        session.event.message.id = message.msgId
         // session.quote.id = message.parentId? message.parentId : undefined
         if (message.parentId) {
             session.event.message.quote.id = message.parentId
