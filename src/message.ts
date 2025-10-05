@@ -219,8 +219,11 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             }
             else if (type === 'message') {
                 if (attrs.forward) {
-                    
-                }else {
+                    if (this.message.length > 0) {
+                        await this.flush()
+                    }
+                    await this.render(children)
+                } else {
                     if (this.message.length > 0) {
                         await this.flush()
                     }
