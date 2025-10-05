@@ -68,8 +68,6 @@ if (message.parentId) {
         id: parentMessage.senderId,
         name: parentMessage.senderNickname || '未知用户'
       };
-      session.quote.guild.name = parentMessage.senderNickname || '未知用户';
-      session.quote.guild.id = parentMessage.senderId;
       session.quote.channel = {
         id: session.channelId,
         name: '', // 云湖API未提供频道名称
