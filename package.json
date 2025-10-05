@@ -19,7 +19,7 @@
     "FLY1919 <qw687255511@163.com>",
     "WindyPear-Team <hjrlluobo2h@qq.com>"
   ],
-  "version": "1.3.8",
+  "version": "1.3.9",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

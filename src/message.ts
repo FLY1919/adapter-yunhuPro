@@ -39,12 +39,11 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
 
     // 将发送好的消息添加到 results 中
     async addResult(data: any) {
-        const message = data.data.messageInfo
-        this.results.push(message)
+        const message = data
+        this.message.push(message)
         const session = this.bot.session()
-        session.event.message = message
         session.channelId = this.channelId
-        session.event.message.id = message.msgId
+        session.event.message.id = message.event.message.msgId
         // session.quote.id = message.parentId? message.parentId : undefined
         if (message.parentId) {
             session.event.message.quote.id = message.parentId
@@ -56,7 +55,6 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         async function reset() {
             this.payload.content.text = ''
             this.sendType = undefined
-            this.message = []
             this.payload.content.imageKey = undefined
             this.payload.content.fileKey = undefined
             this.payload.content.videoKey = undefined
@@ -214,9 +212,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             }
 
             else if (type === 'yunhu:markdown') {
-                if (this.message.length > 0) {
-                    await this.flush()
-                }
+                await this.flush()
                 this.sendType = 'markdown'
                 await this.render(children)
                 await this.flush()
@@ -234,9 +230,8 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
 
                 }
                 else {
-                    if (this.message.length > 0) {
-                        await this.flush()
-                    }
+
+                    await this.flush()
                     await this.render(children)
                     await this.flush()
                 }
