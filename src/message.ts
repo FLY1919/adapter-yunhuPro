@@ -253,8 +253,8 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 } else if (this.sendType === 'text') {
                     this.sendType = 'markdown'
                 }
-                this.markdown += this.sendType != "html" ? `**${attrs.name}(${attrs.id})**\n` : ''
-                this.html += `<strong>${attrs.name}</strong><sub>${attrs.id}</sub><br>`
+                this.markdown += this.sendType != "html" ? `\n**${attrs.name}(${attrs.id})**\n` : ''
+                this.html += `\n<strong>${attrs.name}</strong><sub>${attrs.id}</sub><br>`
                 await this.render(children)
             }
             else if (type === 'h1') {
