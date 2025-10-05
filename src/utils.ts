@@ -54,6 +54,9 @@ if (message.parentId) {
       const parentMessage = res.data.list[0];
       // 创建引用元素但不递归解码，避免循环
       const quoteText = parentMessage.content?.text || '[引用消息]';
+      session.quote.id = message.parentId;
+      session.quote.content = quoteText;
+      // 构建引用元素
       const el = h.quote(message.parentId, { 
         id: message.parentId, 
         author: { 
@@ -61,17 +64,23 @@ if (message.parentId) {
           name: parentMessage.senderNickname || '未知用户'
         } 
       });
+      session.quote.user = {
+        id: parentMessage.senderId,
+        name: parentMessage.senderNickname || '未知用户'
+      };
+      session.quote.guild.name = parentMessage.senderNickname || '未知用户';
+      session.quote.guild.id = parentMessage.senderId;
+      session.quote.channel = {
+        id: session.channelId,
+        name: '', // 云湖API未提供频道名称
+        type: Universal.Channel.Type.TEXT
+      };
       // 添加简化的引用内容
       el.children = [h.text(quoteText.substring(0, 50) + (quoteText.length > 50 ? '...' : ''))];
-      elements.push(el);
+      session.quote.elements = [el];
     }
   } catch (error) {
     logger.error('获取引用消息失败:', error);
-    // 即使获取失败也添加一个空的引用标识
-    elements.push(h.quote(message.parentId, { 
-      id: message.parentId,
-      author: { userId: 'unknown' }
-    }));
   }
 }
 
@@ -254,7 +263,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       session.author.nick = UserInfo.data.user.nickname
       // session.author.isBot = UserInfo.data.user.isBot
       if (message.parentId) {
-        session.quote = { id: message.parentId };
+        session.quote.id = message.parentId
       }
       session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊

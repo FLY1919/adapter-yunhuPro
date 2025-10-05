@@ -193,9 +193,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         }
         else if (type === 'video') {
             await this.flush()
-            if (this.sendType == undefined) {
-                this.sendType = 'video'
-            }
+            this.sendType = 'video'
             // 处理视频
             try {
                 // 尝试上传视频获取videoKey
@@ -232,6 +230,18 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             await this.render(children)
             this.payload.parentId = ''
             await this.flush()
+        }
+        else if (type === 'author'){
+            if (this.sendType == undefined) {
+                this.sendType = 'markdown'
+            } else if (this.sendType === 'image') {
+                this.sendType = 'markdown'
+            } else if (this.sendType === 'text') {
+                this.sendType = 'markdown'
+            }
+            this.markdown += this.sendType != "html" ? `**${attrs.name}**\n` : ''
+            this.html += `<strong>${attrs.name}</strong><br>`
+            await this.render(children)
         }
         else if (type === 'h1'){
             if (this.sendType == undefined) {
