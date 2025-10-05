@@ -17,7 +17,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
     private text = ""
     private markdown = ""
     private message: Dict = []
-
+    private switch_message: boolean = true
 
     async prepare() {
         let [recvId, recvType] = this.channelId.split(':');
@@ -222,8 +222,14 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     if (this.message.length > 0) {
                         await this.flush()
                     }
+                    this.switch_message = false
                     await this.render(children)
-                } else {
+                    this.switch_message = true
+                }else if(!this.switch_message){
+                    await this.render(children)
+
+                }
+                else {
                     if (this.message.length > 0) {
                         await this.flush()
                     }
