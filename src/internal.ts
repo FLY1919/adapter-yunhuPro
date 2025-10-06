@@ -117,7 +117,7 @@ class ImageUploader extends BaseUploader {
 
     // 验证图片格式
     const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon'];
+      'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon', "image/jpg"];
 
     if (!validImageTypes.includes(mimeType)) {
       logger.error(`不支持的图片格式: ${mimeType}`);
