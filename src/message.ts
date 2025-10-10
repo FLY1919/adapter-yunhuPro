@@ -40,7 +40,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
     // 将发送好的消息添加到 results 中
     async addResult(data: any) {
         const message = data
-        this.message.push(message)
+        //this.message.push(message)
         const session = this.bot.session()
         session.channelId = this.channelId
         //session.event.message.id = message.msgId
