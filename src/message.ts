@@ -43,8 +43,13 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
         this.message.push(message)
         const session = this.bot.session()
         session.channelId = this.channelId
-        session.event.message.id = message.msgId
-        // session.quote.id = message.parentId? message.parentId : undefined
+        //session.event.message.id = message.msgId
+        session.event.message = {
+            id: message.msgId,
+            elements: message,
+            //等主播放假再改
+        }
+        //session.quote.id = message.parentId? message.parentId : undefined
         if (message.parentId) {
             session.event.message.quote.id = message.parentId
         }
@@ -62,6 +67,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             this.html = ""
             this.text = ""
             this.markdown = ""
+            this.message = []
         }
         let message: Yunhu.Message
 
@@ -83,7 +89,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
     // 遍历消息元素
     async visit(element: h) {
         const { type, attrs, children } = element
-
+        this.message.push(element)
         try {
             if (type === 'text') {
                 if (this.sendType == undefined) {
