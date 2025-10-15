@@ -261,8 +261,8 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       session.author.nick = UserInfo.data.user.nickname
       // session.author.isBot = UserInfo.data.user.isBot
       if (message.parentId) {
-        session.quote = {}
-        session.quote.id = message.parentId
+        session.quote = {id: message.parentId, user: {id: '', name: ''}, channel: {id: '', name: '', type: Universal.Channel.Type.TEXT}, content: '', elements: [] }
+  
       }
       session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊
