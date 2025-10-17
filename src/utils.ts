@@ -58,22 +58,6 @@ export const decodeMessage = async (
       if (res.data.list && res.data.list.length > 0) {
         const parentMessage = res.data.list[0];
         const quoteText = parentMessage.content?.text || '[引用消息]';
-        
-        // 设置引用信息（不递归解码）
-        session.quote = {
-          id: message.parentId,
-          content: quoteText,
-          user: {
-            id: parentMessage.senderId,
-            name: parentMessage.senderNickname || '未知用户'
-          },
-          channel: {
-            id: session.channelId,
-            name: '', // 云湖API未提供频道名称
-            type: Universal.Channel.Type.TEXT
-          }
-        };
-
         // 构建引用元素
         const quoteElement = h.quote(message.parentId, { 
           id: message.parentId, 
@@ -85,9 +69,24 @@ export const decodeMessage = async (
         
         // 添加简化的引用内容
         quoteElement.children = [h.text(quoteText.substring(0, 50) + (quoteText.length > 50 ? '...' : ''))];
+  
+        // 设置引用信息（不递归解码）
+        session.quote = {
+          'id': message.parentId,
+          'elements': [quoteElement],
+          content: quoteText,
+          'user': {
+            'id': parentMessage.senderId,
+            'name': parentMessage.senderNickname || '未知用户'
+          },
+          'channel': {
+            'id': session.channelId,
+            'name': '', // 云湖API未提供频道名称
+            'type': Universal.Channel.Type.TEXT
+          }
+        };
+        logger.info(session.quote)
         
-        // 将引用元素添加到消息开头
-        elements.unshift(quoteElement);
       }
     } catch (error) {
       logger.error('获取引用消息失败:', error);
