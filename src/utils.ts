@@ -30,6 +30,9 @@ export const decodeMessage = async (
   const elements: any[] = [];
   let textContent = message.content.text || '';
 
+  // 移除文本中的零宽空格
+  textContent = textContent.replace(/\u200b/g, '');
+
   // 判断是否为纯指令消息（文本内容就是斜杠加指令名）
   const isPureCommand = textContent === '/' + message.commandName;
 
@@ -45,42 +48,56 @@ export const decodeMessage = async (
     session.content = textContent;
   }
 
+  // 初始化 session.quote
+  session.quote = {};
+
   // 处理引用回复
-// 处理引用回复
-if (message.parentId) {
-  try {
-    const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
-    if (res.data.list && res.data.list.length > 0) {
-      const parentMessage = res.data.list[0];
-      // 创建引用元素但不递归解码，避免循环
-      const quoteText = parentMessage.content?.text || '[引用消息]';
-      session.quote.id = message.parentId;
-      session.quote.content = quoteText;
-      // 构建引用元素
-      const el = h.quote(message.parentId, { 
-        id: message.parentId, 
-        author: { 
-          userId: parentMessage.senderId,
-          name: parentMessage.senderNickname || '未知用户'
-        } 
-      });
-      session.quote.user = {
-        id: parentMessage.senderId,
-        name: parentMessage.senderNickname || '未知用户'
+  if (message.parentId) {
+    try {
+      const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
+      if (res.data.list && res.data.list.length > 0) {
+        const parentMessage = res.data.list[0];
+        const quoteText = parentMessage.content?.text || '[引用消息]';
+        
+        // 设置引用信息（不递归解码）
+        session.quote = {
+          id: message.parentId,
+          content: quoteText,
+          user: {
+            id: parentMessage.senderId,
+            name: parentMessage.senderNickname || '未知用户'
+          },
+          channel: {
+            id: session.channelId,
+            name: '', // 云湖API未提供频道名称
+            type: Universal.Channel.Type.TEXT
+          }
+        };
+
+        // 构建引用元素
+        const quoteElement = h.quote(message.parentId, { 
+          id: message.parentId, 
+          author: { 
+            userId: parentMessage.senderId,
+            name: parentMessage.senderNickname || '未知用户'
+          } 
+        });
+        
+        // 添加简化的引用内容
+        quoteElement.children = [h.text(quoteText.substring(0, 50) + (quoteText.length > 50 ? '...' : ''))];
+        
+        // 将引用元素添加到消息开头
+        elements.unshift(quoteElement);
+      }
+    } catch (error) {
+      logger.error('获取引用消息失败:', error);
+      // 即使获取失败也设置基本的引用信息
+      session.quote = {
+        id: message.parentId,
+        content: '[引用消息]'
       };
-      session.quote.channel = {
-        id: session.channelId,
-        name: '', // 云湖API未提供频道名称
-        type: Universal.Channel.Type.TEXT
-      };
-      // 添加简化的引用内容
-      el.children = [h.text(quoteText.substring(0, 50) + (quoteText.length > 50 ? '...' : ''))];
-      session.quote.elements = [el];
     }
-  } catch (error) {
-    logger.error('获取引用消息失败:', error);
   }
-}
 
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
@@ -125,9 +142,12 @@ if (message.parentId) {
     for (const { index, id, name } of atPositions) {
       // 添加@前的文本
       if (index > lastIndex) {
-        // 根据是否为纯指令决定是否添加指令名前缀
         const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
-        elements.push(h.text(prefix + textContent.substring(lastIndex, index)));
+        const textBeforeAt = prefix + textContent.substring(lastIndex, index);
+        // 移除零宽空格后再添加文本元素
+        if (textBeforeAt.trim()) {
+          elements.push(h.text(textBeforeAt.replace(/\u200b/g, '')));
+        }
       }
 
       // 添加@元素
@@ -139,9 +159,12 @@ if (message.parentId) {
 
     // 添加剩余文本
     if (lastIndex < textContent.length) {
-      // 根据是否为纯指令决定是否添加指令名前缀
       const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
-      elements.push(h.text(prefix + textContent.substring(lastIndex)));
+      const remainingText = prefix + textContent.substring(lastIndex);
+      // 移除零宽空格后再添加文本元素
+      if (remainingText.trim()) {
+        elements.push(h.text(remainingText.replace(/\u200b/g, '')));
+      }
     }
   } else if (textContent) {
     // 如果没有@，根据是否为纯指令决定如何添加文本
@@ -150,10 +173,10 @@ if (message.parentId) {
       elements.push(h.text('/' + message.commandName));
     } else if (message.commandName) {
       // 指令加参数情况：显示指令名加参数
-      elements.push(h.text(message.commandName + ' ' + textContent));
+      elements.push(h.text((message.commandName + ' ' + textContent).replace(/\u200b/g, '')));
     } else {
       // 普通消息情况
-      elements.push(h.text(textContent));
+      elements.push(h.text(textContent.replace(/\u200b/g, '')));
     }
   }
 
@@ -259,11 +282,6 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
 
       session.author.name = UserInfo.data.user.nickname
       session.author.nick = UserInfo.data.user.nickname
-      // session.author.isBot = UserInfo.data.user.isBot
-      if (message.parentId) {
-        session.quote = {id: message.parentId, user: {id: '', name: ''}, channel: {id: '', name: '', type: Universal.Channel.Type.TEXT}, content: '', elements: [] }
-  
-      }
       session.author.isBot = false // 云湖目前没有提供isBot字段，暂时设为false
       // 设置频道ID，区分私聊和群聊
       if (message.chatType === 'bot') {
