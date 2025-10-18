@@ -53,50 +53,50 @@ export const decodeMessage = async (
 
   // 处理引用回复
 
-if (message.parentId) {
-  try {
-    const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
-    if (res.data.list && res.data.list.length > 0) {
-      const parentMessage = res.data.list[0];
-      
-      // 创建一个临时的 session 对象用于处理父消息
-      const tempSession = {
-        channelId: session.channelId,
-        config: config,
-        quote: {}
-      } as any;
-      
-      // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
-      const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
-      
-      // 设置引用信息，直接使用处理后的 elements
+  if (message.parentId) {
+    try {
+      const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 })
+      if (res.data.list && res.data.list.length > 0) {
+        const parentMessage = res.data.list[0];
+
+        // 创建一个临时的 session 对象用于处理父消息
+        const tempSession = {
+          channelId: session.channelId,
+          config: config,
+          quote: {}
+        } as any;
+
+        // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
+        const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
+
+        // 设置引用信息，直接使用处理后的 elements
+        session.quote = {
+          id: message.parentId,
+          elements: parentUniversalMessage.elements,
+          content: parentUniversalMessage.content,
+          user: {
+            id: parentMessage.senderId,
+            name: parentMessage.senderNickname || '未知用户'
+          },
+          channel: {
+            id: session.channelId,
+            name: '', // 云湖API未提供频道名称
+            type: Universal.Channel.Type.TEXT
+          }
+        };
+
+        logger.info('引用消息处理成功，elements:', parentUniversalMessage.elements);
+      }
+    } catch (error) {
+      logger.error('获取引用消息失败:', error);
+      // 即使获取失败也设置基本的引用信息
       session.quote = {
         id: message.parentId,
-        elements: parentUniversalMessage.elements,
-        content: parentUniversalMessage.content,
-        user: {
-          id: parentMessage.senderId,
-          name: parentMessage.senderNickname || '未知用户'
-        },
-        channel: {
-          id: session.channelId,
-          name: '', // 云湖API未提供频道名称
-          type: Universal.Channel.Type.TEXT
-        }
+        content: '[引用消息]',
+        elements: [h.text('[引用消息]')]
       };
-      
-      logger.info('引用消息处理成功，elements:', parentUniversalMessage.elements);
     }
-  } catch (error) {
-    logger.error('获取引用消息失败:', error);
-    // 即使获取失败也设置基本的引用信息
-    session.quote = {
-      id: message.parentId,
-      content: '[引用消息]',
-      elements: [h.text('[引用消息]')]
-    };
   }
-}
 
   // 处理@用户
   if (message.content.at && message.content.at.length > 0) {
