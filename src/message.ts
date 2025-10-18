@@ -112,7 +112,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                 }
                 try {
                     // 尝试上传图片获取imageKey
-                    const img = await this.bot.internal.uploadImageUrl(element.attrs.src)
+                    const img = await this.bot.internal.uploadImageUrl(element.attrs.src ? element.attrs.src : element.attrs.url)
                     this.markdown += this.sendType != "html" ? `\n![美少女大失败](${img.imageurl})\n` : ''
                     this.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`
                     if (this.sendType === 'image') {
