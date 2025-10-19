@@ -70,30 +70,30 @@ export const decodeMessage = async (
         const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
 
         // 设置引用信息，直接使用处理后的 elements
-        session.quote = {
-          id: message.parentId,
-          elements: parentUniversalMessage.elements,
-          content: parentUniversalMessage.content,
-          user: {
-            id: parentMessage.senderId,
-            name: parentMessage.senderNickname || '未知用户'
+        session.event.message['quote'] = {
+          "id": message.parentId,
+          "elements": parentUniversalMessage.elements,
+          "content": parentUniversalMessage.content,
+          "user": {
+            "id": parentMessage.senderId,
+            "name": parentMessage.senderNickname || '未知用户'
           },
-          channel: {
-            id: session.channelId,
-            name: '', // 云湖API未提供频道名称
-            type: Universal.Channel.Type.TEXT
+          "channel": {
+            "id": session.channelId,
+            "name": '', // 云湖API未提供频道名称
+            "type": Universal.Channel.Type.TEXT
           }
         };
 
-        logger.info('引用消息处理成功，elements:', parentUniversalMessage.elements);
+        logger.info('引用消息处理成功，elements:', session.quote);
       }
     } catch (error) {
       logger.error('获取引用消息失败:', error);
       // 即使获取失败也设置基本的引用信息
       session.quote = {
-        id: message.parentId,
-        content: '[引用消息]',
-        elements: [h.text('[引用消息]')]
+        "id": message.parentId,
+        "content": '[引用消息]',
+        "elements": [h.text('[引用消息]')]
       };
     }
   }
@@ -233,7 +233,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
   const session = bot.session()
   const Internal = bot.internal
   session.setInternal(bot.platform, input)
-
+  session.quote = null
   switch (input.header.eventType) {
     // 消息事件处理
     case 'message.receive.normal':
