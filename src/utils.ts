@@ -178,7 +178,9 @@ export const decodeMessage = async (
 
   // 处理图片内容
   if (message.content.imageUrl) {
-    elements.push(h.image(message.content.imageUrl ? message.content.imageUrl : config._host + "?url=" + URL + message.content.imageName));
+    elements.push(h.image(message.content.imageUrl));
+  }else if (message.content.imageName) {
+    elements.push(h.image(config._host + "?url=" + URL + message.content.imageName));
   }
 
   // 处理文件内容
