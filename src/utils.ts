@@ -90,7 +90,7 @@ export const decodeMessage = async (
     } catch (error) {
       logger.error('获取引用消息失败:', error);
       // 即使获取失败也设置基本的引用信息
-      session.quote = {
+      session.event.message.quote = {
         "id": message.parentId,
         "content": '[引用消息]',
         "elements": [h.text('[引用消息]')]
@@ -309,7 +309,10 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
 
 
       // 转换消息内容为Koishi格式
-      session.event.message = await decodeMessage(message, Internal, session, bot.config)
+      const demessage = await decodeMessage(message, Internal, session, bot.config)
+      session.event.message.id = demessage.id
+      session.event.message.content = demessage.content
+      session.event.message.elements = demessage.elements
       logger.info(`已转换为koishi消息格式:`)
       logger.info(session)
 
