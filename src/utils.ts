@@ -48,9 +48,6 @@ export const decodeMessage = async (
     session.content = textContent;
   }
 
-  // 初始化 session.quote
-  session.quote = {};
-
   // 处理引用回复
 
   if (message.parentId) {
@@ -233,7 +230,6 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
   const session = bot.session()
   const Internal = bot.internal
   session.setInternal(bot.platform, input)
-  session.quote = null
   switch (input.header.eventType) {
     // 消息事件处理
     case 'message.receive.normal':
