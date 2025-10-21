@@ -1,13 +1,15 @@
 import { Dict, HTTP } from "koishi";
 
 // types.ts
-export interface YunhuConfig {
+export interface YunhuConfig
+{
   token: string;
   endpoint?: string; // 可选，如果不是默认 endpoint 的话
   path?: string;     // 可选，云湖平台推送回调的路径
 }
 
-interface CheckChatInfoRecord {
+interface CheckChatInfoRecord
+{
   id: number;
   chatId: string;
   chatType: number;
@@ -19,35 +21,39 @@ interface CheckChatInfoRecord {
   delFlag: number;
 }
 
-interface Medal {
-    id: number;
-    name: string;
-    desc: string;
-    imageUrl: string;
-    sort: number;
+interface Medal
+{
+  id: number;
+  name: string;
+  desc: string;
+  imageUrl: string;
+  sort: number;
 }
 
-interface User {
-    userId: string;
-    nickname: string;
-    avatarUrl: string;
-    registerTime: number;
-    registerTimeText: string;
-    onLineDay: number;
-    continuousOnLineDay: number;
-    medals: Medal[];
-    isVip: number;
+interface User
+{
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
+  registerTime: number;
+  registerTimeText: string;
+  onLineDay: number;
+  continuousOnLineDay: number;
+  medals: Medal[];
+  isVip: number;
 }
 
-export interface UserInfoResponse {
-    code: number;
-    data: {
-        user: User;
-    };
-    msg: string;
+export interface UserInfoResponse
+{
+  code: number;
+  data: {
+    user: User;
+  };
+  msg: string;
 }
 
-interface Bot {
+interface Bot
+{
   id: number;
   botId: string;
   nickname: string;
@@ -64,7 +70,8 @@ interface Bot {
   checkChatInfoRecord: CheckChatInfoRecord;
 }
 
-interface GroupBotRel {
+interface GroupBotRel
+{
   id: number;
   groupId: string;
   botId: string;
@@ -74,7 +81,8 @@ interface GroupBotRel {
   bot: Bot;
 }
 
-interface Group {
+interface Group
+{
   id: number;
   groupId: string;
   name: string;
@@ -91,16 +99,19 @@ interface Group {
   checkChatInfoRecord: CheckChatInfoRecord;
 }
 
-interface Data {
+interface Data
+{
   group: Group;
 }
 
-export interface GroupInfo {
+export interface GroupInfo
+{
   code: number;
   data: Data;
   msg: string;
 }
-export interface YunhuMessage {
+export interface YunhuMessage
+{
   recvId: string;
   recvType: 'user' | 'group';
   contentType: 'text' | 'image' | 'video' | 'file' | 'markdown' | 'html';
@@ -114,19 +125,21 @@ export interface YunhuMessage {
   parentId?: string; // 回复消息ID
 }
 
-export interface Message {
-  msgId: string
-  parentId?: string
-  sendTime: number // 毫秒级时间戳
-  chatId: string
-  chatType: 'group' | 'bot'
-  contentType: 'text' | 'image' | 'markdown' | 'file'
-  content: Content
-  commandId?: number
-  commandName?: string
+export interface Message
+{
+  msgId: string;
+  parentId?: string;
+  sendTime: number; // 毫秒级时间戳
+  chatId: string;
+  chatType: 'group' | 'bot';
+  contentType: 'text' | 'image' | 'markdown' | 'file';
+  content: Content;
+  commandId?: number;
+  commandName?: string;
 }
 
-export interface Content {
+export interface Content
+{
   text?: string;          // contentType 为 text 或 markdown 时使用
   imageUrl?: string;      // contentType 为 image 时使用（替换 imageKey）
   fileKey?: string;       // contentType 为 file 时使用
@@ -145,156 +158,173 @@ export interface Content {
   imageHeight?: number;   // 对应 JSON 中的 imageHeight
 }
 
-export interface Button {
-  text: string
-  actionType: 1 | 2 | 3
-  url?: string
-  value?: string
+export interface Button
+{
+  text: string;
+  actionType: 1 | 2 | 3;
+  url?: string;
+  value?: string;
 }
 
-export interface YunhuEvent {
-    version: string;
-    header: {
-        eventId: string;
-        eventTime: number;
-        eventType: string;
-    };
-    event: Event; // 根据事件类型定义更详细的结构
+export interface YunhuEvent
+{
+  version: string;
+  header: {
+    eventId: string;
+    eventTime: number;
+    eventType: string;
+  };
+  event: Event; // 根据事件类型定义更详细的结构
 }
 
-export interface Sender {
-  senderId: string
-  senderType: 'user'
-  senderUserLevel: 'owner' | 'administrator' | 'member' | 'unknown'
-  senderNickname: string
+export interface Sender
+{
+  senderId: string;
+  senderType: 'user';
+  senderUserLevel: 'owner' | 'administrator' | 'member' | 'unknown';
+  senderNickname: string;
 }
 
 // 基础消息事件
-export interface MessageEvent {
-  sender: Sender
-  message: Message
-  chat: Chat
+export interface MessageEvent
+{
+  sender: Sender;
+  message: Message;
+  chat: Chat;
 }
 
 // 加群事件
-export interface GroupMemberJoinedEvent {
-  sender: Sender
-  chat: Chat
+export interface GroupMemberJoinedEvent
+{
+  sender: Sender;
+  chat: Chat;
   joinedMember: {
-    memberId: string
-    memberNickname: string
-  }
+    memberId: string;
+    memberNickname: string;
+  };
 }
 
 // 退群事件
-export interface GroupMemberLeavedEvent {
-  sender: Sender
-  chat: Chat
+export interface GroupMemberLeavedEvent
+{
+  sender: Sender;
+  chat: Chat;
   leavedMember: {
-    memberId: string
-    memberNickname: string
-  }
-  leaveType: 'self' | 'kicked' // 自行退出或被踢出
+    memberId: string;
+    memberNickname: string;
+  };
+  leaveType: 'self' | 'kicked'; // 自行退出或被踢出
 }
 
 // 成员被邀请加入群聊事件
-export interface GroupMemberInvitedEvent {
-  sender: Sender
-  chat: Chat
+export interface GroupMemberInvitedEvent
+{
+  sender: Sender;
+  chat: Chat;
   invitedMember: {
-    memberId: string
-    memberNickname: string
-  }
+    memberId: string;
+    memberNickname: string;
+  };
   inviter: {
-    inviterId: string
-    inviterNickname: string
-  }
+    inviterId: string;
+    inviterNickname: string;
+  };
 }
 
 // 成员被踢出群聊事件
-export interface GroupMemberKickedEvent {
-  sender: Sender
-  chat: Chat
+export interface GroupMemberKickedEvent
+{
+  sender: Sender;
+  chat: Chat;
   kickedMember: {
-    memberId: string
-    memberNickname: string
-  }
+    memberId: string;
+    memberNickname: string;
+  };
   operator: {
-    operatorId: string
-    operatorNickname: string
-  }
+    operatorId: string;
+    operatorNickname: string;
+  };
 }
 
 // 群聊被解散事件
-export interface GroupDisbandedEvent {
-  sender: Sender
-  chat: Chat
+export interface GroupDisbandedEvent
+{
+  sender: Sender;
+  chat: Chat;
   operator: {
-    operatorId: string
-    operatorNickname: string
-  }
+    operatorId: string;
+    operatorNickname: string;
+  };
 }
 
 // 联合类型，表示所有可能的事件
-export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent | 
-                   GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent;
+export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent |
+  GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent;
 
-export interface Chat {
-  chatId: string
-  chatType: 'bot' | 'group'
+export interface Chat
+{
+  chatId: string;
+  chatType: 'bot' | 'group';
 }
 
-export interface YunhuResponse {
+export interface YunhuResponse
+{
   code: number;
   msg: string;
   data?: any;
 }
 
-export interface Internal {
+export interface Internal
+{
   token: string;
   endpoint: string;
 }
 
 // YunhuBot 接口定义类型
-export type FormatType = 'text' | 'markdown' | 'html'
+export type FormatType = 'text' | 'markdown' | 'html';
 
-export type ResourceType = 'image' | 'video' | 'file'
+export type ResourceType = 'image' | 'video' | 'file';
 
-export interface ResourceResult {
-  buffer: Buffer
-  fileName: string
-  mimeType: string
+export interface ResourceResult
+{
+  buffer: Buffer;
+  fileName: string;
+  mimeType: string;
 }
 
-export interface UploaderOptions {
-  http: HTTP
-  token: string
-  apiendpoint: string
-  resourceType: ResourceType
-  maxSize: number
+export interface UploaderOptions
+{
+  http: HTTP;
+  token: string;
+  apiendpoint: string;
+  resourceType: ResourceType;
+  maxSize: number;
 }
 
 
-export interface Message {
-    msgId: string;
-    parentId?: string;
-    senderId: string;
-    senderType: string;
-    senderNickname: string;
-    contentType: Message['contentType'];
-    content: Content
-    sendTime: number;
-    commandName?: string;
-    commandId?: number;
+export interface Message
+{
+  msgId: string;
+  parentId?: string;
+  senderId: string;
+  senderType: string;
+  senderNickname: string;
+  contentType: Message['contentType'];
+  content: Content;
+  sendTime: number;
+  commandName?: string;
+  commandId?: number;
 }
 
-interface ResponseData {
-    list: Message[];
-    total: number;
+interface ResponseData
+{
+  list: Message[];
+  total: number;
 }
 
-export interface ApiResponse {
-    code: number;
-    data: ResponseData;
-    msg: string;
+export interface ApiResponse
+{
+  code: number;
+  data: ResponseData;
+  msg: string;
 }

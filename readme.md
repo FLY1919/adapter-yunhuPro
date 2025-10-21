@@ -1,72 +1,40 @@
-# koishi-plugin-adapter-yunhuPro
-# 适用于云湖koishi适配器
-> **📢 项目来源声明**  
-> 本项目基于 **[@WindyPear](https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu) 2次开发**。    
-> ~~原作者没时间~~,我也没时间（
-> 我是高中生（悲
-本文档介绍了用于 Koishi 框架的云湖 (Yunhu) 官方适配器。此适配器允许您的 Koishi 机器人接收和发送云湖平台的消息。
-[![Stylelint](https://img.shields.io/badge/stylelint-enabled-brightgreen.svg)]
-(https://stylelint.io/)/
+# koishi-plugin-adapter-yunhupro
 
-[![npm version](https://img.shields.io/npm/v/koishi-plugin-adapter-yunhupro)]/
-(https://badge.fury.io/js/koishi-plugin-adapter-yunhupro)/
+## 适用于 Koishi 框架的云湖 (Yunhu) 适配器
 
-[![npm downloads](https://img.shields.io/npm/koishi-plugin-adapter-yunhupro)]
-(https://github.com/username/project/README)
+> **📢 项目来源声明**
+> 
+> 本项目基于 **[@WindyPear](https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu) 的 `koishi-plugin-adapter-yunhu` 进行二次开发与维护**。
+>
+> **开发者寄语：**
+> 原作者没时间维护，我也没时间（我是高中生，悲）。但仍会尽力维护，欢迎大家使用和反馈！
+
+---
+
+云湖 (Yunhu) 适配器
+
+此适配器可以让 Koishi 机器人接收和发送云湖平台的消息。
+
+[![npm version](https://img.shields.io/npm/v/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro)
+[![npm downloads](https://img.shields.io/npm/dt/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro)
 
 ## 联系方式
-| 平台 | ID | 状态 |
-|------|---------|------|
-| QQ   |3568242357|可能回复不及时|
-| 云湖 |5546917 | 推荐 |
-| 云湖(group) | 979377259| 推荐| 
+
+如果您在使用过程中遇到问题或有任何建议，可以通过以下方式联系我：
+
+| 平台      | ID         | 状态           |
+| --------- | ---------- | -------------- |
+| QQ        | 3568242357 | 可能回复不及时 |
+| 云湖      | 5546917    | 推荐           |
+| 云湖 (群) | 979377259  | 推荐           |
+
 
 ## 特性
 
 -   **基础通信**: 实现了与云湖平台的基础消息接收与发送。
 -   **特有元素支持**: 支持云湖平台特有的消息元素，例如 Markdown 和 HTML 渲染。
 -   **反向代理**: 通过反向代理获取图像资源，确保图片消息的正常发送。
-–   **注意**: 你必须注册空白 和斜杠，由于云湖神秘特性（）
-## 安装
-
-您可以通过 npm 或 yarn 安装此适配器：
-
-
-
-## 基本配置
-```typescript
-export const Config: Schema<Config> = Schema.object({
-    token: Schema.string()
-      .required()
-      .description('机器人 Token'),
-    
-    endpoint: Schema.string()
-      .default(YUNHU_ENDPOINT)
-      .description('云湖 API 地址，默认无需修改'),
-    endpointweb: Schema.string()
-      .default(YUNHU_ENDPOINT_WEB)
-      .description('云湖 API 地址，默认无需修改'),
-    
-    path: Schema.string()
-      .default('/yunhu')
-      .description('Webhook 接收路径'),
-    
-    cat: Schema.string()
-      .default('猫娘')
-      .description('她很可爱，你可以摸摸'),
-    _host: Schema.string()
-      .default('http://127.0.0.1:5140/pic')
-      .description('图片反代'),
-    path_host: Schema.string()
-      .default('/pic')
-      .description('图片反代'),
-     
-    ffmpegPath: Schema.string()
-      .description('FFmpeg 可执行文件路径')
-      .default('')
-      .role('path')
-  })
-```
+-   **注意**: 你必须注册空白 和斜杠，由于云湖神秘特性（）
 
 ## 已实现的功能
 
@@ -102,5 +70,3 @@ export const Config: Schema<Config> = Schema.object({
 ---
 
 **注意**: 某些具体细节（如确切的配置项、元素标签的完整语法）可能需要参考适配器自身的详细文档或源码。
-
-
