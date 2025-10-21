@@ -15,7 +15,6 @@
 
 此适配器可以让 Koishi 机器人接收和发送云湖平台的消息。
 
-[![Stylelint](https://img.shields.io/badge/stylelint-enabled-brightgreen.svg)](https://stylelint.io/)
 [![npm version](https://img.shields.io/npm/v/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro)
 [![npm downloads](https://img.shields.io/npm/dt/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro)
 
