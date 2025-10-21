@@ -1,12 +1,12 @@
 import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 import * as Yunhu from './types';
-import YunhuBot, { name } from './';
+import { YunhuBot } from '../bot/bot';
 import * as mime from 'mime-types';
 import path from 'path';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import { ResourceResult } from './types';
 
-import Internal from './internal';
+import Internal from '../bot/internal';
 
 export * from './types';
 
@@ -64,11 +64,10 @@ export const decodeMessage = async (
         const parentMessage = res.data.list[0];
 
         // 创建一个临时的 session 对象用于处理父消息
-        const tempSession = {
-          channelId: session.channelId,
-          config: config,
-          quote: {}
-        } as any;
+        // 创建一个临时的 session 对象用于处理父消息
+        const tempSession = session.bot.session(session.event);
+        tempSession.channelId = session.channelId;
+
 
         // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
         const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);

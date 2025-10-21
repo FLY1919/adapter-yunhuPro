@@ -1,7 +1,7 @@
 import { image } from '@satorijs/element/jsx-runtime';
-import YunhuBot from './';
+import { YunhuBot } from './bot';
 //import { decodeMessage } from './utils'
-import * as Yunhu from './types';
+import * as Yunhu from '../utils/types';
 import { Context, h, Dict, MessageEncoder, Logger } from 'koishi';
 
 const logger = new Logger('yunhu-message');
