@@ -7,9 +7,9 @@ import { YunhuBot } from '../bot/bot';
 // 文件上传器
 export class FileUploader extends BaseUploader
 {
-    constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any, bot: YunhuBot)
+    constructor(http: HTTP, token: string, apiendpoint: string, bot: YunhuBot)
     {
-        super(http, token, apiendpoint, 'file', ffmpeg, bot);
+        super(http, token, apiendpoint, 'file', bot);
     }
 
     async upload(fileData: string | Buffer | any): Promise<string>

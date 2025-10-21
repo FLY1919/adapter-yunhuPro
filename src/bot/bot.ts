@@ -5,7 +5,6 @@ import Internal from './internal';
 import { YunhuMessageEncoder } from './message';
 import { Webhook } from './ws';
 
-import { } from 'koishi-plugin-ffmpeg';
 
 const logger = new Logger('yunhu');
 
@@ -14,7 +13,7 @@ const YUNHU_API_PATH_WEB = '/v1';
 
 export class YunhuBot extends Bot<Context, Config>
 {
-    static inject = ['server', 'ffmpeg'];
+    static inject = ['server'];
     static MessageEncoder = YunhuMessageEncoder;
     public internal: Internal;
     private Encoder: YunhuMessageEncoder;
@@ -40,8 +39,8 @@ export class YunhuBot extends Bot<Context, Config>
             endpoint: `${this.config.endpointweb}${YUNHU_API_PATH_WEB}`,
         });
 
-        // 初始化内部接口，传入 ffmpeg 服务
-        this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ctx.ffmpeg, this);
+        // 初始化内部接口
+        this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this);
         this.Encoder = new YunhuMessageEncoder(this, config.token);
         this.webhook = new Webhook(ctx, this);
 
@@ -124,7 +123,6 @@ export class YunhuBot extends Bot<Context, Config>
             }
         };
 
-        // 解析并设置 FFmpeg 路径
     }
 
     // 日志调试功能

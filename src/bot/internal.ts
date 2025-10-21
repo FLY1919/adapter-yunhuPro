@@ -20,14 +20,13 @@ export default class Internal
     private httpWeb: HTTP,
     private token: string,
     private apiendpoint: string,
-    private ffmpeg: any, // Koishi 的 ffmpeg 服务
     bot: YunhuBot
   )
   {
     this.bot = bot;
-    this.imageUploader = new ImageUploader(http, token, apiendpoint, ffmpeg, bot);
-    this.videoUploader = new VideoUploader(http, token, apiendpoint, ffmpeg, bot);
-    this.fileUploader = new FileUploader(http, token, apiendpoint, ffmpeg, bot);
+    this.imageUploader = new ImageUploader(http, token, apiendpoint, bot);
+    this.videoUploader = new VideoUploader(http, token, apiendpoint, bot);
+    this.fileUploader = new FileUploader(http, token, apiendpoint, bot);
   }
 
   sendMessage(payload: Dict)

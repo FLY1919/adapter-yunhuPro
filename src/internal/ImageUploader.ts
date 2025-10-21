@@ -14,9 +14,9 @@ const IMAGE_URL = "https://chat-img.jwznb.com/";
 // 图片上传器
 export class ImageUploader extends BaseUploader
 {
-    constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any, bot: YunhuBot)
+    constructor(http: HTTP, token: string, apiendpoint: string, bot: YunhuBot)
     {
-        super(http, token, apiendpoint, 'image', ffmpeg, bot);
+        super(http, token, apiendpoint, 'image', bot);
     }
 
     async upload(image: string | Buffer | any): Promise<string>

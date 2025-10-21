@@ -14,7 +14,6 @@ export abstract class BaseUploader
         protected token: string,
         protected apiendpoint: string,
         protected resourceType: ResourceType,
-        protected ffmpeg: any, // Koishi 的 ffmpeg 服务
         protected bot: YunhuBot
     )
     {

@@ -1,4 +1,4 @@
-import { HTTP } from 'koishi';
+import { Context, HTTP } from 'koishi';
 import { FormData, File } from 'formdata-node';
 import { BaseUploader } from './BaseUploader';
 import { resolveResource } from '../utils/utils';
@@ -6,13 +6,14 @@ import { writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { YunhuBot } from '../bot/bot';
+import { } from 'koishi-plugin-ffmpeg';
 
 // 视频上传器
 export class VideoUploader extends BaseUploader
 {
-    constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any, bot: YunhuBot)
+    constructor(http: HTTP, token: string, apiendpoint: string, bot: YunhuBot)
     {
-        super(http, token, apiendpoint, 'video', ffmpeg, bot);
+        super(http, token, apiendpoint, 'video', bot);
     }
 
     async upload(video: string | Buffer | any): Promise<string>
@@ -52,7 +53,7 @@ export class VideoUploader extends BaseUploader
                 writeFileSync(tempInput, buffer);
 
                 // 使用文件路径作为输入，输出到文件
-                await this.ffmpeg.builder()
+                await (this.bot.ctx as Context).ffmpeg.builder()
                     .input(tempInput)
                     .outputOption('-c:v', 'libx264')
                     .outputOption('-crf', '28')

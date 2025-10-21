@@ -12,8 +12,6 @@ export interface Config
     path_host: string;
     path?: string;
     cat?: string;
-    ffmpegPath?: string;
-    ffmpeg?: boolean;
     loggerinfo: boolean;
 }
 
@@ -40,20 +38,12 @@ export const Config: Schema<Config> = Schema.intersect([
     }).description('连接设置'),
 
     Schema.object({
-        ffmpeg: Schema.boolean()
-            .default(false)
-            .role('boolean')
-            .description('FFmpeg 是否启用视频压缩功能，启用后可发送视频消息，默认关闭'),
         _host: Schema.string()
             .default('http://127.0.0.1:5140/pic')
             .description('图片反代'),
         path_host: Schema.string()
             .default('/pic')
             .description('图片反代'),
-        ffmpegPath: Schema.string()
-            .description('FFmpeg 可执行文件路径')
-            .default('')
-            .role('path')
     }).description('进阶设置'),
 
     Schema.object({
