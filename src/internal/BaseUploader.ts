@@ -1,9 +1,8 @@
-import { HTTP, Logger } from 'koishi';
+import { HTTP } from 'koishi';
 import { FormData } from 'formdata-node';
 import axios, { AxiosRequestConfig } from 'axios';
 import { ResourceType } from '../utils/utils';
-
-const logger = new Logger('yunhu-uploader');
+import { YunhuBot } from '../bot/bot';
 
 // 上传基类
 export abstract class BaseUploader
@@ -15,7 +14,8 @@ export abstract class BaseUploader
         protected token: string,
         protected apiendpoint: string,
         protected resourceType: ResourceType,
-        protected ffmpeg: any // Koishi 的 ffmpeg 服务
+        protected ffmpeg: any, // Koishi 的 ffmpeg 服务
+        protected bot: YunhuBot
     )
     {
         // 设置不同资源类型的最大大小限制
@@ -43,15 +43,15 @@ export abstract class BaseUploader
                 throw new Error(`${this.resourceType}上传失败：${res.msg}，响应码${res.code}`);
             }
 
-            logger.info(`${this.resourceType}上传成功: key=${res.data[this.resourceType + 'Key']}`);
+            this.bot.logInfo(`${this.resourceType}上传成功: key=${res.data[this.resourceType + 'Key']}`);
             return res.data[this.resourceType + 'Key'];
         } catch (error: any)
         {
-            logger.error(`${this.resourceType}上传请求失败:`, error.message);
+            this.bot.loggerError(`${this.resourceType}上传请求失败:`, error.message);
             if (axios.isAxiosError(error) && error.response)
             {
-                logger.error(`Axios响应状态: ${error.response.status}`);
-                logger.error(`Axios响应体:`, error.response.data);
+                this.bot.loggerError(`Axios响应状态: ${error.response.status}`);
+                this.bot.loggerError(`Axios响应体:`, error.response.data);
             }
             throw new Error(`${this.resourceType}上传失败：${error.message}`);
         }

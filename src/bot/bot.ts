@@ -3,7 +3,7 @@ import { Config } from '../index';
 import * as Yunhu from '../utils/types';
 import Internal from './internal';
 import { YunhuMessageEncoder } from './message';
-import { YunhuServer } from './server';
+import { Webhook } from './ws';
 
 import { } from 'koishi-plugin-ffmpeg';
 
@@ -12,18 +12,23 @@ const logger = new Logger('yunhu');
 const YUNHU_API_PATH = '/open-apis/v1';
 const YUNHU_API_PATH_WEB = '/v1';
 
-export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
+export class YunhuBot extends Bot<Context, Config>
 {
     static inject = ['server', 'ffmpeg'];
     static MessageEncoder = YunhuMessageEncoder;
     public internal: Internal;
-    private Encoder: YunhuMessageEncoder<C>;
+    private Encoder: YunhuMessageEncoder;
+    private isDisposing = false;
+    private webhook: Webhook;
 
-    constructor(adapter: YunhuServer<C>, config: Config)
+    constructor(public ctx: Context, config: Config)
     {
-        super((adapter as any).ctx, config, 'yunhu');
+        super(ctx, config, 'yunhu');
         this.platform = 'yunhu';
         this.selfId = config.token;
+
+        // 日志输出插件启动
+        this.loggerInfo(`云湖适配器初始化，机器人ID: ${config.token}`);
 
         // 创建HTTP实例
         const http = this.ctx.http.extend({
@@ -36,8 +41,10 @@ export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
         });
 
         // 初始化内部接口，传入 ffmpeg 服务
-        this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ctx.ffmpeg);
-        this.Encoder = new YunhuMessageEncoder<C>(this, config.token);
+        this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this.ctx.ffmpeg, this);
+        this.Encoder = new YunhuMessageEncoder(this, config.token);
+        this.webhook = new Webhook(ctx, this);
+
         // 实现各种方法
         this.getGuildMember = async (guildId: string, userId: string) =>
         {
@@ -53,7 +60,7 @@ export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
                 };
             } catch (error)
             {
-                logger.error('获取群成员信息失败:', error);
+                this.loggerError('获取群成员信息失败:', error);
                 throw error;
             }
         };
@@ -71,7 +78,7 @@ export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
                 };
             } catch (error)
             {
-                logger.error('获取用户信息失败:', error);
+                this.loggerError('获取用户信息失败:', error);
                 throw error;
             }
         };
@@ -100,7 +107,7 @@ export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
                 }
             } catch (error)
             {
-                logger.error('获取群聊消息失败:', error);
+                this.loggerError('获取群聊消息失败:', error);
                 throw error;
             }
         };
@@ -112,11 +119,65 @@ export class YunhuBot<C extends Context = Context> extends Bot<C, Config>
                 return this.internal.deleteMessage(channelId, messageId);
             } catch (error)
             {
-                logger.error('撤回消息失败:', error);
+                this.loggerError('撤回消息失败:', error);
                 throw error;
             }
         };
 
         // 解析并设置 FFmpeg 路径
+    }
+
+    // 日志调试功能
+
+    logInfo(...args: any[])
+    {
+        if (this.config.loggerinfo)
+        {
+            (logger.info as (...args: any[]) => void)(...args);
+        }
+    }
+
+    loggerInfo(...args: any[])
+    {
+        (logger.info as (...args: any[]) => void)(...args);
+    }
+
+    loggerError(...args: any[])
+    {
+        (logger.error as (...args: any[]) => void)(...args);
+    }
+
+    // 设置 disposing 状态
+    setDisposing(disposing: boolean)
+    {
+        this.isDisposing = disposing;
+    }
+
+    // 启动机器人
+    async start()
+    {
+        this.loggerInfo('云湖机器人开始启动...');
+        await super.start();
+
+        // 启动 webhook 连接
+        try
+        {
+            await this.webhook.connect();
+            this.loggerInfo('Webhook 连接成功');
+        } catch (error)
+        {
+            this.loggerError('Webhook 连接失败:', error);
+            throw error;
+        }
+
+        this.loggerInfo('云湖机器人启动完成');
+    }
+
+    // 停止机器人
+    async stop()
+    {
+        this.loggerInfo('云湖机器人开始停止...');
+        await super.stop();
+        this.loggerInfo('云湖机器人已停止');
     }
 }

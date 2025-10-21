@@ -1,12 +1,11 @@
-import { HTTP, Dict, Logger } from 'koishi';
+import { HTTP, Dict } from 'koishi';
 import axios from 'axios';
 import * as Types from '../utils/types';
 import { FormatType } from '../utils/utils';
 import { ImageUploader } from '../internal/ImageUploader';
 import { VideoUploader } from '../internal/VideoUploader';
 import { FileUploader } from '../internal/FileUploader';
-
-const logger = new Logger('yunhu-internal');
+import { YunhuBot } from './bot';
 
 // 主类
 export default class Internal
@@ -14,18 +13,21 @@ export default class Internal
   private imageUploader: ImageUploader;
   private videoUploader: VideoUploader;
   private fileUploader: FileUploader;
+  private bot: YunhuBot;
 
   constructor(
     private http: HTTP,
     private httpWeb: HTTP,
     private token: string,
     private apiendpoint: string,
-    private ffmpeg: any // Koishi 的 ffmpeg 服务
+    private ffmpeg: any, // Koishi 的 ffmpeg 服务
+    bot: YunhuBot
   )
   {
-    this.imageUploader = new ImageUploader(http, token, apiendpoint, ffmpeg);
-    this.videoUploader = new VideoUploader(http, token, apiendpoint, ffmpeg);
-    this.fileUploader = new FileUploader(http, token, apiendpoint, ffmpeg);
+    this.bot = bot;
+    this.imageUploader = new ImageUploader(http, token, apiendpoint, ffmpeg, bot);
+    this.videoUploader = new VideoUploader(http, token, apiendpoint, ffmpeg, bot);
+    this.fileUploader = new FileUploader(http, token, apiendpoint, ffmpeg, bot);
   }
 
   sendMessage(payload: Dict)
@@ -57,7 +59,7 @@ export default class Internal
     const chatType = chatId.split(':')[1];
     const id = chatId.split(':')[0];
     const payload = { msgId, id, chatType };
-    logger.info(`撤回消息: ${JSON.stringify(payload)}`);
+    this.bot.logInfo(`撤回消息: ${JSON.stringify(payload)}`);
     return this.http.post(`/bot/recall?token=${this.token}`, payload);
   }
   async getGuild(guildId: string): Promise<Types.GroupInfo>
@@ -76,7 +78,7 @@ export default class Internal
     const chatType = chatId.split(':')[1];
     const Id = chatId.split(':')[0];
     const { before, after } = options;
-    logger.warn(chatId);
+    this.bot.logInfo(`获取消息列表，chatId: ${chatId}`);
     const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`;
     return this.http.get(url);
   }
@@ -109,7 +111,7 @@ export default class Internal
       return `data:${contentType};base64,${base64}`;
     } catch (error)
     {
-      console.error('获取图片失败:', error);
+      this.bot.loggerError('获取图片失败:', error);
       throw new Error(`无法获取图片: ${error.message}`);
     }
   }

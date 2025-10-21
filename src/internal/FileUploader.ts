@@ -2,13 +2,14 @@ import { HTTP } from 'koishi';
 import { FormData, File } from 'formdata-node';
 import { BaseUploader } from './BaseUploader';
 import { resolveResource } from '../utils/utils';
+import { YunhuBot } from '../bot/bot';
 
 // 文件上传器
 export class FileUploader extends BaseUploader
 {
-    constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any)
+    constructor(http: HTTP, token: string, apiendpoint: string, ffmpeg: any, bot: YunhuBot)
     {
-        super(http, token, apiendpoint, 'file', ffmpeg);
+        super(http, token, apiendpoint, 'file', ffmpeg, bot);
     }
 
     async upload(fileData: string | Buffer | any): Promise<string>

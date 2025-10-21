@@ -23,8 +23,7 @@ export class Webhook
 
             // 使用类型断言获取请求体
             const payload: Yunhu.YunhuEvent = (ctx.request as any).body;
-            logger.info('Received payload:');
-            logger.info(payload);
+            this.bot.loggerInfo('Received payload:', payload);
 
             // 确保机器人处于在线状态
             if (this.bot.status !== Universal.Status.ONLINE)
