@@ -13,6 +13,10 @@ export const inject = {
   optional: ['ffmpeg']
 };
 
+export const usage = `
+---
+`;
+
 export function apply(ctx: Context, config: Config)
 {
   let isDisposing = false;
