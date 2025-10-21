@@ -1,120 +1,138 @@
-import { Adapter, Context, Logger, Bot, SessionError, h, Schema, Universal, Binary } from 'koishi'
-import * as Yunhu from './types'
-import { adaptSession } from './utils'
-import { } from '@koishijs/plugin-server'
-import { } from 'koishi-plugin-ffmpeg'
-import Internal from './internal'
-import { YunhuMessageEncoder } from './message'
+import { Adapter, Context, Logger, Bot, SessionError, h, Schema, Universal, Binary } from 'koishi';
+import * as Yunhu from './types';
+import { adaptSession } from './utils';
+import { } from '@koishijs/plugin-server';
+import { } from 'koishi-plugin-ffmpeg';
+import Internal from './internal';
+import { YunhuMessageEncoder } from './message';
 
-const logger = new Logger('yunhu')
+const logger = new Logger('yunhu');
 
 // 默认的云湖 API 地址
-const YUNHU_ENDPOINT = 'https://chat-go.jwzhd.com'
-const YUNHU_ENDPOINT_WEB = 'https://chat-web-go.jwzhd.com'
-const YUNHU_API_PATH = '/open-apis/v1'
-const YUNHU_API_PATH_WEB = '/v1'
+const YUNHU_ENDPOINT = 'https://chat-go.jwzhd.com';
+const YUNHU_ENDPOINT_WEB = 'https://chat-web-go.jwzhd.com';
+const YUNHU_API_PATH = '/open-apis/v1';
+const YUNHU_API_PATH_WEB = '/v1';
 
-export const name = 'yunhu'
-export const inject = ['ffmpeg']
+export const name = 'yunhu';
+export const inject = ['ffmpeg'];
 
-class YunhuBot<C extends Context = Context> extends Bot<C> {
-  static inject = ['server', 'ffmpeg']
-  static MessageEncoder = YunhuMessageEncoder
-  public internal: Internal
-  private Encoder: YunhuMessageEncoder<C>
+class YunhuBot<C extends Context = Context> extends Bot<C>
+{
+  static inject = ['server', 'ffmpeg'];
+  static MessageEncoder = YunhuMessageEncoder;
+  public internal: Internal;
+  private Encoder: YunhuMessageEncoder<C>;
 
-  constructor(ctx: C, config: YunhuBot.Config) {
-    super(ctx, config, 'yunhu')
+  constructor(ctx: C, config: YunhuBot.Config)
+  {
+    super(ctx, config, 'yunhu');
 
-    this.platform = 'yunhu'
-    this.selfId = config.token
+    this.platform = 'yunhu';
+    this.selfId = config.token;
 
     // 创建HTTP实例
     const http = ctx.http.extend({
       endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
-    })
+    });
 
     // 爬虫/抓包接口
     const httpWeb = ctx.http.extend({
       endpoint: `${this.config.endpointweb}${YUNHU_API_PATH_WEB}`,
-    })
+    });
 
     // 初始化内部接口，传入 ffmpeg 服务
-    this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, ctx.ffmpeg)
-    this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
+    this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, ctx.ffmpeg);
+    this.Encoder = new YunhuMessageEncoder<C>(this, config.token);
     // 实现各种方法
-    this.getGuildMember = async (guildId: string, userId: string) => {
-      try {
-        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse
+    this.getGuildMember = async (guildId: string, userId: string) =>
+    {
+      try
+      {
+        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
         return {
           "id": _payload.data.user.userId,
           "name": _payload.data.user.nickname,
           'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl,
           "tag": _payload.data.user.nickname,
           "isBot": false
-        }
-      } catch (error) {
-        logger.error('获取群成员信息失败:', error)
-        throw error
+        };
+      } catch (error)
+      {
+        logger.error('获取群成员信息失败:', error);
+        throw error;
       }
-    }
-    this.getUser = async (userId: string) => {
-      try {
-        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse
+    };
+    this.getUser = async (userId: string) =>
+    {
+      try
+      {
+        const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
         return {
           "id": _payload.data.user.userId,
           "name": _payload.data.user.nickname,
           'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl,
           "tag": _payload.data.user.nickname,
           "isBot": false
-        }
-      } catch (error) {
-        logger.error('获取用户信息失败:', error)
-        throw error
+        };
+      } catch (error)
+      {
+        logger.error('获取用户信息失败:', error);
+        throw error;
       }
-    }
-    this.getGuild = async (guildId: string) => {
-      try {
-        const chatType = guildId.split(':')[1]
-        const Id = guildId.split(':')[0]
-        if (chatType == 'group') {
-          const _payload = await this.internal.getGuild(Id)
+    };
+    this.getGuild = async (guildId: string) =>
+    {
+      try
+      {
+        const chatType = guildId.split(':')[1];
+        const Id = guildId.split(':')[0];
+        if (chatType == 'group')
+        {
+          const _payload = await this.internal.getGuild(Id);
           return {
             "id": _payload.data.group.groupId + ':' + chatType,
             "name": _payload.data.group.name,
             'avatar': this.config._host + "?url=" + _payload.data.group.avatarUrl
-          }
-        } else {
-          const _payload = await this.internal.getUser(Id)
+          };
+        } else
+        {
+          const _payload = await this.internal.getUser(Id);
           return {
             "id": _payload.data.user.userId + ':' + chatType,
             "name": _payload.data.user.nickname,
             'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl
-          }
+          };
         }
-      } catch (error) {
-        logger.error('获取群聊消息失败:', error)
-        throw error
+      } catch (error)
+      {
+        logger.error('获取群聊消息失败:', error);
+        throw error;
       }
-    }
+    };
     // 实现消息撤回功能
-    this.deleteMessage = async (channelId: string, messageId: string) => {
-      try {
-        return this.internal.deleteMessage(channelId, messageId)
-      } catch (error) {
-        logger.error('撤回消息失败:', error)
-        throw error
+    this.deleteMessage = async (channelId: string, messageId: string) =>
+    {
+      try
+      {
+        return this.internal.deleteMessage(channelId, messageId);
+      } catch (error)
+      {
+        logger.error('撤回消息失败:', error);
+        throw error;
       }
-    }
+    };
 
     // 注册服务器插件
-    ctx.plugin(YunhuServer, this)
+    ctx.plugin(YunhuServer, this);
     // 解析并设置 FFmpeg 路径
   }
 }
-class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
+class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>>
+{
   // 根据文件扩展名获取内容类型
-  private getContentType(extension: string): string {
+  private getContentType(extension: string): string
+  {
     const typeMap = {
       // Image types
       'jpg': 'image/jpeg',
@@ -161,31 +179,36 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
       'json': 'application/json',
       'html': 'text/html',
       'htm': 'text/html'
-    }
+    };
 
-    function getContentType(extension: string): string {
+    function getContentType(extension: string): string
+    {
       return typeMap[extension.toLowerCase()] || 'application/octet-stream';
     }
 
 
-    return typeMap[extension] || 'application/octet-stream'
+    return typeMap[extension] || 'application/octet-stream';
   }
-  async connect(bot: YunhuBot) {
-    await this.initialize(bot)
+  async connect(bot: YunhuBot)
+  {
+    await this.initialize(bot);
 
     // 爬虫/抓包接口
 
     // 设置消息事件监听
-    this.ctx.on('send', (session) => {
-      logger.info(`New message: ${session.messageId} in channel: ${session.channelId}`)
-    })
+    this.ctx.on('send', (session) =>
+    {
+      logger.info(`New message: ${session.messageId} in channel: ${session.channelId}`);
+    });
 
     // 注册Webhook路由
-    bot.ctx.server.get(`${bot.config.path_host}`, async (ctx) => {
+    bot.ctx.server.get(`${bot.config.path_host}`, async (ctx) =>
+    {
       ctx.status = 200;
       const targetUrl = ctx.query?.url as string | undefined;
 
-      if (!targetUrl) {
+      if (!targetUrl)
+      {
         ctx.status = 400;
         ctx.body = 'Missing URL parameter. Usage: /proxy?url=目标URL';
         return;
@@ -193,20 +216,24 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
 
       // 解码URL
       let decodedUrl: string;
-      try {
+      try
+      {
         decodedUrl = decodeURIComponent(targetUrl);
-        if (!decodedUrl.startsWith('http')) {
+        if (!decodedUrl.startsWith('http'))
+        {
           ctx.status = 400;
           ctx.body = 'Invalid URL. Must start with http or https.';
           return;
         }
-      } catch (e) {
+      } catch (e)
+      {
         ctx.status = 400;
         ctx.body = 'Invalid URL encoding.';
         return;
       }
 
-      try {
+      try
+      {
         // 获取文件扩展名
         const urlObj = new URL(decodedUrl);
         const pathname = urlObj.pathname;
@@ -237,13 +264,15 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
         if (!contentType.startsWith('image/') &&
           !contentType.startsWith('video/') &&
           !contentType.startsWith('audio/') &&
-          !contentType.startsWith('text/')) {
+          !contentType.startsWith('text/'))
+        {
           const filename = pathname.split('/').pop() || 'file';
           ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
         }
 
         ctx.body = Buffer.from(response);
-      } catch (error) {
+      } catch (error)
+      {
         logger.error(`Proxy request failed: ${error.message}`);
         ctx.status = 500;
         ctx.body = `Proxy Error: ${error.message}`;
@@ -251,45 +280,53 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
     });
 
     // 处理Webhook请求
-    bot.ctx.server.post(bot.config.path, async (ctx) => {
-      ctx.status = 200
+    bot.ctx.server.post(bot.config.path, async (ctx) =>
+    {
+      ctx.status = 200;
 
       // 使用类型断言获取请求体
-      const payload: Yunhu.YunhuEvent = (ctx.request as any).body
-      logger.info('Received payload:')
-      logger.info(payload)
+      const payload: Yunhu.YunhuEvent = (ctx.request as any).body;
+      logger.info('Received payload:');
+      logger.info(payload);
 
       // 确保机器人处于在线状态
-      if (bot.status !== Universal.Status.ONLINE) {
-        await this.initialize(bot)
+      if (bot.status !== Universal.Status.ONLINE)
+      {
+        await this.initialize(bot);
       }
 
       // 转换并分发会话
-      const session = adaptSession(bot, payload)
-      if (session) {
-        bot.dispatch(await session)
+      const session = adaptSession(bot, payload);
+      if (session)
+      {
+        bot.dispatch(await session);
       }
 
       // 返回成功响应
-      ctx.body = { code: 0, message: 'success' }
-    })
+      ctx.body = { code: 0, message: 'success' };
+    });
   }
 
   // 初始化机器人状态
-  async initialize(bot: YunhuBot) {
-    try {
-      bot.online()
-      logger.info(`Bot ${bot.selfId} is now online`)
-    } catch (e) {
-      logger.warn(`Failed to initialize bot: ${e.message}`)
-      bot.offline()
+  async initialize(bot: YunhuBot)
+  {
+    try
+    {
+      bot.online();
+      logger.info(`Bot ${bot.selfId} is now online`);
+    } catch (e)
+    {
+      logger.warn(`Failed to initialize bot: ${e.message}`);
+      bot.offline();
     }
   }
 }
 
 // 配置命名空间
-namespace YunhuBot {
-  export interface Config {
+namespace YunhuBot
+{
+  export interface Config
+  {
     token: string;
     endpoint?: string;
     endpointweb?: string;
@@ -334,8 +371,8 @@ namespace YunhuBot {
       .description('FFmpeg 可执行文件路径')
       .default('')
       .role('path')
-  })
+  });
 }
 
 // 默认导出 YunhuBot 类
-export default YunhuBot
+export default YunhuBot;
