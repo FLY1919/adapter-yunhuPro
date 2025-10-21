@@ -21,14 +21,14 @@
     "FLY1919 <qw687255511@163.com>",
     "WindyPear-Team <hjrlluobo2h@qq.com>"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/FLY1919/adapter-yunhupro.git"
-  },
-  "homepage": "https://github.com/FLY1919/adapter-yunhupro",
   "scripts": {
     "build": "tsc",
     "pub": "npm run build && npm publish"
+  },
+  "homepage": "https://github.com/FLY1919/adapter-yunhupro",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLY1919/adapter-yunhupro.git"
   },
   "bugs": {
     "url": "https://github.com/FLY1919/adapter-yunhupro/issues"
