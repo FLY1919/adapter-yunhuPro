@@ -20,31 +20,31 @@ interface CheckChatInfoRecord {
 }
 
 interface Medal {
-    id: number;
-    name: string;
-    desc: string;
-    imageUrl: string;
-    sort: number;
+  id: number;
+  name: string;
+  desc: string;
+  imageUrl: string;
+  sort: number;
 }
 
 interface User {
-    userId: string;
-    nickname: string;
-    avatarUrl: string;
-    registerTime: number;
-    registerTimeText: string;
-    onLineDay: number;
-    continuousOnLineDay: number;
-    medals: Medal[];
-    isVip: number;
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
+  registerTime: number;
+  registerTimeText: string;
+  onLineDay: number;
+  continuousOnLineDay: number;
+  medals: Medal[];
+  isVip: number;
 }
 
 export interface UserInfoResponse {
-    code: number;
-    data: {
-        user: User;
-    };
-    msg: string;
+  code: number;
+  data: {
+    user: User;
+  };
+  msg: string;
 }
 
 interface Bot {
@@ -153,13 +153,13 @@ export interface Button {
 }
 
 export interface YunhuEvent {
-    version: string;
-    header: {
-        eventId: string;
-        eventTime: number;
-        eventType: string;
-    };
-    event: Event; // 根据事件类型定义更详细的结构
+  version: string;
+  header: {
+    eventId: string;
+    eventTime: number;
+    eventType: string;
+  };
+  event: Event; // 根据事件类型定义更详细的结构
 }
 
 export interface Sender {
@@ -236,8 +236,8 @@ export interface GroupDisbandedEvent {
 }
 
 // 联合类型，表示所有可能的事件
-export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent | 
-                   GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent;
+export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent |
+  GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent;
 
 export interface Chat {
   chatId: string
@@ -276,25 +276,25 @@ export interface UploaderOptions {
 
 
 export interface Message {
-    msgId: string;
-    parentId?: string;
-    senderId: string;
-    senderType: string;
-    senderNickname: string;
-    contentType: Message['contentType'];
-    content: Content
-    sendTime: number;
-    commandName?: string;
-    commandId?: number;
+  msgId: string;
+  parentId?: string;
+  senderId: string;
+  senderType: string;
+  senderNickname: string;
+  contentType: Message['contentType'];
+  content: Content
+  sendTime: number;
+  commandName?: string;
+  commandId?: number;
 }
 
 interface ResponseData {
-    list: Message[];
-    total: number;
+  list: Message[];
+  total: number;
 }
 
 export interface ApiResponse {
-    code: number;
-    data: ResponseData;
-    msg: string;
+  code: number;
+  data: ResponseData;
+  msg: string;
 }

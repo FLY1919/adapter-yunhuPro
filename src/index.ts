@@ -17,7 +17,7 @@ const YUNHU_API_PATH_WEB = '/v1'
 export const name = 'yunhu'
 export const inject = ['ffmpeg']
 
-class YunhuBot<C extends Context = Context > extends Bot<C> {
+class YunhuBot<C extends Context = Context> extends Bot<C> {
   static inject = ['server', 'ffmpeg']
   static MessageEncoder = YunhuMessageEncoder
   public internal: Internal
@@ -25,7 +25,7 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
 
   constructor(ctx: C, config: YunhuBot.Config) {
     super(ctx, config, 'yunhu')
-    
+
     this.platform = 'yunhu'
     this.selfId = config.token
 
@@ -33,12 +33,12 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
     const http = ctx.http.extend({
       endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
     })
-    
+
     // 爬虫/抓包接口
     const httpWeb = ctx.http.extend({
       endpoint: `${this.config.endpointweb}${YUNHU_API_PATH_WEB}`,
     })
-    
+
     // 初始化内部接口，传入 ffmpeg 服务
     this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, ctx.ffmpeg)
     this.Encoder = new YunhuMessageEncoder<C>(this, config.token)
@@ -68,7 +68,7 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
           "tag": _payload.data.user.nickname,
           "isBot": false
         }
-      }catch (error){
+      } catch (error) {
         logger.error('获取用户信息失败:', error)
         throw error
       }
@@ -92,7 +92,7 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
             'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl
           }
         }
-      }catch (error){
+      } catch (error) {
         logger.error('获取群聊消息失败:', error)
         throw error
       }
@@ -106,7 +106,7 @@ class YunhuBot<C extends Context = Context > extends Bot<C> {
         throw error
       }
     }
-    
+
     // 注册服务器插件
     ctx.plugin(YunhuServer, this)
     // 解析并设置 FFmpeg 路径
@@ -172,7 +172,7 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
   }
   async connect(bot: YunhuBot) {
     await this.initialize(bot)
-    
+
     // 爬虫/抓包接口
 
     // 设置消息事件监听
@@ -182,78 +182,78 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
 
     // 注册Webhook路由
     bot.ctx.server.get(`${bot.config.path_host}`, async (ctx) => {
-    ctx.status = 200;
-    const targetUrl = ctx.query?.url as string | undefined;
+      ctx.status = 200;
+      const targetUrl = ctx.query?.url as string | undefined;
 
-    if (!targetUrl) {
-      ctx.status = 400;
-      ctx.body = 'Missing URL parameter. Usage: /proxy?url=目标URL';
-      return;
-    }
-
-    // 解码URL
-    let decodedUrl: string;
-    try {
-      decodedUrl = decodeURIComponent(targetUrl);
-      if (!decodedUrl.startsWith('http')) {
+      if (!targetUrl) {
         ctx.status = 400;
-        ctx.body = 'Invalid URL. Must start with http or https.';
+        ctx.body = 'Missing URL parameter. Usage: /proxy?url=目标URL';
         return;
       }
-    } catch (e) {
-      ctx.status = 400;
-      ctx.body = 'Invalid URL encoding.';
-      return;
-    }
 
-    try {
-      // 获取文件扩展名
-      const urlObj = new URL(decodedUrl);
-      const pathname = urlObj.pathname;
-      const extension = pathname.includes('.') 
-        ? pathname.split('.').pop()?.toLowerCase() || ''
-        : '';
+      // 解码URL
+      let decodedUrl: string;
+      try {
+        decodedUrl = decodeURIComponent(targetUrl);
+        if (!decodedUrl.startsWith('http')) {
+          ctx.status = 400;
+          ctx.body = 'Invalid URL. Must start with http or https.';
+          return;
+        }
+      } catch (e) {
+        ctx.status = 400;
+        ctx.body = 'Invalid URL encoding.';
+        return;
+      }
 
-      // 设置请求头
-      const headers: Record<string, string> = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      };
-      headers['Referer'] = `www.yhchat.com`;
-    
+      try {
+        // 获取文件扩展名
+        const urlObj = new URL(decodedUrl);
+        const pathname = urlObj.pathname;
+        const extension = pathname.includes('.')
+          ? pathname.split('.').pop()?.toLowerCase() || ''
+          : '';
 
-      // 使用Koishi的HTTP客户端发起请求
-      const response = await this.ctx.http.get(decodedUrl, {
-        headers,
-        responseType: 'arraybuffer',
-        timeout: 30000 // 30秒超时
-      });
+        // 设置请求头
+        const headers: Record<string, string> = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        };
+        headers['Referer'] = `www.yhchat.com`;
 
-      // 设置内容类型
-      const contentType = this.getContentType(extension);
-      ctx.set('Content-Type', contentType);
-      
-      // 对于可预览的文件类型，直接在浏览器中显示
-      // 对于其他类型，设置为附件下载
-      if (!contentType.startsWith('image/') && 
-          !contentType.startsWith('video/') && 
+
+        // 使用Koishi的HTTP客户端发起请求
+        const response = await this.ctx.http.get(decodedUrl, {
+          headers,
+          responseType: 'arraybuffer',
+          timeout: 30000 // 30秒超时
+        });
+
+        // 设置内容类型
+        const contentType = this.getContentType(extension);
+        ctx.set('Content-Type', contentType);
+
+        // 对于可预览的文件类型，直接在浏览器中显示
+        // 对于其他类型，设置为附件下载
+        if (!contentType.startsWith('image/') &&
+          !contentType.startsWith('video/') &&
           !contentType.startsWith('audio/') &&
           !contentType.startsWith('text/')) {
-        const filename = pathname.split('/').pop() || 'file';
-        ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
+          const filename = pathname.split('/').pop() || 'file';
+          ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
+        }
+
+        ctx.body = Buffer.from(response);
+      } catch (error) {
+        logger.error(`Proxy request failed: ${error.message}`);
+        ctx.status = 500;
+        ctx.body = `Proxy Error: ${error.message}`;
       }
-      
-      ctx.body = Buffer.from(response);
-    } catch (error) {
-      logger.error(`Proxy request failed: ${error.message}`);
-      ctx.status = 500;
-      ctx.body = `Proxy Error: ${error.message}`;
-    }
-  });
-    
+    });
+
     // 处理Webhook请求
     bot.ctx.server.post(bot.config.path, async (ctx) => {
       ctx.status = 200
-      
+
       // 使用类型断言获取请求体
       const payload: Yunhu.YunhuEvent = (ctx.request as any).body
       logger.info('Received payload:')
@@ -269,7 +269,7 @@ class YunhuServer<C extends Context> extends Adapter<C, YunhuBot<C>> {
       if (session) {
         bot.dispatch(await session)
       }
-      
+
       // 返回成功响应
       ctx.body = { code: 0, message: 'success' }
     })
@@ -293,8 +293,8 @@ namespace YunhuBot {
     token: string;
     endpoint?: string;
     endpointweb?: string;
-    _host:string;
-    path_host:string;
+    _host: string;
+    path_host: string;
     path?: string;
     cat?: string;
     ffmpegPath?: string;
@@ -315,11 +315,11 @@ namespace YunhuBot {
     endpointweb: Schema.string()
       .default(YUNHU_ENDPOINT_WEB)
       .description('云湖 API 地址，默认无需修改'),
-    
+
     path: Schema.string()
       .default('/yunhu')
       .description('Webhook 接收路径'),
-    
+
     cat: Schema.string()
       .default('猫娘')
       .description('她很可爱，你可以摸摸'),
@@ -329,7 +329,7 @@ namespace YunhuBot {
     path_host: Schema.string()
       .default('/pic')
       .description('图片反代'),
-     
+
     ffmpegPath: Schema.string()
       .description('FFmpeg 可执行文件路径')
       .default('')

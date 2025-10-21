@@ -231,7 +231,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     this.switch_message = false
                     await this.render(children)
                     this.switch_message = true
-                }else if(!this.switch_message){
+                } else if (!this.switch_message) {
                     await this.render(children)
 
                 }
