@@ -1,13 +1,5 @@
 import { Dict, HTTP } from "koishi";
 
-// types.ts
-export interface YunhuConfig
-{
-  token: string;
-  endpoint?: string; // 可选，如果不是默认 endpoint 的话
-  path?: string;     // 可选，云湖平台推送回调的路径
-}
-
 interface CheckChatInfoRecord
 {
   id: number;

@@ -1,16 +1,15 @@
 import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 import * as Yunhu from './types';
-import YunhuBot, { name } from './';
+import { YunhuBot } from '../bot/bot';
 import * as mime from 'mime-types';
 import path from 'path';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import { ResourceResult } from './types';
 
-import Internal from './internal';
+import Internal from '../bot/internal';
 
 export * from './types';
 
-const logger = new Logger('yunhu-utils');
 const URL = "https://chat-img.jwznb.com/";
 
 // 将云湖用户信息转换为Koishi通用用户格式
@@ -64,11 +63,10 @@ export const decodeMessage = async (
         const parentMessage = res.data.list[0];
 
         // 创建一个临时的 session 对象用于处理父消息
-        const tempSession = {
-          channelId: session.channelId,
-          config: config,
-          quote: {}
-        } as any;
+        // 创建一个临时的 session 对象用于处理父消息
+        const tempSession = session.bot.session(session.event);
+        tempSession.channelId = session.channelId;
+
 
         // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
         const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
@@ -89,11 +87,11 @@ export const decodeMessage = async (
           }
         };
 
-        logger.info('引用消息处理成功，elements:', session.quote);
+        (session.bot as YunhuBot).logInfo('引用消息处理成功，elements:', session.quote);
       }
     } catch (error)
     {
-      logger.error('获取引用消息失败:', error);
+      (session.bot as YunhuBot).loggerError('获取引用消息失败:', error);
       // 即使获取失败也设置基本的引用信息
       session.event.message.quote = {
         "id": message.parentId,
@@ -117,7 +115,7 @@ export const decodeMessage = async (
           userMap.set(id, user.data.user.nickname);
         } catch (error)
         {
-          logger.error(`获取用户信息失败: ${id}`, error);
+          (session.bot as YunhuBot).loggerError(`获取用户信息失败: ${id}`, error);
         }
       })
     );
@@ -263,7 +261,7 @@ function transformElements(elements: any[])
 }
 
 // 适配会话，将云湖事件转换为Koishi会话
-export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>, input: Yunhu.YunhuEvent)
+export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 {
   const session = bot.session();
   const Internal = bot.internal;
@@ -347,16 +345,13 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
       // session.quote.id = message.parentId? message.parentId : undefined
 
 
-      // logger.info(message)
-
-
+      bot.logInfo('收到原始消息:', message);
       // 转换消息内容为Koishi格式
       const demessage = await decodeMessage(message, Internal, session, bot.config);
       session.event.message.id = demessage.id;
       session.event.message.content = demessage.content;
       session.event.message.elements = demessage.elements;
-      logger.info(`已转换为koishi消息格式:`);
-      logger.info(session);
+      bot.logInfo(`已转换为koishi消息格式:`, session);
 
       break;
     }
@@ -428,7 +423,7 @@ export async function adaptSession<C extends Context = Context>(bot: YunhuBot<C>
 
     // 未知事件类型
     default:
-      bot.logger.debug(`未处理的事件类型: ${input.header.eventType}`);
+      bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
       return; // 忽略未知事件
   }
 

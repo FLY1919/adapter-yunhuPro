@@ -1,7 +1,7 @@
 import { image } from '@satorijs/element/jsx-runtime';
-import YunhuBot from './';
+import { YunhuBot } from './bot';
 //import { decodeMessage } from './utils'
-import * as Yunhu from './types';
+import * as Yunhu from '../utils/types';
 import { Context, h, Dict, MessageEncoder, Logger } from 'koishi';
 
 const logger = new Logger('yunhu-message');
@@ -10,7 +10,7 @@ const logger = new Logger('yunhu-message');
 
 //我们需要明白text->markdown->html的转换关系
 // 以及图片、视频、文件等资源的上传和引用方式
-export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, YunhuBot<C>>
+export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
 {
     // 使用 payload 存储待发送的消息
     private payload: Dict;
@@ -145,7 +145,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     //this.payload.content.text += await this.bot.internal.uploadImageUrl(attrs.src)
                 } catch (error)
                 {
-                    this.bot.logger.error(`图片上传失败: ${error}`);
+                    this.bot.loggerError(`图片上传失败: ${error}`);
                     // 降级为文本处理
                     this.markdown += this.sendType != "html" ? '~~[图片上传失败]~~ ' : '';
                     this.html += `<span style ="color: red;">美少女大失败</span>`;
@@ -232,7 +232,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     }
                 } catch (error)
                 {
-                    this.bot.logger.error(`文件上传失败: ${error}`);
+                    this.bot.loggerError(`文件上传失败: ${error}`);
                     this.sendType = 'text';
                     this.text += `[文件上传失败]`;
                 }
@@ -251,7 +251,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
                     await this.flush();
                 } catch (error)
                 {
-                    this.bot.logger.error(`视频上传失败: ${error}`);
+                    this.bot.loggerError(`视频上传失败: ${error}`);
                     this.sendType = 'text';
                     this.text += `[视频上传失败]`;
                     await this.flush();
@@ -447,7 +447,7 @@ export class YunhuMessageEncoder<C extends Context> extends MessageEncoder<C, Yu
             }
             else
             {
-                this.bot.logger.warn(`未知消息元素类型: ${type}`);
+                this.bot.loggerError(`未知消息元素类型: ${type}`);
                 await this.render(children);
             }
 
