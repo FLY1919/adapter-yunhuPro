@@ -1,34 +1,34 @@
 import { Schema } from 'koishi';
 
-export interface Config
+export interface BotTableItem
 {
     botId: string;
     token: string;
+    path: string;
+}
+
+export interface Config
+{
     endpoint?: string;
     endpointweb?: string;
-    path?: string;
     loggerinfo: boolean;
+    botTable: BotTableItem[];
 }
 
 export const Config: Schema<Config> = Schema.intersect([
     Schema.object({
-        botId: Schema.string()
-            .required()
-            .description('机器人账号ID'),
-        token: Schema.string()
-            .required()
-            .description('机器人 Token')
-            .role('secret'),
         botTable: Schema.array(Schema.object({
             botId: Schema.string()
+                .required()
                 .description('机器人账号ID'),
             token: Schema.string()
+                .required()
                 .description('机器人 Token')
                 .role('secret'),
             path: Schema.string()
                 .default('/yunhu')
                 .description('Webhook 接收路径'),
-        })).role('table'),
+        })).role('table').description('机器人列表'),
     }).description('基础设置'),
 
     Schema.object({
@@ -40,9 +40,6 @@ export const Config: Schema<Config> = Schema.intersect([
             .default('https://chat-web-go.jwzhd.com')
             .description('云湖 API 地址，默认无需修改')
             .role('link'),
-        path: Schema.string()
-            .default('/yunhu')
-            .description('Webhook 接收路径'),
     }).description('连接设置'),
 
     Schema.object({

@@ -86,6 +86,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         {
             this.payload.content.text = this.html;
         }
+        this.bot.logInfo(this.payload);
         message = await this.bot.internal.sendMessage(this.payload);
 
         await this.addResult(message);

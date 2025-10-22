@@ -1,9 +1,8 @@
 import { Bot, Context, Logger } from 'koishi';
-import { Config } from '../index';
+import { BotTableItem, Config } from '../config';
 import * as Yunhu from '../utils/types';
 import Internal from './internal';
 import { YunhuMessageEncoder } from './message';
-import { Webhook } from './ws';
 
 const logger = new Logger('yunhu');
 
@@ -17,16 +16,14 @@ export class YunhuBot extends Bot<Context, Config>
     public internal: Internal;
     private Encoder: YunhuMessageEncoder;
     private isDisposing = false;
-    private webhook: Webhook;
+    public botConfig: BotTableItem;
 
-    constructor(public ctx: Context, config: Config)
+    constructor(public ctx: Context, botConfig: BotTableItem, config: Config)
     {
         super(ctx, config, 'yunhu');
         this.platform = 'yunhu';
-        this.selfId = config.token;
-
-        // 日志输出插件启动
-        this.loggerInfo(`云湖适配器初始化，机器人ID: ${config.token}`);
+        this.selfId = botConfig.botId;
+        this.botConfig = botConfig;
 
         // 创建HTTP实例
         const http = this.ctx.http.extend({
@@ -39,9 +36,8 @@ export class YunhuBot extends Bot<Context, Config>
         });
 
         // 初始化内部接口
-        this.internal = new Internal(http, httpWeb, config.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this);
-        this.Encoder = new YunhuMessageEncoder(this, config.token);
-        this.webhook = new Webhook(ctx, this);
+        this.internal = new Internal(http, httpWeb, botConfig.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this);
+        this.Encoder = new YunhuMessageEncoder(this, botConfig.token);
 
         // 实现各种方法
         this.getGuildMember = async (guildId: string, userId: string) =>
@@ -153,28 +149,12 @@ export class YunhuBot extends Bot<Context, Config>
     // 启动机器人
     async start()
     {
-        this.loggerInfo('云湖机器人开始启动...');
         await super.start();
-
-        // 启动 webhook 连接
-        try
-        {
-            await this.webhook.connect();
-            this.loggerInfo('Webhook 连接成功');
-        } catch (error)
-        {
-            this.loggerError('Webhook 连接失败:', error);
-            throw error;
-        }
-
-        this.loggerInfo('云湖机器人启动完成');
     }
 
     // 停止机器人
     async stop()
     {
-        this.loggerInfo('云湖机器人开始停止...');
         await super.stop();
-        this.loggerInfo('云湖机器人已停止');
     }
 }
