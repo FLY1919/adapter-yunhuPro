@@ -5,7 +5,6 @@ import Internal from './internal';
 import { YunhuMessageEncoder } from './message';
 import { Webhook } from './ws';
 
-
 const logger = new Logger('yunhu');
 
 const YUNHU_API_PATH = '/open-apis/v1';

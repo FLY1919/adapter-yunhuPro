@@ -7,7 +7,6 @@ import { Context, h, Dict, MessageEncoder, Logger } from 'koishi';
 const logger = new Logger('yunhu-message');
 
 
-
 //我们需要明白text->markdown->html的转换关系
 // 以及图片、视频、文件等资源的上传和引用方式
 export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
@@ -94,7 +93,6 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         await reset.call(this);
     }
 
-
     // 遍历消息元素
     async visit(element: h)
     {
@@ -139,7 +137,6 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                         this.payload.content.imageKey = img.imagekey;
                         this.payload.contentType = 'image';
                     }
-
 
 
                     //this.payload.content.text += await this.bot.internal.uploadImageUrl(attrs.src)

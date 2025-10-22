@@ -1,9 +1,7 @@
 import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 import * as Yunhu from './types';
 import { YunhuBot } from '../bot/bot';
-import * as mime from 'mime-types';
 import path from 'path';
-import { fileFromPath } from 'formdata-node/file-from-path';
 import { ResourceResult } from './types';
 
 import Internal from '../bot/internal';
@@ -66,7 +64,6 @@ export const decodeMessage = async (
         // 创建一个临时的 session 对象用于处理父消息
         const tempSession = session.bot.session(session.event);
         tempSession.channelId = session.channelId;
-
 
         // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
         const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
@@ -344,7 +341,6 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       session.timestamp = message.sendTime;
       // session.quote.id = message.parentId? message.parentId : undefined
 
-
       bot.logInfo('收到原始消息:', message);
       // 转换消息内容为Koishi格式
       const demessage = await decodeMessage(message, Internal, session, bot.config);
@@ -430,114 +426,37 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
   return session;
 }
 
-
-// 支持的图片MIME类型
-const VALID_IMAGE_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon'
-];
-
 /**
- * 将各种资源类型转换为标准格式
- * @param resource 资源 (URL, 路径, Buffer, base64, h.Element)
- * @param defaultFileName 默认文件名
- * @param defaultMimeType 默认MIME类型
- * @param http HTTP实例用于获取URL资源
- * @returns 标准化的资源结果
+ * 获取图片并转换为Base64
+ * @param url 图片URL
+ * @param http Koishi HTTP 实例
+ * @returns Base64 格式的图片
  */
-export async function resolveResource(
-  resource: string | Buffer | any,
-  defaultFileName: string,
-  defaultMimeType: string,
-  http: HTTP
-): Promise<ResourceResult>
+export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
 {
-  let fileName = defaultFileName;
-  let mimeType = defaultMimeType;
-  let buffer: Buffer | null = null;
+  try
+  {
+    // 设置请求头，包括Referer
+    const httpClient = http.extend({
+      headers: {
+        'Referer': 'www.yhchat.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    const { data, type } = await httpClient.file(url);
 
-  if (resource && typeof resource === 'object' && resource.type === 'image')
-  {
-    fileName = resource.attrs?.filename || fileName;
-    if (resource.attrs?.url)
+    if (!type || !type.startsWith('image/'))
     {
-      const response = await http.get(resource.attrs.url, { responseType: 'arraybuffer' });
-      buffer = Buffer.from(response);
-    } else if (resource.attrs?.data)
-    {
-      buffer = resource.attrs.data;
-    } else
-    {
-      throw new Error('资源元素缺少 url 或 data 属性');
+      throw new Error('响应不是有效的图片类型');
     }
-  } else if (Buffer.isBuffer(resource))
+
+    // 将Buffer转换为Base64
+    const base64 = Buffer.from(data).toString('base64');
+
+    // 返回Data URL格式
+    return `data:${type};base64,${base64}`;
+  } catch (error)
   {
-    buffer = resource;
-  } else if (typeof resource === 'string')
-  {
-    if (resource.startsWith('data:'))
-    {
-      const parts = resource.split(',');
-      const base64Data = parts[1];
-      const inferredMime = parts[0].match(/data:(.*?);base64/)?.[1];
-      if (inferredMime)
-      {
-        mimeType = inferredMime;
-        fileName = `resource.${mime.extension(inferredMime) || 'dat'}`;
-      }
-      buffer = Buffer.from(base64Data, 'base64');
-    } else if (resource.startsWith('http://') || resource.startsWith('https://'))
-    {
-      const response = await http.get(resource, { responseType: 'arraybuffer' });
-      buffer = Buffer.from(new Uint8Array(response));
-      const urlParts = resource.split('/');
-      fileName = urlParts[urlParts.length - 1].split('?')[0];
-      const ext = path.extname(fileName);
-      if (ext)
-      {
-        const inferredMime = mime.lookup(ext);
-        if (inferredMime) mimeType = inferredMime;
-      }
-    } else
-    { // 本地文件路径
-      const resolvedPath = path.resolve(resource);
-      fileName = path.basename(resolvedPath);
-      const inferredMime = mime.lookup(resolvedPath);
-      if (inferredMime) mimeType = inferredMime;
-      const file = await fileFromPath(resolvedPath);
-      buffer = Buffer.from(await file.arrayBuffer());
-    }
-  } else
-  {
-    throw new Error('资源类型不支持');
+    throw new Error(`无法获取图片: ${error.message}`);
   }
-
-  if (!buffer) throw new Error('无法获取资源数据');
-
-  return { buffer, fileName, mimeType };
-}
-
-
-
-/**
- * 获取文件扩展名
- * @param mimeType MIME类型
- * @returns 文件扩展名
- */
-export function getExtension(mimeType: string): string
-{
-  return mime.extension(mimeType) || 'dat';
-}
-
-
-/**
- * 更新文件名扩展
- * @param fileName 原始文件名
- * @param mimeType MIME类型
- * @returns 更新后的文件名
- */
-export function updateFileExtension(fileName: string, mimeType: string): string
-{
-  const ext = getExtension(mimeType);
-  return fileName.replace(/\.[^.]+$/, '') + '.' + ext;
 }

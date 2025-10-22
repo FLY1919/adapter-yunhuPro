@@ -1,5 +1,4 @@
 import { HTTP } from 'koishi';
-import { FormData } from 'formdata-node';
 import { ResourceType } from '../utils/utils';
 import { YunhuBot } from '../bot/bot';
 
@@ -49,5 +48,5 @@ export abstract class BaseUploader
         }
     }
 
-    abstract upload(resource: string | Buffer | any): Promise<string>;
+    abstract upload(url: string): Promise<string>;
 }

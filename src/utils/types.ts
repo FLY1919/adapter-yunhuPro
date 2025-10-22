@@ -281,7 +281,7 @@ export interface ResourceResult
 {
   buffer: Buffer;
   fileName: string;
-  mimeType: string;
+  type: string;
 }
 
 export interface UploaderOptions
@@ -292,7 +292,6 @@ export interface UploaderOptions
   resourceType: ResourceType;
   maxSize: number;
 }
-
 
 export interface Message
 {

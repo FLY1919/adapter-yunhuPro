@@ -1,7 +1,5 @@
 import { Context, HTTP } from 'koishi';
-import { FormData, File } from 'formdata-node';
 import { BaseUploader } from './BaseUploader';
-import { resolveResource } from '../utils/utils';
 import { writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -16,17 +14,12 @@ export class VideoUploader extends BaseUploader
         super(http, token, apiendpoint, 'video', bot);
     }
 
-    async upload(video: string | Buffer | any): Promise<string>
+    async upload(url: string): Promise<string>
     {
-        const form = new FormData();
-
-        // 解析资源
-        const { buffer, fileName, mimeType } = await resolveResource(
-            video,
-            'video.mp4',
-            'video/mp4',
-            this.http
-        );
+        // 从URL获取文件
+        this.bot.logInfo('检测到 HTTP/HTTPS URL，开始下载视频');
+        const { data, filename, type } = await this.http.file(url, { timeout: 60000 });
+        const buffer = Buffer.from(data);
 
         // 记录原始大小
         const originalSize = buffer.length;
@@ -102,8 +95,10 @@ export class VideoUploader extends BaseUploader
         }
 
         // 创建文件对象并上传
-        const file = new File([finalBuffer], fileName, { type: mimeType });
-        form.append('video', file);
+        // 创建表单并上传
+        const form = new FormData();
+        const blob = new Blob([finalBuffer], { type: type || 'video/mp4' });
+        form.append('video', blob, filename || 'video.mp4');
         return this.sendFormData(form);
     }
 }

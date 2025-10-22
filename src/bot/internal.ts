@@ -81,37 +81,6 @@ export default class Internal
     return this.http.get(url);
   }
 
-  // 获取图片并转换为Base64
-  async getImageAsBase64(url: string): Promise<string>
-  {
-    try
-    {
-      // 设置请求头，包括Referer
-      const http = this.http.extend({
-        headers: {
-          'Referer': 'www.yhchat.com',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-      const { data, mime } = await http.file(url);
-
-      if (!mime || !mime.startsWith('image/'))
-      {
-        throw new Error('响应不是有效的图片类型');
-      }
-
-      // 将Buffer转换为Base64
-      const base64 = Buffer.from(data).toString('base64');
-
-      // 返回Data URL格式
-      return `data:${mime};base64,${base64}`;
-    } catch (error)
-    {
-      this.bot.loggerError('获取图片失败:', error);
-      throw new Error(`无法获取图片: ${error.message}`);
-    }
-  }
-
   async setBoard(
     chatId: string,
     contentType: FormatType,
