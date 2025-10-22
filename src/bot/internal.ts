@@ -53,13 +53,26 @@ export default class Internal
     return this.fileUploader.upload(fileData);
   }
 
-  async deleteMessage(chatId: string, msgId: string)
+  async deleteMessage(chatId: string, msgId: string | string[])
   {
     const [type, id] = chatId.split(':');
     const chatType = type === 'private' ? 'user' : type;
-    const payload = { msgId, id, chatType };
-    this.bot.logInfo(`撤回消息: ${JSON.stringify(payload)}`);
-    return this.http.post(`/bot/recall?token=${this.token}`, payload);
+
+    if (Array.isArray(msgId))
+    {
+      const promises = msgId.map(messageId =>
+      {
+        const payload = { msgId: messageId, chatId: id, chatType };
+        this.bot.logInfo(`批量撤回消息: ${JSON.stringify(payload)}`);
+        return this.http.post(`/bot/recall?token=${this.token}`, payload);
+      });
+      return Promise.all(promises);
+    } else
+    {
+      const payload = { msgId, chatId: id, chatType };
+      this.bot.logInfo(`撤回消息: ${JSON.stringify(payload)}`);
+      return this.http.post(`/bot/recall?token=${this.token}`, payload);
+    }
   }
   async getGuild(guildId: string): Promise<Types.GroupInfo>
   {
