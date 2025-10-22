@@ -91,12 +91,12 @@ export default class Internal
     return this.httpWeb.post(`/bot/bot-info`, { botId });
   }
 
-  async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number; } = {}): Promise<Types.ApiResponse>
+  async getMessageList(channelId: string, messageId: string, options: { before?: number; after?: number; } = {}): Promise<Types.ApiResponse>
   {
-    const chatType = chatId.split(':')[1];
-    const Id = chatId.split(':')[0];
+    const chatType = channelId.split(':')[1];
+    const Id = channelId.split(':')[0];
     const { before, after } = options;
-    this.bot.logInfo(`获取消息列表，chatId: ${chatId}`);
+    this.bot.logInfo(`获取消息列表，channelId: ${channelId}`);
     const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`;
     return this.http.get(url);
   }

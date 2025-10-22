@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config)
         // 返回成功响应
         koaCtx.body = { code: 0, message: 'success' };
       });
-      ctx.logger.info(`[${bot.selfId}] 创建监听： ${botConfig.path}`);
+      ctx.logger.info(`[${bot.selfId}] 机器人上线，创建监听：http://localhost:${ctx.server.port}${botConfig.path}`);
     }
   });
 
@@ -77,7 +77,7 @@ export function apply(ctx: Context, config: Config)
     {
       await bot.stop();
     }
-    // ctx.logger.info('All Yunhu bots stopped.');
+    ctx.logger.info('适配器已停止运行。');
     bots.length = 0; // 清空数组
   });
 }
