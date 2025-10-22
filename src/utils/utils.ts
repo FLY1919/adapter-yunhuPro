@@ -76,7 +76,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      bot.loggerInfo('收到原始消息:', message);
+      // bot.logInfo('收到原始消息:', message);
 
       const content = await clearMsg(bot, message);
       const UserInfo = await Internal.getUser(sender.senderId);
