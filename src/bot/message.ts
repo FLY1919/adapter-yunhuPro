@@ -181,6 +181,11 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                 this.markdown += this.sendType != "html" ? "\n" : '';
                 this.html += `<br>`;
             }
+            else if (type === 'i18n')
+            {
+                // i18n 元素只渲染子元素
+                await this.render(children);
+            }
             else if (type === 'p')
             {
                 // 处理段落
@@ -191,11 +196,11 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                 {
                     this.sendType = 'markdown';
                 }
-                this.text += this.sendType === "text" ? "\n" : '';
-                this.markdown += this.sendType != "html" ? "\n" : '';
                 this.html += '<p>';
                 await this.render(children);
                 this.html += '</p>';
+                this.text += this.sendType === "text" ? "\n" : '';
+                this.markdown += this.sendType != "html" ? "\n" : '';
             }
             else if (type === 'a')
             {
