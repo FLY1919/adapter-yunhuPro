@@ -19,180 +19,16 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
 
 // 将云湖消息转换为Koishi通用消息格式
 export const decodeMessage = async (
+  bot: YunhuBot,
   message: Yunhu.Message,
-  Internal: Internal,
-  session: Session,
-  config
-): Promise<Universal.Message> =>
+): Promise<Partial<Universal.Message>> =>
 {
-  const elements: any[] = [];
-  let textContent = message.content.text || '';
+  const elements: h[] = [];
+  const textContent = (message.content.text || '').replace(/\u200b/g, '');
 
-  // 移除文本中的零宽空格
-  textContent = textContent.replace(/\u200b/g, '');
-
-  // 判断是否为纯指令消息（文本内容就是斜杠加指令名）
-  const isPureCommand = textContent === '/' + message.commandName;
-
-  // 设置 session.content
-  if (isPureCommand)
+  if (textContent)
   {
-    // 纯指令情况：session.content 只包含指令名
-    session.content = message.commandName;
-  } else if (message.commandName)
-  {
-    // 指令加参数情况：session.content 包含指令名和参数
-    session.content = message.commandName + ' ' + textContent;
-  } else
-  {
-    // 普通消息情况
-    session.content = textContent;
-  }
-
-  // 处理引用回复
-
-  if (message.parentId)
-  {
-    try
-    {
-      const res = await Internal.getMessageList(session.channelId, message.parentId, { before: 1 });
-      if (res.data.list && res.data.list.length > 0)
-      {
-        const parentMessage = res.data.list[0];
-
-        // 创建一个临时的 session 对象用于处理父消息
-        // 创建一个临时的 session 对象用于处理父消息
-        const tempSession = session.bot.session(session.event);
-        tempSession.channelId = session.channelId;
-
-        // 使用 decodeMessage 处理父消息，生成符合 Koishi 规范的 elements
-        const parentUniversalMessage = await decodeMessage(parentMessage, Internal, tempSession, config);
-
-        // 设置引用信息，直接使用处理后的 elements
-        session.event.message['quote'] = {
-          "id": message.parentId,
-          "elements": parentUniversalMessage.elements,
-          "content": parentUniversalMessage.content,
-          "user": {
-            "id": parentMessage.senderId,
-            "name": parentMessage.senderNickname || '未知用户'
-          },
-          "channel": {
-            "id": session.channelId,
-            "name": '', // 云湖API未提供频道名称
-            "type": Universal.Channel.Type.TEXT
-          }
-        };
-
-        (session.bot as YunhuBot).logInfo('引用消息处理成功，elements:', session.quote);
-      }
-    } catch (error)
-    {
-      (session.bot as YunhuBot).loggerError('获取引用消息失败:', error);
-      // 即使获取失败也设置基本的引用信息
-      session.event.message.quote = {
-        "id": message.parentId,
-        "content": '[引用消息]',
-        "elements": [h.text('[引用消息]')]
-      };
-    }
-  }
-
-  // 处理@用户
-  if (message.content.at && message.content.at.length > 0)
-  {
-    // 获取所有@用户的昵称映射
-    const userMap = new Map();
-    await Promise.all(
-      message.content.at.map(async (id) =>
-      {
-        try
-        {
-          const user = await Internal.getUser(id);
-          userMap.set(id, user.data.user.nickname);
-        } catch (error)
-        {
-          (session.bot as YunhuBot).loggerError(`获取用户信息失败: ${id}`, error);
-        }
-      })
-    );
-
-    // 按文本顺序处理@
-    const atPositions: Array<{ index: number; id: string; name: string; }> = [];
-
-    // 查找所有@位置
-    for (const id of message.content.at)
-    {
-      const name = userMap.get(id);
-      if (name)
-      {
-        const atText = `@${name}`;
-        let startIndex = 0;
-
-        while (startIndex < textContent.length)
-        {
-          const index = textContent.indexOf(atText, startIndex);
-          if (index === -1) break;
-
-          atPositions.push({ index, id, name });
-          startIndex = index + atText.length;
-        }
-      }
-    }
-
-    // 按位置排序
-    atPositions.sort((a, b) => a.index - b.index);
-
-    // 分割文本并插入@元素
-    let lastIndex = 0;
-    for (const { index, id, name } of atPositions)
-    {
-      // 添加@前的文本
-      if (index > lastIndex)
-      {
-        const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
-        const textBeforeAt = prefix + textContent.substring(lastIndex, index);
-        // 移除零宽空格后再添加文本元素
-        if (textBeforeAt.trim())
-        {
-          elements.push(h.text(textBeforeAt.replace(/\u200b/g, '')));
-        }
-      }
-
-      // 添加@元素
-      elements.push(h.at(id, { name }));
-
-      // 更新最后索引位置（跳过@文本）
-      lastIndex = index + name.length + 1; // +1 是为了跳过@符号
-    }
-
-    // 添加剩余文本
-    if (lastIndex < textContent.length)
-    {
-      const prefix = !isPureCommand && message.commandName ? message.commandName + ' ' : '';
-      const remainingText = prefix + textContent.substring(lastIndex);
-      // 移除零宽空格后再添加文本元素
-      if (remainingText.trim())
-      {
-        elements.push(h.text(remainingText.replace(/\u200b/g, '')));
-      }
-    }
-  } else if (textContent)
-  {
-    // 如果没有@，根据是否为纯指令决定如何添加文本
-    if (isPureCommand)
-    {
-      // 纯指令情况：显示斜杠加指令名
-      elements.push(h.text('/' + message.commandName));
-    } else if (message.commandName)
-    {
-      // 指令加参数情况：显示指令名加参数
-      elements.push(h.text((message.commandName + ' ' + textContent).replace(/\u200b/g, '')));
-    } else
-    {
-      // 普通消息情况
-      elements.push(h.text(textContent.replace(/\u200b/g, '')));
-    }
+    elements.push(...h.parse(textContent));
   }
 
   // 处理图片内容
@@ -207,55 +43,29 @@ export const decodeMessage = async (
   // 处理文件内容
   if (message.content.fileKey)
   {
-    elements.push(h.text('[文件]'));
+    elements.push(h('file', { src: message.content.fileKey }));
   }
 
   // 处理视频内容
   if (message.content.videoKey)
   {
-    elements.push(h.text('[视频]'));
+    elements.push(h('video', { src: message.content.videoKey }));
   }
 
-  return {
+  const result: Partial<Universal.Message> = {
     id: message.msgId,
-    content: textContent, // 保留原始文本内容
     elements,
+    content: textContent,
   };
-};
 
-// 将消息内容转换为Koishi消息元素
-function transformElements(elements: any[])
-{
-  return elements.map(element =>
+  if (message.parentId)
   {
-    if (typeof element === 'string')
-    {
-      return h.text(element);
-    } else if (Buffer.isBuffer(element))
-    {
-      return h.image(element, 'image/png', {
-        filename: 'image.png',
-        cache: false
-      });
-    } else if (typeof element === 'object' && element.type === 'image')
-    {
-      if (element.url)
-      {
-        return h('image', {
-          src: element.url,
-          filename: element.filename || 'image.png',
-          cache: false,
-          weight: element.weight || 0,
-          height: element.height || 0
-        });
-      } else if (element.data)
-      {
-        return h.image(element.data, 'image/png');
-      }
-    }
-    return h.text(String(element));
-  });
-}
+    result.quote = { id: message.parentId };
+    // 可以在这里添加获取被引用消息详情的逻辑
+  }
+
+  return result;
+};
 
 // 适配会话，将云湖事件转换为Koishi会话
 export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
@@ -269,7 +79,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      bot.logInfo('收到原始消息:', message);
+      bot.loggerInfo('收到原始消息:', message);
 
       session.type = 'message';
       session.userId = sender.senderId;
@@ -349,10 +159,15 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       // session.quote.id = message.parentId? message.parentId : undefined
 
       // 转换消息内容为Koishi格式
-      const demessage = await decodeMessage(message, Internal, session, bot.config);
-      session.event.message.id = demessage.id;
-      session.event.message.content = demessage.content;
-      session.event.message.elements = demessage.elements;
+      // 转换消息内容为Koishi格式
+      const universalMessage = await decodeMessage(bot, message);
+      session.content = universalMessage.content;
+      session.elements = universalMessage.elements;
+      session.messageId = universalMessage.id;
+      if (universalMessage.quote)
+      {
+        session.quote = universalMessage.quote;
+      }
       break;
     }
 
@@ -426,7 +241,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
       return; // 忽略未知事件
   }
-  bot.logInfo('视检session ', session);
+  bot.loggerInfo('视检session ', session);
 
   return session;
 }

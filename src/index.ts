@@ -53,10 +53,10 @@ export function apply(ctx: Context, config: Config)
         }
 
         // 转换并分发会话
-        const session = adaptSession(bot, payload);
+        const session = await adaptSession(bot, payload);
         if (session)
         {
-          bot.dispatch(await session);
+          bot.dispatch(session);
         }
 
         // 返回成功响应
@@ -71,7 +71,6 @@ export function apply(ctx: Context, config: Config)
     isDisposing = true;
     for (const bot of bots)
     {
-      bot.setDisposing(true);
       await bot.stop();
     }
     ctx.logger.info('All Yunhu bots stopped.');
