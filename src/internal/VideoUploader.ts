@@ -78,11 +78,23 @@ export class VideoUploader extends BaseUploader
                 // 清理临时文件
                 if (tempInput)
                 {
-                    try { unlinkSync(tempInput); } catch (e) { this.bot.logInfo('删除临时输入文件失败:', e); }
+                    try
+                    {
+                        unlinkSync(tempInput);
+                    } catch (e)
+                    {
+                        this.bot.logInfo('删除临时输入文件失败:', e);
+                    }
                 }
                 if (tempOutput)
                 {
-                    try { unlinkSync(tempOutput); } catch (e) { this.bot.logInfo('删除临时输出文件失败:', e); }
+                    try
+                    {
+                        unlinkSync(tempOutput);
+                    } catch (e)
+                    {
+                        this.bot.logInfo('删除临时输出文件失败:', e);
+                    }
                 }
             }
         }
