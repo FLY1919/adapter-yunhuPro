@@ -1,4 +1,5 @@
-import { Bot, Context, Logger } from 'koishi';
+import { Bot, Context, Fragment, Logger } from 'koishi';
+import { SendOptions } from '@satorijs/protocol';
 
 import { getImageAsBase64 } from '../utils/utils';
 import { BotTableItem, Config } from '../config';
@@ -125,6 +126,20 @@ export class YunhuBot extends Bot<Context, Config>
             }
         };
 
+    }
+
+    async sendMessage(channelId: string, content: Fragment, guildId?: string, options?: SendOptions): Promise<string[]>
+    {
+        const encoder = new YunhuMessageEncoder(this, channelId, guildId, options);
+        await encoder.send(content);
+        const messageId = encoder.getMessageId();
+        if (messageId)
+        {
+            return [messageId];
+        } else
+        {
+            return [];
+        }
     }
 
     logInfo(...args: any[])

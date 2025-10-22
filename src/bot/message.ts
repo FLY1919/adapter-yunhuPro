@@ -13,6 +13,12 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
     private markdown = "";
     private message: Dict = [];
     private switch_message: boolean = true;
+    private messageId: string;
+
+    getMessageId(): string
+    {
+        return this.messageId;
+    }
 
     async prepare()
     {
@@ -70,7 +76,16 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.markdown = "";
             this.message = [];
         }
-        let message: Yunhu.Message;
+        if (!this.payload.content.text && !this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey)
+        {
+            if (this.text || this.markdown || this.html)
+            {
+                // do nothing and continue
+            } else
+            {
+                return;
+            }
+        }
 
         this.payload.contentType = this.sendType;
         if (this.sendType === 'text')
@@ -84,9 +99,13 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.payload.content.text = this.html;
         }
         this.bot.logInfo('send payload：', this.payload);
-        message = await this.bot.internal.sendMessage(this.payload);
+        const response = await this.bot.internal.sendMessage(this.payload);
 
-        await this.addResult(message);
+        if (response.code === 1 && response.data?.messageInfo?.msgId)
+        {
+            this.messageId = response.data.messageInfo.msgId;
+        }
+
         await reset.call(this);
     }
 

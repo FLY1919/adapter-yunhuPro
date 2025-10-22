@@ -29,7 +29,7 @@ export default class Internal
     this.fileUploader = new FileUploader(http, token, apiendpoint, bot);
   }
 
-  sendMessage(payload: Dict)
+  async sendMessage(payload: Dict): Promise<Types.YunhuResponse>
   {
     return this.http.post(`/bot/send?token=${this.token}`, payload);
   }
@@ -55,8 +55,8 @@ export default class Internal
 
   async deleteMessage(chatId: string, msgId: string)
   {
-    const chatType = chatId.split(':')[1];
-    const id = chatId.split(':')[0];
+    const [type, id] = chatId.split(':');
+    const chatType = type === 'private' ? 'user' : type;
     const payload = { msgId, id, chatType };
     this.bot.logInfo(`撤回消息: ${JSON.stringify(payload)}`);
     return this.http.post(`/bot/recall?token=${this.token}`, payload);
