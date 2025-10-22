@@ -1,10 +1,13 @@
 import { Context, HTTP } from 'koishi';
-import { BaseUploader } from './BaseUploader';
-import { writeFileSync, readFileSync, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { YunhuBot } from '../bot/bot';
 import { } from 'koishi-plugin-ffmpeg';
+
+import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { BaseUploader } from './BaseUploader';
+import { YunhuBot } from '../bot/bot';
+
 
 // 视频上传器
 export class VideoUploader extends BaseUploader

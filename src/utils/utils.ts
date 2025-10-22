@@ -1,16 +1,11 @@
 import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
-import * as Yunhu from './types';
+
 import { YunhuBot } from '../bot/bot';
-import path from 'path';
-import { ResourceResult } from './types';
-
-import Internal from '../bot/internal';
-
+import * as Yunhu from './types';
 export * from './types';
 
 const URL = "https://chat-img.jwznb.com/";
 
-// 将云湖用户信息转换为Koishi通用用户格式
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   id: user.senderId,
   name: user.senderNickname,
@@ -66,7 +61,6 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message): Promise<string>
   return textContent;
 }
 
-// 适配会话，将云湖事件转换为Koishi会话
 export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 {
   const Internal = bot.internal;

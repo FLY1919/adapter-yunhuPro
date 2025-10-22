@@ -102,6 +102,15 @@ export interface GroupInfo
   data: Data;
   msg: string;
 }
+export interface BotInfoResponse
+{
+  code: number;
+  data: {
+    bot: Bot;
+  };
+  msg: string;
+}
+
 export interface YunhuMessage
 {
   recvId: string;

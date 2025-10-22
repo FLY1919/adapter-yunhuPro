@@ -1,8 +1,10 @@
 import { Bot, Context, Logger } from 'koishi';
+
+import { getImageAsBase64 } from '../utils/utils';
 import { BotTableItem, Config } from '../config';
+import { YunhuMessageEncoder } from './message';
 import * as Yunhu from '../utils/types';
 import Internal from './internal';
-import { YunhuMessageEncoder } from './message';
 
 const logger = new Logger('yunhu');
 
@@ -46,11 +48,11 @@ export class YunhuBot extends Bot<Context, Config>
             {
                 const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
                 return {
-                    "id": _payload.data.user.userId,
-                    "name": _payload.data.user.nickname,
-                    'avatar': _payload.data.user.avatarUrl,
-                    "tag": _payload.data.user.nickname,
-                    "isBot": false
+                    id: _payload.data.user.userId,
+                    name: _payload.data.user.nickname,
+                    avatar: _payload.data.user.avatarUrl,
+                    tag: _payload.data.user.nickname,
+                    isBot: false
                 };
             } catch (error)
             {
@@ -64,11 +66,11 @@ export class YunhuBot extends Bot<Context, Config>
             {
                 const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
                 return {
-                    "id": _payload.data.user.userId,
-                    "name": _payload.data.user.nickname,
-                    'avatar': _payload.data.user.avatarUrl,
-                    "tag": _payload.data.user.nickname,
-                    "isBot": false
+                    id: _payload.data.user.userId,
+                    name: _payload.data.user.nickname,
+                    avatar: _payload.data.user.avatarUrl,
+                    tag: _payload.data.user.nickname,
+                    isBot: false
                 };
             } catch (error)
             {
@@ -157,7 +159,22 @@ export class YunhuBot extends Bot<Context, Config>
     // 启动机器人
     async start()
     {
-        await super.start();
+        try
+        {
+            const botInfo = await this.internal.getBotInfo(this.selfId);
+            if (botInfo.code === 1)
+            {
+                this.user.name = botInfo.data.bot.nickname;
+                this.user.avatar = await getImageAsBase64(botInfo.data.bot.avatarUrl, this.ctx.http);
+                this.selfId = botInfo.data.bot.botId;
+            }
+            await super.start();
+            this.online();
+        } catch (error)
+        {
+            this.loggerError('Failed to get bot info:', error);
+            this.offline();
+        }
     }
 
     // 停止机器人

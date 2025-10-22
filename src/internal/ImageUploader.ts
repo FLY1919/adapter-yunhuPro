@@ -1,7 +1,10 @@
 import { HTTP, Dict } from 'koishi';
-import { createHash } from 'crypto';
+
+import { createHash } from 'node:crypto';
+
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
+
 const IMAGE_URL = "https://chat-img.jwznb.com/";
 
 // 图片上传器

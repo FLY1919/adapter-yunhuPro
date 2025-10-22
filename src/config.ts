@@ -2,6 +2,7 @@ import { Schema } from 'koishi';
 
 export interface BotTableItem
 {
+    enable: boolean;
     botId: string;
     token: string;
     path: string;
@@ -18,12 +19,15 @@ export interface Config
 export const Config: Schema<Config> = Schema.intersect([
     Schema.object({
         botTable: Schema.array(Schema.object({
+            enable: Schema.boolean()
+                .default(true)
+                .description('启用'),
             botId: Schema.string()
                 .required()
-                .description('机器人账号ID'),
+                .description('账号ID'),
             token: Schema.string()
                 .required()
-                .description('机器人 Token')
+                .description('Token')
                 .role('secret'),
             path: Schema.string()
                 .default('/yunhu')

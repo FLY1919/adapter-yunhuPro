@@ -1,12 +1,13 @@
 import { HTTP, Dict } from 'koishi';
-import * as Types from '../utils/types';
+
 import { FormatType } from '../utils/utils';
+import * as Types from '../utils/types';
+import { YunhuBot } from './bot';
+
 import { ImageUploader } from '../internal/ImageUploader';
 import { VideoUploader } from '../internal/VideoUploader';
 import { FileUploader } from '../internal/FileUploader';
-import { YunhuBot } from './bot';
 
-// 主类
 export default class Internal
 {
   private imageUploader: ImageUploader;
@@ -69,6 +70,11 @@ export default class Internal
   async getUser(userId: string): Promise<Types.UserInfoResponse>
   {
     return this.httpWeb.get(`/user/homepage?userId=${userId}`);
+  }
+
+  async getBotInfo(botId: string): Promise<Types.BotInfoResponse>
+  {
+    return this.httpWeb.post(`/bot/bot-info`, { botId });
   }
 
   async getMessageList(chatId: string, messageId: string, options: { before?: number; after?: number; } = {}): Promise<Types.ApiResponse>

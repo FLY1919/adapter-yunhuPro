@@ -1,4 +1,5 @@
 import { HTTP } from 'koishi';
+
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
 

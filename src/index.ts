@@ -1,9 +1,10 @@
 import { Context, Universal, sleep } from 'koishi';
-import { YunhuBot } from './bot/bot';
-import { Config } from './config';
+import { } from '@koishijs/plugin-server';
+
 import { adaptSession } from './utils/utils';
 import * as Yunhu from './utils/types';
-import { } from '@koishijs/plugin-server';
+import { YunhuBot } from './bot/bot';
+import { Config } from './config';
 
 export * from './config';
 export * from './bot/bot';
@@ -33,8 +34,15 @@ export function apply(ctx: Context, config: Config)
     }
     if (isDisposing) return;
 
+    // 筛选出启用的机器人，并去除 path 重复的机器人
+    const uniqueBotsConfig = config.botTable
+      .filter(botConfig => botConfig.enable)
+      .filter((botConfig, index, self) =>
+        index === self.findIndex(b => b.path === botConfig.path)
+      );
+
     // 遍历 botTable，为每个机器人创建实例和路由
-    for (const botConfig of config.botTable)
+    for (const botConfig of uniqueBotsConfig)
     {
       const bot = new YunhuBot(ctx, botConfig, config);
       bots.push(bot);

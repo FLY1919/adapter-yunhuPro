@@ -1,13 +1,8 @@
-import { image } from '@satorijs/element/jsx-runtime';
-import { YunhuBot } from './bot';
-//import { decodeMessage } from './utils'
+import { Context, h, Dict, MessageEncoder } from 'koishi';
+
 import * as Yunhu from '../utils/types';
-import { Context, h, Dict, MessageEncoder, Logger } from 'koishi';
+import { YunhuBot } from './bot';
 
-const logger = new Logger('yunhu-message');
-
-//我们需要明白text->markdown->html的转换关系
-// 以及图片、视频、文件等资源的上传和引用方式
 export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
 {
     // 使用 payload 存储待发送的消息
