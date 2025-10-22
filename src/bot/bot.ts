@@ -53,7 +53,7 @@ export class YunhuBot extends Bot<Context, Config>
                 return {
                     "id": _payload.data.user.userId,
                     "name": _payload.data.user.nickname,
-                    'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl,
+                    'avatar': _payload.data.user.avatarUrl,
                     "tag": _payload.data.user.nickname,
                     "isBot": false
                 };
@@ -71,7 +71,7 @@ export class YunhuBot extends Bot<Context, Config>
                 return {
                     "id": _payload.data.user.userId,
                     "name": _payload.data.user.nickname,
-                    'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl,
+                    'avatar': _payload.data.user.avatarUrl,
                     "tag": _payload.data.user.nickname,
                     "isBot": false
                 };
@@ -93,7 +93,7 @@ export class YunhuBot extends Bot<Context, Config>
                     return {
                         "id": _payload.data.group.groupId + ':' + chatType,
                         "name": _payload.data.group.name,
-                        'avatar': this.config._host + "?url=" + _payload.data.group.avatarUrl
+                        'avatar': _payload.data.group.avatarUrl
                     };
                 } else
                 {
@@ -101,7 +101,7 @@ export class YunhuBot extends Bot<Context, Config>
                     return {
                         "id": _payload.data.user.userId + ':' + chatType,
                         "name": _payload.data.user.nickname,
-                        'avatar': this.config._host + "?url=" + _payload.data.user.avatarUrl
+                        'avatar': _payload.data.user.avatarUrl
                     };
                 }
             } catch (error)

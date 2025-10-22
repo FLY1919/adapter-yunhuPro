@@ -204,7 +204,7 @@ export const decodeMessage = async (
     elements.push(h.image(message.content.imageUrl));
   } else if (message.content.imageName)
   {
-    elements.push(h.image(config._host + "?url=" + URL + message.content.imageName));
+    elements.push(h.image(URL + message.content.imageName));
   }
 
   // 处理文件内容
@@ -307,14 +307,14 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         "id": session.userId,
         "name": UserInfo.data.user.nickname,
         "nick": UserInfo.data.user.nickname,
-        "avatar": bot.config._host + "?url=" + UserInfo.data.user.avatarUrl,
+        "avatar": UserInfo.data.user.avatarUrl,
         "isBot": false // 云湖目前没有提供isBot字段，暂时设为false
       };
       session.event.member = {
         "user": session.author.user,
         "name": UserInfo.data.user.nickname,
         "nick": UserInfo.data.user.nickname,
-        "avatar": bot.config._host + "?url=" + UserInfo.data.user.avatarUrl
+        "avatar": UserInfo.data.user.avatarUrl
       };
 
       session.author.name = UserInfo.data.user.nickname;
@@ -334,7 +334,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         session.event.guild = {
           "id": chat.chatId,
           "name": guildInfo.data.group.name,
-          "avatar": bot.config._host + "?url=" + guildInfo.data.group.avatarUrl,
+          "avatar": guildInfo.data.group.avatarUrl,
         };
       }
 

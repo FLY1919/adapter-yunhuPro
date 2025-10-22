@@ -5,8 +5,6 @@ import { adaptSession } from '../utils/utils';
 
 import { } from '@koishijs/plugin-server';
 
-const logger = new Logger('yunhu-ws');
-
 export class Webhook
 {
     constructor(private ctx: Context, private bot: YunhuBot)
