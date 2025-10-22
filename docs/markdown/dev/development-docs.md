@@ -23,7 +23,7 @@ git clone --branch docs https://github.com/FLY1919/adapter-yunhupro.git
 2. **切换到文档分支**
 
 ```bash
-cd koishi-plugin-adapter-iirose
+cd adapter-yunhupro
 ```
 
 3. **安装依赖**
@@ -43,6 +43,12 @@ code .
 ```bash
 yarn dev
 ```
+
+然后打开
+```link
+http://localhost:5173/adapter-yunhupro/
+```
+然后开始编辑文档吧~~~
 
 6. **构建文档**
 

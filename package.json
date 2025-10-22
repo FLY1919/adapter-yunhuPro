@@ -1,9 +1,9 @@
 {
-  "name": "koishi-plugin-adapter-iirose-docs",
+  "name": "koishi-plugin-adapter-yunhupro-docs",
   "version": "1.0.0",
-  "description": "Documentation for koishi-plugin-adapter-iirose",
+  "description": "Documentation for koishi-plugin-adapter-yunhupro",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "dependencies": {
     "@cordisjs/vitepress": "^4.0.1",

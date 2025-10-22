@@ -1,5 +1,20 @@
 # 快速开始
 
+|                                                                 NPM Version                                                                 |                                                                   Downloads                                                                    |                                           Platform                                           |                                                                     License                                                                     |
+| :-----------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------: |
+| [![npm version](https://img.shields.io/npm/v/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro) | [![npm downloads](https://img.shields.io/npm/dt/koishi-plugin-adapter-yunhupro)](https://www.npmjs.com/package/koishi-plugin-adapter-yunhupro) | [![platform](https://img.shields.io/badge/platform-Koishi-blueviolet)](https://koishi.chat/) | [![license](https://img.shields.io/github/license/FLY1919/adapter-yunhupro)](https://github.com/FLY1919/adapter-yunhupro/blob/main/LICENSE.txt) |
+
+本插件为 [Koishi](https://koishi.chat/) 框架提供了一个[云湖 (Yunhu)](https://www.yhchat.com/) 平台适配器。
+
+---
+
+:::tip
+
+### 本文档正在施工中... ...
+
+---
+:::
+
 
 ## 📞 联系方式
 
@@ -22,5 +37,3 @@
 :::
 
 ## 许可证
-
-本项目基于 [MIT 许可证](https://github.com/FLY1919/adapter-yunhupro/blob/main/LICENSE) 开源。
