@@ -97,7 +97,7 @@ export default class Internal
     const Id = channelId.split(':')[0];
     const { before, after } = options;
     this.bot.logInfo(`获取消息列表，channelId: ${channelId}`);
-    const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 0}&after=${after || 0}`;
+    const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 1}&after=${after || 1}`;
     return this.http.get(url);
   }
 
