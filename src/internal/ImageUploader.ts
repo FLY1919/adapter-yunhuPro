@@ -7,7 +7,6 @@ import { resolveResource, getExtension, updateFileExtension } from '../utils/uti
 import * as path from 'path';
 import * as fs from 'fs';
 import { URL } from 'url';
-import axios from 'axios';
 import { YunhuBot } from '../bot/bot';
 const IMAGE_URL = "https://chat-img.jwznb.com/";
 
@@ -187,16 +186,14 @@ export class ImageUploader extends BaseUploader
                 try
                 {
                     // 使用HTTP客户端下载图片
-                    const response = await axios.get(image, {
-                        responseType: 'arraybuffer',
+                    const { data, mime } = await this.http.file(image, {
                         timeout: 30000 // 30秒超时
                     });
-
-                    const buffer = Buffer.from(response.data);
+                    const buffer = Buffer.from(data);
+                    const mimeType = mime || await this.detectMimeType(buffer);
                     this.bot.logInfo(`URL 下载成功，长度: ${buffer.length} 字节`);
 
                     // 验证下载的数据是否为有效图片
-                    const mimeType = await this.detectMimeType(buffer);
                     this.bot.logInfo(`URL 下载内容检测到的MIME类型: ${mimeType}`);
 
                     if (!mimeType.startsWith('image/'))

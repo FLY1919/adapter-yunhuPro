@@ -1,5 +1,4 @@
 import { HTTP, Dict } from 'koishi';
-import axios from 'axios';
 import * as Types from '../utils/types';
 import { FormatType } from '../utils/utils';
 import { ImageUploader } from '../internal/ImageUploader';
@@ -88,26 +87,24 @@ export default class Internal
     try
     {
       // 设置请求头，包括Referer
-      const response = await axios.get(url, {
-        responseType: 'arraybuffer',
+      const http = this.http.extend({
         headers: {
           'Referer': 'www.yhchat.com',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
       });
+      const { data, mime } = await http.file(url);
 
-      // 获取图片MIME类型
-      const contentType = response.headers['content-type'];
-      if (!contentType || !contentType.startsWith('image/'))
+      if (!mime || !mime.startsWith('image/'))
       {
         throw new Error('响应不是有效的图片类型');
       }
 
-      // 将ArrayBuffer转换为Base64
-      const base64 = Buffer.from(response.data, 'binary').toString('base64');
+      // 将Buffer转换为Base64
+      const base64 = Buffer.from(data).toString('base64');
 
       // 返回Data URL格式
-      return `data:${contentType};base64,${base64}`;
+      return `data:${mime};base64,${base64}`;
     } catch (error)
     {
       this.bot.loggerError('获取图片失败:', error);

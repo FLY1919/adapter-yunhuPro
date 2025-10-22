@@ -1,6 +1,5 @@
 import { HTTP } from 'koishi';
 import { FormData } from 'formdata-node';
-import axios, { AxiosRequestConfig } from 'axios';
 import { ResourceType } from '../utils/utils';
 import { YunhuBot } from '../bot/bot';
 
@@ -27,15 +26,9 @@ export abstract class BaseUploader
     {
         const uploadUrl = `${this.apiendpoint}/${this.resourceType}/upload?token=${this.token}`;
 
-        const axiosConfig: AxiosRequestConfig = {
-            maxBodyLength: Infinity,
-            maxContentLength: Infinity,
-        };
-
         try
         {
-            const response = await axios.post(uploadUrl, form, axiosConfig);
-            const res = response.data;
+            const res = await this.http.post(uploadUrl, form);
 
             if (res.code !== 1)
             {
@@ -47,10 +40,10 @@ export abstract class BaseUploader
         } catch (error: any)
         {
             this.bot.loggerError(`${this.resourceType}上传请求失败:`, error.message);
-            if (axios.isAxiosError(error) && error.response)
+            if (HTTP.Error.is(error) && error.response)
             {
-                this.bot.loggerError(`Axios响应状态: ${error.response.status}`);
-                this.bot.loggerError(`Axios响应体:`, error.response.data);
+                this.bot.loggerError(`响应状态: ${error.response.status}`);
+                this.bot.loggerError(`响应体:`, error.response.data);
             }
             throw new Error(`${this.resourceType}上传失败：${error.message}`);
         }
