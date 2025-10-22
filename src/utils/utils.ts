@@ -335,6 +335,11 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           "name": guildInfo.data.group.name,
           "avatar": guildInfo.data.group.avatarUrl,
         };
+        session.event.channel = {
+          "id": session.channelId,
+          "name": guildInfo.data.group.name,
+          "type": Universal.Channel.Type.TEXT,
+        };
       }
 
       // 设置消息内容和元数据
