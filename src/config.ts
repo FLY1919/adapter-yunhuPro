@@ -2,7 +2,7 @@ import { Schema } from 'koishi';
 
 export interface Config
 {
-    botId:string;
+    botId: string;
     token: string;
     endpoint?: string;
     endpointweb?: string;
@@ -37,8 +37,8 @@ export const Config: Schema<Config> = Schema.intersect([
 
     Schema.object({
         loggerinfo: Schema.boolean()
-        .default(false)
-        .description("日志调试模式")
-        .experimental(),
+            .default(false)
+            .description("日志调试模式")
+            .experimental(),
     }).description('调试设置'),
 ]);

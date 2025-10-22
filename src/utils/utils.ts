@@ -269,6 +269,8 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
+      bot.logInfo('收到原始消息:', message);
+
       session.type = 'message';
       session.userId = sender.senderId;
       session.event.user.name = sender.senderNickname;
@@ -341,14 +343,11 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       session.timestamp = message.sendTime;
       // session.quote.id = message.parentId? message.parentId : undefined
 
-      bot.logInfo('收到原始消息:', message);
       // 转换消息内容为Koishi格式
       const demessage = await decodeMessage(message, Internal, session, bot.config);
       session.event.message.id = demessage.id;
       session.event.message.content = demessage.content;
       session.event.message.elements = demessage.elements;
-      bot.logInfo(`已转换为koishi消息格式:`, session);
-
       break;
     }
 
@@ -422,6 +421,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
       return; // 忽略未知事件
   }
+  bot.logInfo(session);
 
   return session;
 }
