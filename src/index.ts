@@ -6,7 +6,7 @@ export * from './config';
 export * from './bot/bot';
 
 export const name = 'adapter-yunhupro';
-export const reusable = true;
+export const reusable = false;
 export const filter = false;
 export const inject = {
   required: ['http', 'logger', 'server'],

@@ -19,6 +19,16 @@ export const Config: Schema<Config> = Schema.intersect([
             .required()
             .description('机器人 Token')
             .role('secret'),
+        botTable: Schema.array(Schema.object({
+            botId: Schema.string()
+                .description('机器人账号ID'),
+            token: Schema.string()
+                .description('机器人 Token')
+                .role('secret'),
+            path: Schema.string()
+                .default('/yunhu')
+                .description('Webhook 接收路径'),
+        })).role('table'),
     }).description('基础设置'),
 
     Schema.object({
