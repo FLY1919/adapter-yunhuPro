@@ -2,9 +2,8 @@ import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
+import { logger } from '..';
 export * from './types';
-
-const URL = "https://chat-img.jwznb.com/";
 
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   id: user.senderId,
@@ -12,32 +11,20 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   isBot: false,
 });
 
-async function clearMsg(bot: YunhuBot, message: Yunhu.Message): Promise<string>
+async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
 {
   let textContent = (message.content.text || '').replace(/\u200b/g, '');
 
   if (message.content.at && message.content.at.length > 0)
   {
-    const userMap = new Map<string, string>();
-    await Promise.all(
-      message.content.at.map(async (id) =>
-      {
-        try
-        {
-          const user = await bot.internal.getUser(id);
-          userMap.set(id, user.data.user.nickname);
-        } catch (error)
-        {
-          bot.loggerError(`获取用户信息失败: ${id}`, error);
-        }
-      })
-    );
-
-    for (const [id, name] of userMap.entries())
+    // At all is a special case.
+    if (message.content.at.includes('all'))
     {
-      const atText = `@${name}`;
-      textContent = textContent.replace(new RegExp(atText, 'g'), h.at(id, { name }).toString());
+      textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
     }
+    // For other at mentions, we can use the sender info from the payload.
+    const atText = `@${sender.senderNickname}`;
+    textContent = textContent.replace(new RegExp(atText, 'g'), h.at(sender.senderId, { name: sender.senderNickname }).toString());
   }
 
   if (message.content.imageUrl)
@@ -45,7 +32,7 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message): Promise<string>
     textContent += h.image(message.content.imageUrl).toString();
   } else if (message.content.imageName)
   {
-    textContent += h.image(URL + message.content.imageName).toString();
+    textContent += h.image(bot.config.resourceEndpoint + message.content.imageName).toString();
   }
 
   if (message.content.fileKey)
@@ -70,10 +57,9 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      // bot.logInfo('收到原始消息:', message);
+      bot.logInfo('收到原始input消息:', input);
 
-      const content = await clearMsg(bot, message);
-      const UserInfo = await Internal.getUser(sender.senderId);
+      const content = await clearMsg(bot, message, sender);
 
       const sessionPayload = {
         type: 'message',
@@ -82,9 +68,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         timestamp: message.sendTime,
         user: {
           id: sender.senderId,
-          name: UserInfo.data.user.nickname,
-          nick: UserInfo.data.user.nickname,
-          avatar: UserInfo.data.user.avatarUrl,
+          name: sender.senderNickname,
         },
         message: {
           id: message.msgId,
@@ -105,15 +89,27 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         session.isDirect = false;
         session.guildId = message.chatId;
         session.channelId = `group:${message.chatId}`; // 统一格式
-        const guildInfo = await bot.internal.getGuild(chat.chatId);
-        session.event.guild = {
-          id: chat.chatId,
-          name: guildInfo.data.group.name,
-        };
+        try
+        {
+          const guildInfo = await bot.internal.getGuild(chat.chatId);
+          if (guildInfo && guildInfo.data && guildInfo.data.group)
+          {
+            session.event.guild = {
+              id: chat.chatId,
+              name: guildInfo.data.group.name,
+            };
+          } else
+          {
+            bot.logger.warn(`Failed to get guild info for ${chat.chatId}, guild info is null or invalid.`);
+          }
+        } catch (error)
+        {
+          bot.logger.error(`Failed to get guild info for ${chat.chatId}:`, error);
+        }
+
         session.event.member = {
           user: sessionPayload.user,
           name: sessionPayload.user.name,
-          nick: sessionPayload.user.nick,
         };
       }
 
@@ -224,6 +220,7 @@ export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
     return `data:${type};base64,${base64}`;
   } catch (error)
   {
-    throw new Error(`无法获取图片: ${error.message}`);
+    logger.error(`无法获取图片: ${url}, 错误: ${error.message}`);
+    return url;
   }
 }

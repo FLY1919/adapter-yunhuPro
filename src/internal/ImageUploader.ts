@@ -5,8 +5,6 @@ import { createHash } from 'node:crypto';
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
 
-const IMAGE_URL = "https://chat-img.jwznb.com/";
-
 // 图片上传器
 export class ImageUploader extends BaseUploader
 {
@@ -56,8 +54,8 @@ export class ImageUploader extends BaseUploader
         if (originalSize > this.MAX_SIZE)
         {
             const sizeMB = (originalSize / (1024 * 1024)).toFixed(2);
-            this.bot.loggerError(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
-            throw new Error(`图片大小${sizeMB}MB超过10MB限制，无法上传`);
+            this.bot.loggerError(`图片大小${sizeMB}MB，超过10MB限制，无法上传`);
+            throw new Error(`图片大小${sizeMB}MB，超过10MB限制，无法上传`);
         }
 
         // 创建表单并上传
@@ -75,7 +73,7 @@ export class ImageUploader extends BaseUploader
             this.bot.logInfo(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
 
             const imagekey = await this.sendFormData(form);
-            const imageUrl = `${IMAGE_URL}${imageHash}.${extension}`;
+            const imageUrl = `${this.bot.config.resourceEndpoint}${imageHash}.${extension}`;
             this.bot.logInfo(`生成的图片URL: ${imageUrl}`);
 
             return {

@@ -1,4 +1,4 @@
-import { Context, Universal, sleep } from 'koishi';
+import { Context, Logger, Universal, sleep } from 'koishi';
 import { } from '@koishijs/plugin-server';
 
 import { adaptSession } from './utils/utils';
@@ -16,7 +16,7 @@ export const inject = {
   required: ['http', 'logger', 'server'],
   optional: ['ffmpeg']
 };
-
+export const logger = new Logger(name);
 export const usage = `
 ---
 `;
@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config)
         // 返回成功响应
         koaCtx.body = { code: 0, message: 'success' };
       });
-      ctx.logger.info(`Created bot instance for ${bot.selfId} at path ${botConfig.path}`);
+      ctx.logger.info(`[${bot.selfId}] 创建监听： ${botConfig.path}`);
     }
   });
 
@@ -77,7 +77,7 @@ export function apply(ctx: Context, config: Config)
     {
       await bot.stop();
     }
-    ctx.logger.info('All Yunhu bots stopped.');
+    // ctx.logger.info('All Yunhu bots stopped.');
     bots.length = 0; // 清空数组
   });
 }
