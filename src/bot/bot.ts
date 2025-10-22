@@ -94,6 +94,16 @@ export class YunhuBot extends Bot<Context, Config>
         return this.internal.getGuildMember(guildId, userId);
     }
 
+    async dismissBoard(chatId: string, chatType: 'user' | 'group', memberId?: string)
+    {
+        return this.internal.dismissBoard(chatId, chatType, memberId);
+    }
+
+    async dismissAllBoard()
+    {
+        return this.internal.dismissAllBoard();
+    }
+
     async getUser(userId: string)
     {
         return this.internal.getUser(userId);

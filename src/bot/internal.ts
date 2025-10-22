@@ -239,4 +239,26 @@ export class Internal
       throw error;
     }
   }
+
+  async dismissBoard(chatId: string, chatType: 'user' | 'group', memberId?: string): Promise<Types.YunhuResponse>
+  {
+    const payload: any = {
+      chatId,
+      chatType,
+    };
+    if (memberId && chatType === 'group')
+    {
+      payload.memberId = memberId;
+    }
+    return this.http.post('/bot/board-dismiss', payload, {
+      params: { token: this.token },
+    });
+  }
+
+  async dismissAllBoard(): Promise<Types.YunhuResponse>
+  {
+    return this.http.post('/bot/board-all-dismiss', {}, {
+      params: { token: this.token },
+    });
+  }
 }
