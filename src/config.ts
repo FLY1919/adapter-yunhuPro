@@ -37,11 +37,11 @@ export const Config: Schema<Config> = Schema.intersect([
 
     Schema.object({
         endpoint: Schema.string()
-            .default('https://chat-go.jwzhd.com')
+            .default('https://chat-go.jwzhd.com/open-apis/v1')
             .description('云湖 API 地址，默认无需修改')
             .role('link'),
         endpointweb: Schema.string()
-            .default('https://chat-web-go.jwzhd.com')
+            .default('https://chat-web-go.jwzhd.com/v1')
             .description('云湖 API 地址，默认无需修改')
             .role('link'),
     }).description('连接设置'),

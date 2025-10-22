@@ -8,9 +8,6 @@ import Internal from './internal';
 
 const logger = new Logger('yunhu');
 
-const YUNHU_API_PATH = '/open-apis/v1';
-const YUNHU_API_PATH_WEB = '/v1';
-
 export class YunhuBot extends Bot<Context, Config>
 {
     static inject = ['server'];
@@ -29,16 +26,16 @@ export class YunhuBot extends Bot<Context, Config>
 
         // 创建HTTP实例
         const http = this.ctx.http.extend({
-            endpoint: `${this.config.endpoint}${YUNHU_API_PATH}`,
+            endpoint: this.config.endpoint,
         });
 
         // 爬虫/抓包接口
         const httpWeb = this.ctx.http.extend({
-            endpoint: `${this.config.endpointweb}${YUNHU_API_PATH_WEB}`,
+            endpoint: this.config.endpointweb,
         });
 
         // 初始化内部接口
-        this.internal = new Internal(http, httpWeb, botConfig.token, `${this.config.endpoint}${YUNHU_API_PATH}`, this);
+        this.internal = new Internal(http, httpWeb, botConfig.token, this.config.endpoint, this);
         this.Encoder = new YunhuMessageEncoder(this, botConfig.token);
 
         // 实现各种方法
