@@ -127,8 +127,6 @@ export class YunhuBot extends Bot<Context, Config>
 
     }
 
-    // 日志调试功能
-
     logInfo(...args: any[])
     {
         if (this.config.loggerinfo)
@@ -147,7 +145,6 @@ export class YunhuBot extends Bot<Context, Config>
         (logger.error as (...args: any[]) => void)(...args);
     }
 
-    // 设置 disposing 状态
     setDisposing(disposing: boolean)
     {
         this.isDisposing = disposing;
