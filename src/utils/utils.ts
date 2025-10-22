@@ -50,17 +50,12 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sen
 
 export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 {
-  const Internal = bot.internal;
-
   switch (input.header.eventType)
   {
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      bot.logInfo('收到原始input消息:', JSON.stringify(input));
-
       const content = await clearMsg(bot, message, sender);
-
       const sessionPayload = {
         type: 'message',
         platform: 'yunhu',
@@ -117,6 +112,8 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         }
       }
 
+      //  分发session
+      bot.logInfo('分发session内容：', session);
       bot.dispatch(session);
       return;
     }

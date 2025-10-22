@@ -52,7 +52,7 @@ export function apply(ctx: Context, config: Config)
       {
         koaCtx.status = 200;
         const payload: Yunhu.YunhuEvent = (koaCtx.request as any).body;
-        bot.logInfo('接收到 payload:', payload);
+        bot.logInfo('接收到 payload:', JSON.stringify(payload));
 
         // 确保机器人处于在线状态
         if (bot.status !== Universal.Status.ONLINE)
