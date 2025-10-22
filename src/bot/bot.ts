@@ -80,28 +80,15 @@ export class YunhuBot extends Bot<Context, Config>
         {
             try
             {
-                const chatType = guildId.split(':')[1];
-                const Id = guildId.split(':')[0];
-                if (chatType == 'group')
-                {
-                    const _payload = await this.internal.getGuild(Id);
-                    return {
-                        "id": _payload.data.group.groupId + ':' + chatType,
-                        "name": _payload.data.group.name,
-                        'avatar': _payload.data.group.avatarUrl
-                    };
-                } else
-                {
-                    const _payload = await this.internal.getUser(Id);
-                    return {
-                        "id": _payload.data.user.userId + ':' + chatType,
-                        "name": _payload.data.user.nickname,
-                        'avatar': _payload.data.user.avatarUrl
-                    };
-                }
+                const _payload = await this.internal.getGuild(guildId);
+                return {
+                    id: _payload.data.group.groupId,
+                    name: _payload.data.group.name,
+                    avatar: _payload.data.group.avatarUrl
+                };
             } catch (error)
             {
-                this.loggerError('获取群聊消息失败:', error);
+                this.loggerError('获取群组信息失败:', error);
                 throw error;
             }
         };
