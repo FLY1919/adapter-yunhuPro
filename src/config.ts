@@ -44,7 +44,7 @@ export const Config: Schema<Config> = Schema.intersect([
                 "token": "填入你的机器人Token",
                 "path": "/yunhu"
             }])
-            .description('机器人配置列表。<br>需填写机器人的ID、Token、监听路径。<br>**注意**：不同机器人 需要设置 **不同的接收路径**'),
+            .description('机器人配置列表。<br>需填写机器人的ID、Token、监听路径。<br>**注意**：不同机器人 需要设置 **不同的接收路径**，否则视为无效'),
     }).description('基础设置'),
 
     Schema.object({
