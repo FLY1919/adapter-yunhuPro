@@ -21,7 +21,9 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
 
     async prepare()
     {
-        let [recvId, recvType] = this.channelId.split(':');
+        let [type, id] = this.channelId.split(':');
+        const recvId = id;
+        const recvType = type === 'private' ? 'user' : type;
         // 初始化 payload
         this.payload = {
             recvId,
@@ -86,7 +88,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         {
             this.payload.content.text = this.html;
         }
-        this.bot.logInfo(this.payload);
+        this.bot.loggerInfo(this.payload);
         message = await this.bot.internal.sendMessage(this.payload);
 
         await this.addResult(message);

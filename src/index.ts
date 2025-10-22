@@ -52,12 +52,8 @@ export function apply(ctx: Context, config: Config)
           bot.online();
         }
 
-        // 转换并分发会话
-        const session = await adaptSession(bot, payload);
-        if (session)
-        {
-          bot.dispatch(session);
-        }
+        // 转换并分发会话，adaptSession 内部会自行 dispatch
+        await adaptSession(bot, payload);
 
         // 返回成功响应
         koaCtx.body = { code: 0, message: 'success' };
