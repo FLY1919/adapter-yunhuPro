@@ -74,6 +74,7 @@ export default class Internal
       return this.http.post(`/bot/recall?token=${this.token}`, payload);
     }
   }
+
   async getGuild(guildId: string): Promise<Types.GroupInfo>
   {
     const payload = { "groupId": guildId };

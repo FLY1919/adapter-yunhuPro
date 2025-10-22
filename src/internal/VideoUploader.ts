@@ -8,7 +8,6 @@ import { join } from 'node:path';
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
 
-
 // 视频上传器
 export class VideoUploader extends BaseUploader
 {
