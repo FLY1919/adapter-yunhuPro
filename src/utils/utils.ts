@@ -83,79 +83,48 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 
       session.type = 'message';
       session.userId = sender.senderId;
-      session.event.user.name = sender.senderNickname;
-      session.event.user.nick = sender.senderNickname;
-      session.event.user.id = sender.senderId;
-      const level = () =>
-      {
-        if (sender.senderUserLevel === 'owner')
-        {
-          return 0x1FFFFFFFFF;
-        } else if (sender.senderUserLevel === 'administrator')
-        {
-          return 0x8;
-        } else if (sender.senderUserLevel === 'member')
-        {
-          return 2048;
-        } else
-        {
-          return 0;
-        }
-      };
-      const UserInfo = await Internal.getUser(session.userId);
-      session.event.role = {
-        "id": chat.chatId,
-        "name": UserInfo.data.user.nickname,
-        "permissions": BigInt(level()),
-        "color": null,
-        "position": null,
-        "hoist": false,
-        "mentionable": false
-      };
-      session.author.user = {
-        "id": session.userId,
-        "name": UserInfo.data.user.nickname,
-        "nick": UserInfo.data.user.nickname,
-        "avatar": UserInfo.data.user.avatarUrl,
-        "isBot": false // 云湖目前没有提供isBot字段，暂时设为false
-      };
-      session.event.member = {
-        "user": session.author.user,
-        "name": UserInfo.data.user.nickname,
-        "nick": UserInfo.data.user.nickname,
-        "avatar": UserInfo.data.user.avatarUrl
-      };
+      session.timestamp = message.sendTime;
 
-      session.author.name = UserInfo.data.user.nickname;
-      session.author.nick = UserInfo.data.user.nickname;
-      session.author.isBot = false; // 云湖目前没有提供isBot字段，暂时设为false
-      // 设置频道ID，区分私聊和群聊
+      const UserInfo = await Internal.getUser(session.userId);
+      const user = {
+        id: sender.senderId,
+        name: UserInfo.data.user.nickname,
+        nick: UserInfo.data.user.nickname,
+        avatar: UserInfo.data.user.avatarUrl,
+        isBot: false,
+      };
+      session.event.user = user;
+
       if (message.chatType === 'bot')
       {
-        session.channelId = `${sender.senderId}:user`;
         session.isDirect = true;
+        session.channelId = `${sender.senderId}:user`;
       } else
       {
-        session.channelId = `${message.chatId}:${message.chatType}`;
-        session.guildId = message.chatId;
         session.isDirect = false;
+        session.guildId = message.chatId;
+        session.channelId = `${message.chatId}:${message.chatType}`;
+
+        // 关键修复：确保 member.user 被正确赋值
+        session.event.member = {
+          user,
+          name: user.name,
+          nick: user.nick,
+          avatar: user.avatar,
+        };
+
         const guildInfo = await Internal.getGuild(chat.chatId);
         session.event.guild = {
-          "id": chat.chatId,
-          "name": guildInfo.data.group.name,
-          "avatar": guildInfo.data.group.avatarUrl,
+          id: chat.chatId,
+          name: guildInfo.data.group.name,
+          avatar: guildInfo.data.group.avatarUrl,
         };
         session.event.channel = {
-          "id": session.channelId,
-          "name": guildInfo.data.group.name,
-          "type": Universal.Channel.Type.TEXT,
+          id: session.channelId,
+          name: guildInfo.data.group.name,
+          type: Universal.Channel.Type.TEXT,
         };
       }
-
-      // 设置消息内容和元数据
-
-      session.messageId = message.msgId;
-      session.timestamp = message.sendTime;
       // session.quote.id = message.parentId? message.parentId : undefined
 
       // 转换消息内容为Koishi格式
