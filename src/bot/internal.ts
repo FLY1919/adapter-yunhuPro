@@ -154,6 +154,7 @@ export class Internal
   async _getMessage(channelId: string, messageId: string): Promise<Types.ApiResponse>
   {
     const response = await this.getMessageList(channelId, messageId);
+    this.bot.logInfo(`_getMessage response `, JSON.stringify(response));
     if (response.code === 1 && response.data?.list)
     {
       response.data.list = response.data.list.filter(item => item.msgId === messageId);

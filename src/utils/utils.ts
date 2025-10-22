@@ -22,7 +22,6 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sen
     {
       textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
     }
-    // For other at mentions, we can use the sender info from the payload.
     const atText = `@${sender.senderNickname}`;
     textContent = textContent.replace(new RegExp(atText, 'g'), h.at(sender.senderId, { name: sender.senderNickname }).toString());
   }
@@ -95,20 +94,54 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 
       if (message.parentId)
       {
-        try
+        if (message.content.parentImgName)  //  图片引用
         {
-          const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
-          if (quoteMessage)
+          try
           {
-            session.quote = quoteMessage;
-          } else
+            const imageUrl = bot.config.resourceEndpoint + message.content.parentImgName;
+            const base64 = await getImageAsBase64(imageUrl, bot.ctx.http);
+            const content = h.image(base64).toString();
+
+            let quoteMessage: Universal.Message;
+            try
+            {
+              quoteMessage = await bot.getMessage(session.channelId, message.parentId);
+            } catch (e)
+            {
+              // ignore
+            }
+
+            if (quoteMessage)
+            {
+              session.quote = {
+                ...quoteMessage,
+                content,
+                elements: h.parse(content),
+              };
+            }
+          } catch (error)
           {
+            bot.logger.warn(`Failed to process quoted image ${message.parentId}:`, error);
+            session.quote = { id: message.parentId }; // Fallback
+          }
+        } else
+        {
+          // 普通引用
+          try
+          {
+            const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
+            if (quoteMessage)
+            {
+              session.quote = quoteMessage;
+            } else
+            {
+              session.quote = { id: message.parentId };
+            }
+          } catch (error)
+          {
+            bot.logger.warn(`Failed to get quote message ${message.parentId}:`, error);
             session.quote = { id: message.parentId };
           }
-        } catch (error)
-        {
-          bot.logger.warn(`Failed to get quote message ${message.parentId}:`, error);
-          session.quote = { id: message.parentId };
         }
       }
 
