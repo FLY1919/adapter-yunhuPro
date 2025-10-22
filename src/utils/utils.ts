@@ -115,7 +115,21 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 
       if (message.parentId)
       {
-        session.quote = { id: message.parentId };
+        try
+        {
+          const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
+          if (quoteMessage)
+          {
+            session.quote = quoteMessage;
+          } else
+          {
+            session.quote = { id: message.parentId };
+          }
+        } catch (error)
+        {
+          bot.logger.warn(`Failed to get quote message ${message.parentId}:`, error);
+          session.quote = { id: message.parentId };
+        }
       }
 
       bot.dispatch(session);

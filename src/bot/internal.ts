@@ -93,12 +93,22 @@ export default class Internal
 
   async getMessageList(channelId: string, messageId: string, options: { before?: number; after?: number; } = {}): Promise<Types.ApiResponse>
   {
-    const chatType = channelId.split(':')[1];
-    const Id = channelId.split(':')[0];
+    const [type, id] = channelId.split(':');
+    const chatType = type === 'private' ? 'user' : type;
     const { before, after } = options;
     this.bot.logInfo(`获取消息列表，channelId: ${channelId}`);
-    const url = `/bot/messages?token=${this.token}&chat-id=${Id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 1}&after=${after || 1}`;
+    const url = `/bot/messages?token=${this.token}&chat-id=${id}&chat-type=${chatType}&message-id=${messageId}&before=${before || 1}&after=${after || 1}`;
     return this.http.get(url);
+  }
+
+  async getMessage(channelId: string, messageId: string): Promise<Types.ApiResponse>
+  {
+    const response = await this.getMessageList(channelId, messageId);
+    if (response.code === 1 && response.data?.list)
+    {
+      response.data.list = response.data.list.filter(item => item.msgId === messageId);
+    }
+    return response;
   }
 
   async setBoard(

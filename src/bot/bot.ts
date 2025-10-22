@@ -39,6 +39,14 @@ export class YunhuBot extends Bot<Context, Config>
         this.internal = new Internal(http, httpWeb, botConfig.token, this.config.endpoint, this);
         this.Encoder = new YunhuMessageEncoder(this, botConfig.token);
 
+        // 将 internal 的方法挂载到 bot 实例上
+        for (const key of Object.getOwnPropertyNames(Internal.prototype))
+        {
+            if (typeof this.internal[key] === 'function')
+            {
+                this[key] = this.internal[key].bind(this.internal);
+            }
+        }
         // 实现各种方法
         this.getGuildMember = async (guildId: string, userId: string) =>
         {
@@ -118,6 +126,23 @@ export class YunhuBot extends Bot<Context, Config>
         {
             try
             {
+                this.getMessage = async (channelId: string, messageId: string) =>
+                {
+                    const res = await this.internal.getMessage(channelId, messageId);
+                    if (res.code === 1 && res.data.list.length > 0)
+                    {
+                        const msg = res.data.list[0];
+                        return {
+                            id: msg.msgId,
+                            content: msg.content.text,
+                            user: {
+                                id: msg.senderId,
+                                name: msg.senderNickname,
+                            },
+                            timestamp: msg.sendTime,
+                        };
+                    }
+                };
                 return this.internal.deleteMessage(channelId, messageId);
             } catch (error)
             {
