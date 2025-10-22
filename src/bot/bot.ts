@@ -92,6 +92,27 @@ export class YunhuBot extends Bot<Context, Config>
                 throw error;
             }
         };
+        this.getChannel = async (channelId: string, guildId?: string) =>
+        {
+            try
+            {
+                const [id, type] = channelId.split(':');
+                if (type === 'group')
+                {
+                    const guild = await this.getGuild(guildId || id);
+                    return {
+                        id: channelId,
+                        name: guild.name,
+                        type: 0 // 文本频道
+                    };
+                }
+            } catch (error)
+            {
+                this.loggerError('获取频道信息失败:', error);
+                throw error;
+            }
+        };
+
         // 实现消息撤回功能
         this.deleteMessage = async (channelId: string, messageId: string) =>
         {
