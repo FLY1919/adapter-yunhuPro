@@ -421,7 +421,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
       return; // 忽略未知事件
   }
-  bot.logInfo(session);
+  bot.logInfo('视检session ', session);
 
   return session;
 }
