@@ -310,11 +310,8 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             }
             else if (type === 'quote')
             {
-                await this.flush();
                 this.payload.parentId = attrs.id;
                 await this.render(children);
-                this.payload.parentId = '';
-                await this.flush();
             }
             else if (type === 'author')
             {
