@@ -1,11 +1,10 @@
 import { Bot, Context, Fragment, Logger } from 'koishi';
 import { SendOptions } from '@satorijs/protocol';
 
-import { getImageAsBase64 } from '../utils/utils';
+import { FormatType, getImageAsBase64 } from '../utils/utils';
 import { BotTableItem, Config } from '../config';
 import { YunhuMessageEncoder } from './message';
-import * as Yunhu from '../utils/types';
-import Internal from './internal';
+import { Internal } from './internal';
 
 const logger = new Logger('yunhu');
 
@@ -39,118 +38,85 @@ export class YunhuBot extends Bot<Context, Config>
         this.internal = new Internal(http, httpWeb, botConfig.token, this.config.endpoint, this);
         this.Encoder = new YunhuMessageEncoder(this, botConfig.token);
 
-        // 将 internal 的方法挂载到 bot 实例上
-        for (const key of Object.getOwnPropertyNames(Internal.prototype))
-        {
-            if (typeof this.internal[key] === 'function')
-            {
-                this[key] = this.internal[key].bind(this.internal);
-            }
-        }
-        // 实现各种方法
-        this.getGuildMember = async (guildId: string, userId: string) =>
-        {
-            try
-            {
-                const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
-                return {
-                    id: _payload.data.user.userId,
-                    name: _payload.data.user.nickname,
-                    avatar: _payload.data.user.avatarUrl,
-                    tag: _payload.data.user.nickname,
-                    isBot: false
-                };
-            } catch (error)
-            {
-                this.loggerError('获取群成员信息失败:', error);
-                throw error;
-            }
-        };
-        this.getUser = async (userId: string) =>
-        {
-            try
-            {
-                const _payload = await this.internal.getUser(userId) as Yunhu.UserInfoResponse;
-                return {
-                    id: _payload.data.user.userId,
-                    name: _payload.data.user.nickname,
-                    avatar: _payload.data.user.avatarUrl,
-                    tag: _payload.data.user.nickname,
-                    isBot: false
-                };
-            } catch (error)
-            {
-                this.loggerError('获取用户信息失败:', error);
-                throw error;
-            }
-        };
-        this.getGuild = async (guildId: string) =>
-        {
-            try
-            {
-                const _payload = await this.internal.getGuild(guildId);
-                return {
-                    id: _payload.data.group.groupId,
-                    name: _payload.data.group.name,
-                    avatar: _payload.data.group.avatarUrl
-                };
-            } catch (error)
-            {
-                this.loggerError('获取群组信息失败:', error);
-                throw error;
-            }
-        };
-        this.getChannel = async (channelId: string, guildId?: string) =>
-        {
-            try
-            {
-                const [id, type] = channelId.split(':');
-                if (type === 'group')
-                {
-                    const guild = await this.getGuild(guildId || id);
-                    return {
-                        id: channelId,
-                        name: guild.name,
-                        type: 0 // 文本频道
-                    };
-                }
-            } catch (error)
-            {
-                this.loggerError('获取频道信息失败:', error);
-                throw error;
-            }
-        };
+    }
+    async uploadImageUrl(image: string | Buffer | any)
+    {
+        return this.internal.uploadImageUrl(image);
+    }
 
-        // 实现消息撤回功能
-        this.deleteMessage = async (channelId: string, messageId: string) =>
-        {
-            try
-            {
-                this.getMessage = async (channelId: string, messageId: string) =>
-                {
-                    const res = await this.internal.getMessage(channelId, messageId);
-                    if (res.code === 1 && res.data.list.length > 0)
-                    {
-                        const msg = res.data.list[0];
-                        return {
-                            id: msg.msgId,
-                            content: msg.content.text,
-                            user: {
-                                id: msg.senderId,
-                                name: msg.senderNickname,
-                            },
-                            timestamp: msg.sendTime,
-                        };
-                    }
-                };
-                return this.internal.deleteMessage(channelId, messageId);
-            } catch (error)
-            {
-                this.loggerError('撤回消息失败:', error);
-                throw error;
-            }
-        };
+    async uploadImage(image: string | Buffer | any)
+    {
+        return this.internal.uploadImage(image);
+    }
 
+    async uploadVideo(video: string | Buffer | any)
+    {
+        return this.internal.uploadVideo(video);
+    }
+
+    async uploadFile(fileData: string | Buffer | any)
+    {
+        return this.internal.uploadFile(fileData);
+    }
+
+    async getBotInfo(botId: string)
+    {
+        return this.internal.getBotInfo(botId);
+    }
+
+    async getYunhuMessageList(channelId: string, messageId: string, options: { before?: number; after?: number; } = {})
+    {
+        return this.internal.getMessageList(channelId, messageId, options);
+    }
+
+    async setBoard(
+        chatId: string,
+        contentType: FormatType,
+        content: string,
+        options: { memberId?: string; expireTime?: number; } = {}
+    )
+    {
+        return this.internal.setBoard(chatId, contentType, content, options);
+    }
+
+    async setAllBoard(
+        chatId: string,
+        contentType: FormatType,
+        content: string,
+        options: { expireTime?: number; } = {}
+    )
+    {
+        return this.internal.setAllBoard(chatId, contentType, content, options);
+    }
+
+    async getGuildMember(guildId: string, userId: string)
+    {
+        return this.internal.getGuildMember(guildId, userId);
+    }
+
+    async getUser(userId: string)
+    {
+        return this.internal.getUser(userId);
+    }
+
+    async getGuild(guildId: string)
+    {
+        return this.internal.getGuild(guildId);
+    }
+
+    async getChannel(channelId: string, guildId?: string)
+    {
+        return this.internal.getChannel(channelId, guildId);
+    }
+
+    async deleteMessage(channelId: string, messageId: string)
+    {
+        return this.internal.deleteMessage(channelId, messageId);
+    }
+
+    async getMessage(channelId: string, messageId: string)
+    {
+        return this.internal.getMessage(channelId, messageId);
     }
 
     async sendMessage(channelId: string, content: Fragment, guildId?: string, options?: SendOptions): Promise<string[]>

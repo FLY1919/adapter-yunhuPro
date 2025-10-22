@@ -2,7 +2,7 @@ import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
-import { logger } from '..';
+import { logger, name } from '..';
 export * from './types';
 
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
@@ -57,7 +57,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      bot.logInfo('收到原始input消息:', input);
+      bot.logInfo('收到原始input消息:', JSON.stringify(input));
 
       const content = await clearMsg(bot, message, sender);
 
@@ -88,25 +88,10 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       {
         session.isDirect = false;
         session.guildId = message.chatId;
-        session.channelId = `group:${message.chatId}`; // 统一格式
-        try
-        {
-          const guildInfo = await bot.internal.getGuild(chat.chatId);
-          if (guildInfo && guildInfo.data && guildInfo.data.group)
-          {
-            session.event.guild = {
-              id: chat.chatId,
-              name: guildInfo.data.group.name,
-            };
-          } else
-          {
-            bot.logger.warn(`Failed to get guild info for ${chat.chatId}, guild info is null or invalid.`);
-          }
-        } catch (error)
-        {
-          bot.logger.error(`Failed to get guild info for ${chat.chatId}:`, error);
-        }
-
+        session.channelId = `group:${chat.chatId}`;
+        session.event.guild = {
+          id: chat.chatId
+        };
         session.event.member = {
           user: sessionPayload.user,
           name: sessionPayload.user.name,

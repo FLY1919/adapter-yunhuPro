@@ -1,4 +1,4 @@
-import { HTTP, Dict } from 'koishi';
+import { HTTP, Dict, Universal } from 'koishi';
 
 import { FormatType } from '../utils/utils';
 import * as Types from '../utils/types';
@@ -8,7 +8,7 @@ import { ImageUploader } from '../internal/ImageUploader';
 import { VideoUploader } from '../internal/VideoUploader';
 import { FileUploader } from '../internal/FileUploader';
 
-export default class Internal
+export class Internal
 {
   private imageUploader: ImageUploader;
   private videoUploader: VideoUploader;
@@ -75,15 +75,65 @@ export default class Internal
     }
   }
 
-  async getGuild(guildId: string): Promise<Types.GroupInfo>
+  async _getGuild(guildId: string): Promise<Types.GroupInfo>
   {
     const payload = { "groupId": guildId };
     return this.httpWeb.post(`/group/group-info`, payload);
   }
 
-  async getUser(userId: string): Promise<Types.UserInfoResponse>
+  async getGuild(guildId: string): Promise<Universal.Guild>
+  {
+    try
+    {
+      const _payload = await this._getGuild(guildId);
+      return {
+        id: _payload.data.group.groupId,
+        name: _payload.data.group.name,
+        avatar: _payload.data.group.avatarUrl
+      };
+    } catch (error)
+    {
+      this.bot.loggerError('获取群组信息失败:', error);
+      throw error;
+    }
+  }
+
+  async _getUser(userId: string): Promise<Types.UserInfoResponse>
   {
     return this.httpWeb.get(`/user/homepage?userId=${userId}`);
+  }
+
+  async getUser(userId: string): Promise<Universal.User>
+  {
+    try
+    {
+      const _payload = await this._getUser(userId);
+      return {
+        id: _payload.data.user.userId,
+        name: _payload.data.user.nickname,
+        avatar: _payload.data.user.avatarUrl,
+        isBot: false
+      };
+    } catch (error)
+    {
+      this.bot.loggerError('获取用户信息失败:', error);
+      throw error;
+    }
+  }
+
+  async getGuildMember(guildId: string, userId: string): Promise<Universal.GuildMember>
+  {
+    try
+    {
+      const user = await this.getUser(userId);
+      return {
+        ...user,
+      };
+    } catch (error)
+    {
+      this.bot.loggerError('获取群成员信息失败:', error);
+      throw error;
+    }
   }
 
   async getBotInfo(botId: string): Promise<Types.BotInfoResponse>
@@ -101,7 +151,7 @@ export default class Internal
     return this.http.get(url);
   }
 
-  async getMessage(channelId: string, messageId: string): Promise<Types.ApiResponse>
+  async _getMessage(channelId: string, messageId: string): Promise<Types.ApiResponse>
   {
     const response = await this.getMessageList(channelId, messageId);
     if (response.code === 1 && response.data?.list)
@@ -109,6 +159,24 @@ export default class Internal
       response.data.list = response.data.list.filter(item => item.msgId === messageId);
     }
     return response;
+  }
+
+  async getMessage(channelId: string, messageId: string): Promise<Universal.Message>
+  {
+    const res = await this._getMessage(channelId, messageId);
+    if (res.code === 1 && res.data.list.length > 0)
+    {
+      const msg = res.data.list[0];
+      return {
+        id: msg.msgId,
+        content: msg.content.text,
+        user: {
+          id: msg.senderId,
+          name: msg.senderNickname,
+        },
+        timestamp: msg.sendTime,
+      };
+    }
   }
 
   async setBoard(
@@ -150,4 +218,24 @@ export default class Internal
     return this.http.post(`/bot/board-all?token=${this.token}`, payload);
   }
 
+  async getChannel(channelId: string, guildId?: string): Promise<Universal.Channel>
+  {
+    try
+    {
+      const [id, type] = channelId.split(':');
+      if (type === 'group')
+      {
+        const guild = await this.getGuild(guildId || id);
+        return {
+          id: channelId,
+          name: guild.name,
+          type: 0 // 文本频道
+        };
+      }
+    } catch (error)
+    {
+      this.bot.loggerError('获取频道信息失败:', error);
+      throw error;
+    }
+  }
 }
