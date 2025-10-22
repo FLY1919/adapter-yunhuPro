@@ -258,9 +258,35 @@ export interface GroupDisbandedEvent
   };
 }
 
+// 快捷菜单事件
+export interface BotShortcutMenuEvent
+{
+  botId: string;
+  menuId: string;
+  menuType: number;
+  menuAction: number;
+  chatId: string;
+  chatType: 'group' | 'bot';
+  senderType: 'user';
+  senderId: string;
+  sendTime: number;
+}
+
+// 内联按钮事件
+export interface ButtonReportInlineEvent
+{
+  botId: string;
+  msgId: string;
+  chatId: string;
+  chatType: 'group' | 'bot';
+  senderId: string;
+  senderType: 'user';
+  buttonId: string;
+}
+
 // 联合类型，表示所有可能的事件
 export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent |
-  GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent;
+  GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent | BotShortcutMenuEvent | ButtonReportInlineEvent;
 
 export interface Chat
 {

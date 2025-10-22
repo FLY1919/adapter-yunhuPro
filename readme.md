@@ -28,9 +28,6 @@
 以下云湖平台的功能当前版本暂不支持，欢迎有能力的开发者贡献 PR！
 
 - **设置看板 (Set Kanban):** 与看板相关的接口。
-- `bot.shortcut.menu` 事件
-- `button.report.inline` 交互式按钮事件
-- `quote`对图片、表情包的处理
 
 ## 📞 联系方式
 

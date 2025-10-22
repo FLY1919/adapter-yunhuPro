@@ -209,11 +209,31 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           session.operatorId = operator.operatorId;
           break;
         }
+        case 'bot.shortcut.menu': {
+          session.type = 'interaction/button';
+          const event = input.event as Yunhu.BotShortcutMenuEvent;
+          session.userId = event.senderId;
+          session.channelId = event.chatType === 'bot' ? `private:${event.senderId}` : `group:${event.chatId}`;
+          session.guildId = event.chatType === 'group' ? event.chatId : undefined;
+          session.event.button = { id: event.menuId };
+          break;
+        }
+        case 'button.report.inline': {
+          session.type = 'interaction/button';
+          const event = input.event as Yunhu.ButtonReportInlineEvent;
+          session.userId = event.senderId;
+          session.messageId = event.msgId;
+          session.channelId = event.chatType === 'bot' ? `private:${event.senderId}` : `group:${event.chatId}`;
+          session.guildId = event.chatType === 'group' ? event.chatId : undefined;
+          session.event.button = { id: event.buttonId };
+          break;
+        }
         default:
           bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
           return;
       }
-      return session;
+      bot.dispatch(session);
+      return;
     }
   }
 }
