@@ -1,51 +1,23 @@
 {
-  "name": "koishi-plugin-adapter-yunhupro",
-  "description": "Yunhu Adapter",
-  "version": "2.0.0",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "files": [
-    "lib",
-    "src"
-  ],
-  "license": "Apache-2.0",
-  "keywords": [
-    "chatbot",
-    "koishi",
-    "plugin",
-    "adapter",
-    "yunhu",
-    "云湖"
-  ],
-  "author": "WindyPear-Team",
-  "contributors": [
-    "FLY1919 <qw687255511@163.com>",
-    "WindyPear-Team <hjrlluobo2h@qq.com>",
-    "shangxueink <1919892171@qq.com>"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "pub": "npm run build && npm publish"
-  },
-  "homepage": "https://github.com/FLY1919/adapter-yunhupro",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/FLY1919/adapter-yunhupro.git"
-  },
-  "bugs": {
-    "url": "https://github.com/FLY1919/adapter-yunhupro/issues"
-  },
-  "koishi": {
-    "description": {
-      "zh": "云湖适配器",
-      "en": "Yunhu Adapter"
-    }
-  },
-  "peerDependencies": {
-    "koishi": "^4.18.8"
-  },
+  "name": "koishi-plugin-adapter-iirose-docs",
+  "version": "1.0.0",
+  "description": "Documentation for koishi-plugin-adapter-iirose",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
   "dependencies": {
+    "@cordisjs/vitepress": "^4.0.1",
+    "@vueuse/core": "^13.0.0",
+    "typescript": "^5.8.2",
+    "vitepress": "^1.6.3",
+    "vue": "3",
+    "vue-tsc": "^2.2.8"
   },
-  "devDependencies": {
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "start": "vitepress preview docs",
+    "typecheck": "vue-tsc --noEmit"
   }
 }
