@@ -450,8 +450,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                 this.markdown += this.sendType != "html" ? '*' : '';
                 this.html += '</em>';
             }
-            else if (type === 'u' || type === 'sup' || type === 'sub'
-            )
+            else if (type === 'u' || type === 'sup' || type === 'sub')
             {
                 this.sendType = 'html';
                 this.sendType = 'html';
