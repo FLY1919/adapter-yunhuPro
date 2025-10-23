@@ -1,0 +1,1 @@
+import{_ as e,c as a,o as r,ae as l}from"./chunks/framework.CliRSA9F.js";const g=JSON.parse('{"title":"快速开始","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),i={name:"index.md"};function n(s,t,o,h,d,p){return r(),a("div",null,[...t[0]||(t[0]=[l("",11)])])}const u=e(i,[["render",n]]);export{g as __pageData,u as default};
