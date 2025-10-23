@@ -6,7 +6,8 @@
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
-    "src"
+    "src",
+    "data"
   ],
   "license": "Apache-2.0",
   "keywords": [
