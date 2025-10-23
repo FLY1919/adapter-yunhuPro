@@ -53,8 +53,8 @@ jobs:
 
       - name: Copy build output to gh-pages
         run: |
-          rm -rf gh-pages/docs/*  # 清空 gh-pages/docs 目录
-          cp -r docs/docs/.vitepress/dist/* gh-pages/docs/  # 复制构建输出
+          rm -rf gh-pages/docs  # 清空 gh-pages/docs 目录
+          cp -r docs/docs/.vitepress/dist gh-pages/docs # 复制构建输出
 
       - name: Commit and push changes to gh-pages
         run: |
