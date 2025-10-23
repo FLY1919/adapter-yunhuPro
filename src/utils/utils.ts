@@ -62,7 +62,9 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         timestamp: message.sendTime,
         user: {
           id: sender.senderId,
+          type: sender.senderType,
           name: sender.senderNickname,
+          role: sender.senderUserLevel
         },
         message: {
           id: message.msgId,
