@@ -3,26 +3,21 @@ name: Deploy VitePress Docs to GitHub Pages
 on:
   push:
     branches:
-      - docs
+      - docs  # 在 docs 分支推送时触发
     paths:
-      - 'docs/**'
-  workflow_dispatch:
+      - 'docs/**' # 仅在 docs 目录下的文件发生更改时触发
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # 关键：添加权限配置
-    permissions:
-      contents: write  # 授予写入仓库内容的权限
-      pages: write     # 授予 GitHub Pages 相关权限
-      id-token: write  # 用于 OIDC 令牌
 
     steps:
       - name: Checkout docs branch
         uses: actions/checkout@v4
         with:
-          ref: docs
-          path: docs
+          ref: docs  # 检出 docs 分支
+          path: docs  # 检出到 docs 目录
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,7 +34,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cd docs
-          yarn install
+          yarn install # 不使用 --frozen-lockfile，允许更新 yarn.lock
 
       - name: Build VitePress Site
         run: cd docs && yarn build
@@ -49,7 +44,7 @@ jobs:
         with:
           ref: gh-pages
           path: gh-pages
-          token: ${{ secrets.GITHUB_TOKEN }}  # 明确指定使用 GITHUB_TOKEN
+          clean: false # 保留 gh-pages 分支的内容
 
       - name: Create gh-pages/docs directory if it doesn't exist
         run: |
@@ -58,14 +53,14 @@ jobs:
 
       - name: Copy build output to gh-pages
         run: |
-          rm -rf gh-pages/docs/*
-          cp -r docs/docs/.vitepress/dist/* gh-pages/docs/
+          rm -rf gh-pages/docs  # 清空 gh-pages/docs 目录
+          cp -r docs/docs/.vitepress/dist gh-pages/docs # 复制构建输出
 
       - name: Commit and push changes to gh-pages
         run: |
           cd gh-pages
           git config --local user.email "actions@github.com"
-          git config --local user.name "github-actions[bot]"
+          git config --local user.name "GitHub Actions"
           git add .
           git commit -m "Deploy VitePress site to gh-pages" || echo "No changes to commit"
           git push origin gh-pages
