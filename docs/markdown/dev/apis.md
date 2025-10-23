@@ -15,7 +15,6 @@ if (bot == null) return;
 // 在这里继续使用 bot.方法
 ```
 
-
 ## 消息相关 (Message)
 
 ### sendMessage()

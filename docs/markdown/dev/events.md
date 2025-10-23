@@ -13,7 +13,6 @@
 | `message.receive.normal`      | `message`   | 收到普通消息（私聊或群聊）              | `session.type = 'message'` |
 | `message.receive.instruction` | `message`   | 收到指令消息（通常由斜杠指令 `/` 触发） | `session.type = 'message'` |
 
-
 ## 成员变动事件 (Guild Member Events)
 
 | 云湖事件类型           | Koishi 事件            | 触发时机                     | Session 字段                                                                                     |
