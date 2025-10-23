@@ -54,7 +54,36 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
-      const content = await clearMsg(bot, message, sender);
+      let content: string;
+
+      // 指令
+      if (message.commandName)
+      {
+        const commandName = message.commandName;
+        if (message.contentType === 'form' && message.content.formJson)
+        {
+          // 自定义输入指令：将表单数据序列化为 JSON 字符串作为参数。
+          const formJsonString = JSON.stringify(message.content.formJson);
+          content = `/${commandName} '${formJsonString}'`;
+        } else
+        {
+          const baseContent = await clearMsg(bot, message, sender);
+          // 直接发送的指令：文本以 /指令名 开头
+          if (baseContent.startsWith(`/${commandName}`))
+          {
+            content = baseContent;
+          } else
+          {
+            // 普通指令：文本是参数，在前面加上指令
+            content = `/${commandName} ${baseContent}`.trim();
+          }
+        }
+      } else
+      {
+        // 普通消息
+        content = await clearMsg(bot, message, sender);
+      }
+
       const sessionPayload = {
         type: 'message',
         platform: 'yunhu',

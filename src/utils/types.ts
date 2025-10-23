@@ -133,7 +133,7 @@ export interface Message
   sendTime: number; // 毫秒级时间戳
   chatId: string;
   chatType: 'group' | 'bot';
-  contentType: 'text' | 'image' | 'markdown' | 'file';
+  contentType: 'text' | 'image' | 'markdown' | 'file' | 'form';
   content: Content;
   commandId?: number;
   commandName?: string;
@@ -157,6 +157,7 @@ export interface Content
   etag?: string;          // 对应 JSON 中的 etag
   imageWidth?: number;    // 对应 JSON 中的 imageWidth
   imageHeight?: number;   // 对应 JSON 中的 imageHeight
+  formJson?: Dict<any>;   // contentType 为 form 时使用
 }
 
 export interface Button
