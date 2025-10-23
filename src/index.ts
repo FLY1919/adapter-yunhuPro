@@ -66,6 +66,29 @@ export function apply(ctx: Context, config: Config)
         // 返回成功响应
         koaCtx.body = { code: 0, message: 'success' };
       });
+
+      // 处理 GET 请求，用于给用户提示
+      ctx.server.get(botConfig.path, async (koaCtx) =>
+      {
+        koaCtx.type = 'html';
+        koaCtx.body = `
+          <html>
+            <head>
+              <title>Koishi Adapter for Yunhu Pro</title>
+              <style>
+                body { font-family: sans-serif; padding: 2em; text-align: center; }
+                code { background-color: #f0f0f0; padding: 0.2em 0.4em; border-radius: 3px; }
+              </style>
+            </head>
+            <body>
+              <h2>Koishi Yunhu Pro 适配器已启动</h2>
+              <p>这是一个用于接收云湖消息的 Webhook 地址。</p>
+              <p>请复制浏览器地址栏，并将其粘贴到你的云湖机器人后台的【Webhook订阅地址】中。</p>
+              <p>配置完成后，此适配器即可接收来自云湖的消息和事件。</p>
+            </body>
+          </html>
+        `;
+      });
       ctx.logger.info(`[${bot.selfId}] 机器人上线，创建监听：http://localhost:${ctx.server.port}${botConfig.path}`);
     }
   });
