@@ -1,0 +1,45 @@
+{
+    "title": "Yunhu Adapter",
+    "description": "Koishi 云湖 适配器插件文档",
+    "ignoreDeadLinks": true,
+    "base": "/adapter-yunhupro/",
+    "head": [
+        [
+            "link",
+            {
+                "rel": "icon",
+                "href": "https://www.yhchat.com/favicon.ico"
+            }
+        ],
+        [
+            "meta",
+            {
+                "name": "theme-color",
+                "content": "#00A1D6"
+            }
+        ]
+    ],
+    "themeConfig": {
+        "socialLinks": {
+            "github": "https://github.com/FLY1919/adapter-yunhupro/tree/main"
+        },
+        "lastUpdated": {
+            "text": "上次更新"
+        },
+        "editLink": {
+            "pattern": "https://github.com/FLY1919/adapter-yunhupro/edit/docs/docs/:path",
+            "text": "在 GitHub 上编辑此页"
+        },
+        "logo": "https://www.yhchat.com/favicon.ico",
+        "nav": [
+            {
+                "text": "接入教程",
+                "link": "/markdown/start/config"
+            },
+            {
+                "text": "适配器接口",
+                "link": "/markdown/dev/apis"
+            }
+        ]
+    }
+}
