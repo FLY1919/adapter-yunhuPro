@@ -21,7 +21,7 @@
     ],
     "themeConfig": {
         "socialLinks": {
-            "github": "https://github.com/FLY1919/adapter-yunhupro/tree/main"
+            "github": "https://github.com/FLY1919/adapter-yunhupro"
         },
         "lastUpdated": {
             "text": "上次更新"
@@ -33,11 +33,11 @@
         "logo": "https://www.yhchat.com/favicon.ico",
         "nav": [
             {
-                "text": "接入教程",
-                "link": "/markdown/start/config"
+                "text": "教程",
+                "link": "/markdown/firstime/start"
             },
             {
-                "text": "适配器接口",
+                "text": "接口",
                 "link": "/markdown/dev/apis"
             }
         ]

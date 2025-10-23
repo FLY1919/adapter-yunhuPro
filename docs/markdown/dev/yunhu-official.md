@@ -19,7 +19,6 @@
 *   [上传图片](./yunhu-official/400/7.md)
 *   [上传视频](./yunhu-official/400/8.md)
 *   [上传文件](./yunhu-official/400/9.md)
-*   [代码示例](./yunhu-official/400/10.md)
 
 ## 看板管理
 

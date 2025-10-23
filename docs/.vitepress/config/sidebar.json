@@ -113,10 +113,6 @@
                             {
                                 "text": "上传文件",
                                 "link": "/markdown/dev/yunhu-official/400/9"
-                            },
-                            {
-                                "text": "代码示例",
-                                "link": "/markdown/dev/yunhu-official/400/10"
                             }
                         ]
                     },
@@ -175,7 +171,7 @@
         "items": [
             {
                 "text": "GitHub 仓库",
-                "link": "https://github.com/FLY1919/adapter-yunhupro/tree/main",
+                "link": "https://github.com/FLY1919/adapter-yunhupro",
                 "target": "_blank"
             },
             {
