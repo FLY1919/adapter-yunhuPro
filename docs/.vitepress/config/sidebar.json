@@ -151,20 +151,20 @@
                                 "link": "/markdown/dev/yunhu-official/300/1"
                             }
                         ]
+                    }
+                ]
+            },
+            {
+                "text": "补充文档",
+                "collapsed": true,
+                "items": [
+                    {
+                        "text": "接收消息",
+                        "link": "/markdown/dev/yunhu-official/others/1"
                     },
                     {
-                        "text": "补充文档",
-                        "collapsed": true,
-                        "items": [
-                            {
-                                "text": "接收消息",
-                                "link": "/markdown/dev/yunhu-official/others/1"
-                            },
-                            {
-                                "text": "查询接口",
-                                "link": "/markdown/dev/yunhu-official/others/2"
-                            }
-                        ]
+                        "text": "查询接口",
+                        "link": "/markdown/dev/yunhu-official/others/2"
                     }
                 ]
             }

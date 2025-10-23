@@ -32,7 +32,7 @@ yarn dev
 
 ## 开发适配器
 
-请参考文档开发 -> [开发文档](./yunhu-official.md)
+请参考文档 以开发此适配器 -> [开发文档](./yunhu-official.md)
 
 ---
 
