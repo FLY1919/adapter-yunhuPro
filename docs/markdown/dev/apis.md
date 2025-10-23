@@ -154,7 +154,7 @@ bot.getChannel(channelId: string, guildId?: string): Promise<Universal.Channel>
 
 ## 看板 (Board)
 
-看板是云湖平台提供的一种置顶消息功能。
+看板是云湖平台提供的一种置顶消息功能，像群公告。
 
 ### setBoard()
 
