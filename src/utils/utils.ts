@@ -3,6 +3,7 @@ import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
 import { logger, name } from '..';
+import { yunhuEmojiMap } from './emoji';
 export * from './types';
 
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
@@ -11,9 +12,19 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   isBot: false,
 });
 
+function decodeYunhuEmoji(text: string): string
+{
+  if (!text) return '';
+  return text.replace(/\[\..+?\]/g, (match) =>
+  {
+    return yunhuEmojiMap.get(match) || match;
+  });
+}
+
 async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
 {
   let textContent = (message.content.text || '').replace(/\u200b/g, '');
+  textContent = decodeYunhuEmoji(textContent);
 
   if (message.content.at && message.content.at.length > 0)
   {
