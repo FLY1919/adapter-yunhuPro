@@ -19,7 +19,7 @@
 
 ## ⚙️ 文档
 
-<a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank">点击此处查看文档！</a>
+[点击此处查看文档！](https://fly1919.github.io/adapter-yunhupro/)
 
 ## 🗺️ 路线图 & 暂未实现的功能
 
