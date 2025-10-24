@@ -6,7 +6,6 @@
 
 本插件为 [Koishi](https://koishi.chat/) 框架提供了一个[云湖 (Yunhu)](https://www.yhchat.com/) 平台适配器。
 
-
 ## 📞 联系方式
 
 如需进一步帮助，您可以通过以下方式联系我：
