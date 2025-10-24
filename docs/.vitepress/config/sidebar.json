@@ -161,6 +161,10 @@
                     {
                         "text": "查询接口",
                         "link": "/markdown/dev/additional/2"
+                    },
+                    {
+                        "text": "Emoji映射表",
+                        "link": "/markdown/dev/additional/3"
                     }
                 ]
             }
