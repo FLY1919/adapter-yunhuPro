@@ -187,6 +187,11 @@
                 "text": "Koishi 官网",
                 "link": "https://koishi.chat/zh-CN/guide/",
                 "target": "_blank"
+            },
+            {
+                "text": "原项目（adapter-yunhu）",
+                "link": "https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu",
+                "target": "_blank"
             }
         ]
     }

@@ -18,6 +18,11 @@
 
 ## 贡献者
 
+> **📢 项目来源声明**
+> 
+> 本项目基于 **[@WindyPear](https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu) 的 `adapter-yunhu`** 进行二次开发、维护与功能更新。
+
+
 :::tip
 
 <a href="https://github.com/FLY1919/adapter-yunhupro/graphs/contributors">
