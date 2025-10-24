@@ -11,16 +11,15 @@
   ],
   "license": "Apache-2.0",
   "keywords": [
+    "adapter",
     "chatbot",
     "koishi",
     "plugin",
-    "adapter",
     "yunhu",
     "云湖"
   ],
   "contributors": [
     "FLY1919 <qw687255511@163.com>",
-    "WindyPear-Team <hjrlluobo2h@qq.com>",
     "shangxueink <1919892171@qq.com>"
   ],
   "scripts": {

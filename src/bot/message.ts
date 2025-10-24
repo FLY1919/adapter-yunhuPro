@@ -1,6 +1,4 @@
 import { Context, h, Dict, MessageEncoder } from 'koishi';
-
-import * as Yunhu from '../utils/types';
 import { YunhuBot } from './bot';
 
 export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
@@ -466,8 +464,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
 
         } catch (error)
         {
-
+            this.bot.loggerError(error);
         }
-
     }
 }

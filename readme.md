@@ -12,22 +12,23 @@
 > 本项目基于 **[@WindyPear](https://github.com/WindyPear-Team/koishi-plugin-adapter-yunhu) 的 `adapter-yunhu`** 进行二次开发、维护与功能更新。
 >
 > **开发者寄语：**
-> 原作者没时间维护，我也没时间（我是高中生，悲）。但仍会尽力维护，欢迎大家使用和反馈！
+> 
+> 原作者没时间维护，我也没时间（我是高中生，悲）。
+> 
+> 但仍会尽力维护，欢迎大家使用和反馈！
 
 ---
 
 ## ⚙️ 文档
 
-请前往此处查看文档！
-
-> https://fly1919.github.io/adapter-yunhupro/
+<a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank" rel="noopener noreferrer">点击此处查看文档！</a>
 
 ## 🗺️ 路线图 & 暂未实现的功能
 
 以下云湖平台的功能当前版本暂不支持，欢迎有能力的开发者贡献 PR！
 
 - 快捷菜单的下拉选择、选中菜单暂未支持。
-- 语音消息不会支持。
+- 语音消息不予支持。
 
 ## 📞 联系方式
 

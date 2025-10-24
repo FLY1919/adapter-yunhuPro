@@ -1,9 +1,10 @@
-import { Bot, Context, h, Session, Universal, Logger, HTTP } from 'koishi';
+import { h, Universal, HTTP } from 'koishi';
 
+import { yunhuEmojiMap } from './emoji';
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
-import { logger, name } from '..';
-import { yunhuEmojiMap } from './emoji';
+import { logger } from '..';
+
 export * from './types';
 
 export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
