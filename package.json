@@ -18,7 +18,6 @@
     "yunhu",
     "云湖"
   ],
-  "author": "WindyPear-Team",
   "contributors": [
     "FLY1919 <qw687255511@163.com>",
     "WindyPear-Team <hjrlluobo2h@qq.com>",
@@ -38,15 +37,18 @@
   },
   "koishi": {
     "description": {
-      "zh": "云湖适配器",
-      "en": "Yunhu Adapter"
+      "zh": "[云湖](https://www.yhchat.com/)适配器",
+      "en": "[云湖](https://www.yhchat.com/) adapter",
+      "ja": "[云湖](https://www.yhchat.com/) アダプター",
+      "ko": "[云湖](https://www.yhchat.com/) 어댑터",
+      "zh-TW": "[雲湖](https://www.yhchat.com/) 適配器",
+      "fr": "[云湖](https://www.yhchat.com/) adaptateur",
+      "ru": "[云湖](https://www.yhchat.com/) адаптер",
+      "de": "[云湖](https://www.yhchat.com/) Adapter",
+      "es": "[云湖](https://www.yhchat.com/) adaptador"
     }
   },
   "peerDependencies": {
     "koishi": "^4.18.8"
-  },
-  "dependencies": {
-  },
-  "devDependencies": {
   }
 }

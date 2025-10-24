@@ -18,6 +18,7 @@ export const inject = {
   required: ['http', 'logger', 'server'],
   optional: ['ffmpeg']
 };
+
 export const logger = new Logger(name);
 export const usage = `
 ---
