@@ -17,8 +17,6 @@
 > 
 > 但仍会尽力维护，欢迎大家使用和反馈！
 
----
-
 ## ⚙️ 文档
 
 <a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank" rel="noopener noreferrer">点击此处查看文档！</a>
