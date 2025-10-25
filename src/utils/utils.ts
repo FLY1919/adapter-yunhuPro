@@ -13,85 +13,102 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   isBot: false,
 });
 
-function decodeYunhuEmoji(text: string): string
-{
+
+// 转义正则表达式特殊字符的函数
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function decodeYunhuEmoji(text: string): string {
   if (!text) return '';
-  return text.replace(/\[\..+?\]/g, (match) =>
-  {
+  return text.replace(/\[\..+?\]/g, (match) => {
     return yunhuEmojiMap.get(match) || match;
   });
 }
 
-async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
-{
+async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string> {
   let textContent = (message.content.text || '').replace(/\u200b/g, '');
   textContent = decodeYunhuEmoji(textContent);
 
-  if (message.content.at && message.content.at.length > 0)
-  {
-    // At all is a special case.
-    if (message.content.at.includes('all'))
-    {
+  if (message.content.at && message.content.at.length > 0) {
+    // 构建用户名到ID的映射
+    const tempAtName = {};
+    let atIndex = 0;
+
+    // 首先处理 @全体成员
+    if (message.content.at.includes('all')) {
       textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
     }
-    const atText = `@${sender.senderNickname}`;
-    textContent = textContent.replace(new RegExp(atText, 'g'), h.at(sender.senderId, { name: sender.senderNickname }).toString());
+    const atUsers = message.content.at.filter(item => item !== 'all');
+    const atRegex = /@([^@\s\u200b]+)\u200b/g;
+    let match: RegExpExecArray | null;
+    const atMatches = [];
+
+    // 收集所有匹配的@用户名
+    while ((match = atRegex.exec(textContent)) !== null) {
+      atMatches.push(match[1]); // match[1] 是用户名
+    }
+    const uniqueNames = [...new Set(atMatches)];
+    uniqueNames.forEach(name => {
+      if (atIndex < atUsers.length) {
+        tempAtName[name] = atUsers[atIndex];
+        atIndex++;
+      }
+    });
+
+    // 根据映射表替换所有@
+    Object.entries(tempAtName).forEach(([name, id]) => {
+      const escapedName = escapeRegExp(name);
+      const regex = new RegExp(`@${escapedName}\\\\u200b`, 'g');
+      textContent = textContent.replace(
+        regex,
+        h.at(id, { name: name }).toString()
+      );
+    });
   }
 
-  if (message.content.imageUrl)
-  {
+  if (message.content.imageUrl) {
     textContent += h.image(message.content.imageUrl).toString();
-  } else if (message.content.imageName)
-  {
+  } else if (message.content.imageName) {
     textContent += h.image(bot.config.resourceEndpoint + message.content.imageName).toString();
   }
 
-  if (message.content.fileKey)
-  {
+  if (message.content.fileKey) {
     textContent += h('file', { src: message.content.fileKey }).toString();
   }
 
-  if (message.content.videoKey)
-  {
+  if (message.content.videoKey) {
     textContent += h('video', { src: message.content.videoKey }).toString();
   }
 
   return textContent;
 }
 
-export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
-{
-  switch (input.header.eventType)
-  {
+export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent) {
+  switch (input.header.eventType) {
     case 'message.receive.normal':
     case 'message.receive.instruction': {
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
       let content: string;
 
       // 指令
-      if (message.commandName)
-      {
+      if (message.commandName) {
         const commandName = message.commandName;
-        if (message.contentType === 'form' && message.content.formJson)
-        {
+        if (message.contentType === 'form' && message.content.formJson) {
           // 自定义输入指令：将表单数据序列化为 JSON 字符串作为参数。
           const formJsonString = JSON.stringify(message.content.formJson);
           content = `/${commandName} '${formJsonString}'`;
-        } else
-        {
+        } else {
           const baseContent = await clearMsg(bot, message, sender);
           // 直接发送的指令：文本以 /指令名 开头
-          if (baseContent.startsWith(`/${commandName}`))
-          {
+          if (baseContent.startsWith(`/${commandName}`)) {
             content = baseContent;
-          } else
-          {
+          } else {
             // 普通指令：文本是参数，在前面加上指令
             content = `/${commandName} ${baseContent}`.trim();
           }
         }
-      } else
-      {
+      } else {
         // 普通消息
         content = await clearMsg(bot, message, sender);
       }
@@ -117,12 +134,10 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       const session = bot.session(sessionPayload);
       session.content = content;
 
-      if (message.chatType === 'bot')
-      {
+      if (message.chatType === 'bot') {
         session.isDirect = true;
         session.channelId = `private:${sender.senderId}`;
-      } else
-      {
+      } else {
         session.isDirect = false;
         session.guildId = message.chatId;
         session.channelId = `group:${chat.chatId}`;
@@ -135,53 +150,42 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         };
       }
 
-      if (message.parentId)
-      {
+      if (message.parentId) {
         if (message.content.parentImgName)  //  图片引用
         {
-          try
-          {
+          try {
             const imageUrl = bot.config.resourceEndpoint + message.content.parentImgName;
             const base64 = await getImageAsBase64(imageUrl, bot.ctx.http);
             const content = h.image(base64).toString();
 
             let quoteMessage: Universal.Message;
-            try
-            {
+            try {
               quoteMessage = await bot.getMessage(session.channelId, message.parentId);
-            } catch (e)
-            {
+            } catch (e) {
               // ignore
             }
 
-            if (quoteMessage)
-            {
+            if (quoteMessage) {
               session.quote = {
                 ...quoteMessage,
                 content,
                 elements: h.parse(content),
               };
             }
-          } catch (error)
-          {
+          } catch (error) {
             bot.logger.warn(`Failed to process quoted image ${message.parentId}:`, error);
             session.quote = { id: message.parentId }; // Fallback
           }
-        } else
-        {
+        } else {
           // 普通引用
-          try
-          {
+          try {
             const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
-            if (quoteMessage)
-            {
+            if (quoteMessage) {
               session.quote = quoteMessage;
-            } else
-            {
+            } else {
               session.quote = { id: message.parentId };
             }
-          } catch (error)
-          {
+          } catch (error) {
             bot.logger.warn(`Failed to get quote message ${message.parentId}:`, error);
             session.quote = { id: message.parentId };
           }
@@ -198,8 +202,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
     default: {
       const session = bot.session();
       session.setInternal(bot.platform, input);
-      switch (input.header.eventType)
-      {
+      switch (input.header.eventType) {
         case 'bot.followed': {
           session.type = 'friend-added';
           const { sender } = input.event as Yunhu.MessageEvent;
@@ -287,10 +290,8 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
  * @param http Koishi HTTP 实例
  * @returns Base64 格式的图片
  */
-export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
-{
-  try
-  {
+export async function getImageAsBase64(url: string, http: HTTP): Promise<string> {
+  try {
     // 设置请求头，包括Referer
     const httpClient = http.extend({
       headers: {
@@ -300,8 +301,7 @@ export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
     });
     const { data, type } = await httpClient.file(url);
 
-    if (!type || !type.startsWith('image/'))
-    {
+    if (!type || !type.startsWith('image/')) {
       throw new Error('响应不是有效的图片类型');
     }
 
@@ -310,8 +310,7 @@ export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
 
     // 返回Data URL格式
     return `data:${type};base64,${base64}`;
-  } catch (error)
-  {
+  } catch (error) {
     logger.error(`无法获取图片: ${url}, 错误: ${error.message}`);
     return url;
   }
