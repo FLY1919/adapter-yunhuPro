@@ -1,7 +1,8 @@
-import { promises as fs } from 'fs';
-import * as path from 'path';
 import { Context, Logger, Universal, sleep } from 'koishi';
 import { } from '@koishijs/plugin-server';
+
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
 
 import { adaptSession } from './utils/utils';
 import * as Yunhu from './utils/types';
@@ -19,7 +20,7 @@ export const inject = {
   optional: ['ffmpeg']
 };
 
-export const logger = new Logger(name);
+export const logger = new Logger('adapter-yunhupro');
 export const usage = `
 ---
 `;

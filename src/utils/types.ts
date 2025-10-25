@@ -146,7 +146,7 @@ export interface Content
   fileKey?: string;       // contentType 为 file 时使用
   videoKey?: string;      // contentType 为 video 时使用
   buttons?: Button[];     // 所有类型都可能有
-  at?: [string[], string]; // 第一个元素是用户ID数组，第二个元素是包含@的文本内容
+  at?: string[];          // @的用户ID数组
   parentId?: string;      // 回复消息的 ID
   parent?: string;        // 回复消息的 
   parentImgName?: string; // 回复消息的图片名称

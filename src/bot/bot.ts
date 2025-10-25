@@ -1,12 +1,11 @@
+import { FormatType, getImageAsBase64 } from '../utils/utils';
 import { Bot, Context, Fragment, Logger } from 'koishi';
 import { SendOptions } from '@satorijs/protocol';
-
-import { FormatType, getImageAsBase64 } from '../utils/utils';
 import { BotTableItem, Config } from '../config';
 import { YunhuMessageEncoder } from './message';
 import { Internal } from './internal';
 
-const logger = new Logger('yunhu');
+const logger = new Logger('adapter-yunhupro');
 
 export class YunhuBot extends Bot<Context, Config>
 {

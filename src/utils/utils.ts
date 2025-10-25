@@ -29,66 +29,56 @@ function decodeYunhuEmoji(text: string): string
 
 async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
 {
-  // 确定文本内容的来源
-  let textContent: string;
+  let textContent = message.content.text || '';
+  const atUserIds = message.content.at;
 
-  // 如果有 at 数据，优先使用 at[1] 作为文本内容
-  if (message.content.at && Array.isArray(message.content.at) && message.content.at.length >= 2)
+  // 存在 at 信息，则进行处理
+  if (atUserIds && Array.isArray(atUserIds) && atUserIds.length > 0)
   {
-    textContent = message.content.at[1];
-  } else
-  {
-    textContent = message.content.text || '';
-  }
-
-  // 处理 @ 消息
-  if (message.content.at && Array.isArray(message.content.at) && message.content.at.length >= 2)
-  {
-    const atUserIds = message.content.at[0]; // 第一个元素是用户ID数组
-    const tempAtName: Record<string, string> = {};
-
-    // 处理 @全体成员
+    // @全体成员
     if (atUserIds.includes('all'))
     {
-      textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
+      // 匹配 "@全体成员" 及其后的可选空格或零宽空格
+      textContent = textContent.replace(/@全体成员[\s\u200b]?/g, h('at', { type: 'all' }).toString());
     }
 
-    const validUserIds = atUserIds.filter(item => item !== 'all');
-
-    // 使用正则匹配所有 @用户名+零宽字符 的模式
-    const atRegex = /@([^@\s]+)(\u200b|\u2068|\u2069|\u2066|\u2067)?/g;
-    let match: RegExpExecArray | null;
-    const atMatches: string[] = [];
-
-    // 收集所有匹配的@用户名
-    while ((match = atRegex.exec(textContent)) !== null)
+    const validUserIds = atUserIds.filter(id => id !== 'all');
+    if (validUserIds.length > 0)
     {
-      atMatches.push(match[1]);
-    }
-
-    // 构建映射：用户名 -> 用户ID
-    atMatches.forEach((name, index) =>
-    {
-      if (index < validUserIds.length)
+      // @用户名
+      // 正则表达式匹配 @后跟非@、非空白、非零宽字符的用户名，直到遇到一个空格或零宽字符
+      const mentionRegex = /@([^@\s\u200b\u2068\u2069\u2066\u2067]+)[\s\u200b\u2068\u2069\u2066\u2067]/g;
+      let match;
+      const mentionedNames: string[] = [];
+      while ((match = mentionRegex.exec(textContent)) !== null)
       {
-        tempAtName[name] = validUserIds[index];
+        mentionedNames.push(match[1]);
       }
-    });
 
-    // 根据映射表替换所有@
-    Object.entries(tempAtName).forEach(([name, id]) =>
-    {
-      const escapedName = escapeRegExp(name);
-      const regex = new RegExp(`@${escapedName}[\\u200b\\u2068\\u2069\\u2066\\u2067]?`, 'g');
-      textContent = textContent.replace(
-        regex,
-        h.at(id, { name: name }).toString()
-      );
-    });
+      // 按首次出现顺序获取唯一的用户名
+      const uniqueMentionedNames = [...new Set(mentionedNames)];
+
+      // 创建从用户名到用户ID的映射
+      const nameToIdMap = new Map<string, string>();
+      uniqueMentionedNames.forEach((name, index) =>
+      {
+        if (index < validUserIds.length)
+        {
+          nameToIdMap.set(name, validUserIds[index]);
+        }
+      });
+
+      nameToIdMap.forEach((id, name) =>
+      {
+        const escapedName = escapeRegExp(name);
+        const replaceRegex = new RegExp(`@${escapedName}[\\s\\u200b\\u2068\\u2069\\u2066\\u2067]`, 'g');
+        textContent = textContent.replace(replaceRegex, h.at(id, { name }).toString());
+      });
+    }
   }
 
-  // 移除零宽字符和解码表情（在 @ 处理之后进行）
-  textContent = textContent.replace(/\u200b/g, '');
+  // 移除文本中残留的零宽字符并解码表情
+  textContent = textContent.replace(/[\u200b\u2068\u2069\u2066\u2067]/g, '');
   textContent = decodeYunhuEmoji(textContent);
 
   // 处理其他媒体内容
