@@ -31,41 +31,48 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sen
   textContent = decodeYunhuEmoji(textContent);
 
   if (message.content.at && message.content.at.length > 0) {
-    // 构建用户名到ID的映射
-    const tempAtName = {};
-    let atIndex = 0;
+  // 正确获取用户ID数组和文本内容
+  const atUserIds = message.content.at[0]; // 第一个元素是用户ID数组
+  let textContent = message.content.at[1]; // 第二个元素是文本内容
 
-    // 首先处理 @全体成员
-    if (message.content.at.includes('all')) {
-      textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
-    }
-    const atUsers = message.content.at.filter(item => item !== 'all');
-    const atRegex = /@([^@\s\u200b]+)\u200b/g;
-    let match: RegExpExecArray | null;
-    const atMatches = [];
-
-    // 收集所有匹配的@用户名
-    while ((match = atRegex.exec(textContent)) !== null) {
-      atMatches.push(match[1]); // match[1] 是用户名
-    }
-    const uniqueNames = [...new Set(atMatches)];
-    uniqueNames.forEach(name => {
-      if (atIndex < atUsers.length) {
-        tempAtName[name] = atUsers[atIndex];
-        atIndex++;
-      }
-    });
-
-    // 根据映射表替换所有@
-    Object.entries(tempAtName).forEach(([name, id]) => {
-      const escapedName = escapeRegExp(name);
-      const regex = new RegExp(`@${escapedName}\\\\u200b`, 'g');
-      textContent = textContent.replace(
-        regex,
-        h.at(id, { name: name }).toString()
-      );
-    });
+  const tempAtName = {};
+  if (atUserIds.includes('all')) {
+    textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
   }
+  const validUserIds = atUserIds.filter(item => item !== 'all');
+  
+  // 使用正则匹配所有 @用户名+零宽字符 的模式
+  const atRegex = /@([^@\s]+)(\u200b|\u2068|\u2069|\u2066|\u2067)?/g;
+  let match: RegExpExecArray | null;
+  const atMatches = [];
+  
+  // 收集所有匹配的@用户名
+  while ((match = atRegex.exec(textContent)) !== null) {
+    // match[1] 是用户名，可能后面跟着零宽字符
+    atMatches.push(match[1]);
+  }
+  
+  // 构建映射：用户名 -> 用户ID
+  // 假设 atUserIds 的顺序与 @ 出现的顺序一致
+  atMatches.forEach((name, index) => {
+    if (index < validUserIds.length) {
+      tempAtName[name] = validUserIds[index];
+    }
+  });
+
+  
+  // 根据映射表替换所有@
+  Object.entries(tempAtName).forEach(([name, id]) => {
+    const escapedName = escapeRegExp(name);
+    const regex = new RegExp(`@${escapedName}[\\u200b\\u2068\\u2069\\u2066\\u2067]?`, 'g');
+    textContent = textContent.replace(
+      regex, 
+      h.at(id, { name: name }).toString()
+    );
+  });
+
+}
+
 
   if (message.content.imageUrl) {
     textContent += h.image(message.content.imageUrl).toString();
