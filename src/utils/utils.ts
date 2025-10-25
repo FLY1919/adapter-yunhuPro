@@ -1,5 +1,4 @@
 import { h, Universal, HTTP } from 'koishi';
-
 import { yunhuEmojiMap } from './emoji';
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
@@ -13,9 +12,8 @@ export const decodeUser = (user: Yunhu.Sender): Universal.User => ({
   isBot: false,
 });
 
-
 // 转义正则表达式特殊字符的函数
-function escapeRegExp(string) {
+function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
@@ -27,53 +25,61 @@ function decodeYunhuEmoji(text: string): string {
 }
 
 async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string> {
-  let textContent = (message.content.text || '').replace(/\u200b/g, '');
-  textContent = decodeYunhuEmoji(textContent);
-
-  if (message.content.at && message.content.at.length > 0) {
-  // 正确获取用户ID数组和文本内容
-  const atUserIds = message.content.at[0]; // 第一个元素是用户ID数组
-  let textContent = message.content.at[1]; // 第二个元素是文本内容
-
-  const tempAtName = {};
-  if (atUserIds.includes('all')) {
-    textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
-  }
-  const validUserIds = atUserIds.filter(item => item !== 'all');
+  // 确定文本内容的来源
+  let textContent: string;
   
-  // 使用正则匹配所有 @用户名+零宽字符 的模式
-  const atRegex = /@([^@\s]+)(\u200b|\u2068|\u2069|\u2066|\u2067)?/g;
-  let match: RegExpExecArray | null;
-  const atMatches = [];
-  
-  // 收集所有匹配的@用户名
-  while ((match = atRegex.exec(textContent)) !== null) {
-    // match[1] 是用户名，可能后面跟着零宽字符
-    atMatches.push(match[1]);
+  // 如果有 at 数据，优先使用 at[1] 作为文本内容
+  if (message.content.at && Array.isArray(message.content.at) && message.content.at.length >= 2) {
+    textContent = message.content.at[1];
+  } else {
+    textContent = message.content.text || '';
   }
   
-  // 构建映射：用户名 -> 用户ID
-  // 假设 atUserIds 的顺序与 @ 出现的顺序一致
-  atMatches.forEach((name, index) => {
-    if (index < validUserIds.length) {
-      tempAtName[name] = validUserIds[index];
+  // 处理 @ 消息
+  if (message.content.at && Array.isArray(message.content.at) && message.content.at.length >= 2) {
+    const atUserIds = message.content.at[0]; // 第一个元素是用户ID数组
+    const tempAtName: Record<string, string> = {};
+    
+    // 处理 @全体成员
+    if (atUserIds.includes('all')) {
+      textContent = textContent.replace(/@全体成员/g, h('at', { type: 'all' }).toString());
     }
-  });
-
+    
+    const validUserIds = atUserIds.filter(item => item !== 'all');
+    
+    // 使用正则匹配所有 @用户名+零宽字符 的模式
+    const atRegex = /@([^@\s]+)(\u200b|\u2068|\u2069|\u2066|\u2067)?/g;
+    let match: RegExpExecArray | null;
+    const atMatches: string[] = [];
+    
+    // 收集所有匹配的@用户名
+    while ((match = atRegex.exec(textContent)) !== null) {
+      atMatches.push(match[1]);
+    }
+    
+    // 构建映射：用户名 -> 用户ID
+    atMatches.forEach((name, index) => {
+      if (index < validUserIds.length) {
+        tempAtName[name] = validUserIds[index];
+      }
+    });
+    
+    // 根据映射表替换所有@
+    Object.entries(tempAtName).forEach(([name, id]) => {
+      const escapedName = escapeRegExp(name);
+      const regex = new RegExp(`@${escapedName}[\\u200b\\u2068\\u2069\\u2066\\u2067]?`, 'g');
+      textContent = textContent.replace(
+        regex, 
+        h.at(id, { name: name }).toString()
+      );
+    });
+  }
   
-  // 根据映射表替换所有@
-  Object.entries(tempAtName).forEach(([name, id]) => {
-    const escapedName = escapeRegExp(name);
-    const regex = new RegExp(`@${escapedName}[\\u200b\\u2068\\u2069\\u2066\\u2067]?`, 'g');
-    textContent = textContent.replace(
-      regex, 
-      h.at(id, { name: name }).toString()
-    );
-  });
-
-}
-
-
+  // 移除零宽字符和解码表情（在 @ 处理之后进行）
+  textContent = textContent.replace(/\u200b/g, '');
+  textContent = decodeYunhuEmoji(textContent);
+  
+  // 处理其他媒体内容
   if (message.content.imageUrl) {
     textContent += h.image(message.content.imageUrl).toString();
   } else if (message.content.imageName) {
@@ -90,6 +96,7 @@ async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sen
 
   return textContent;
 }
+
 
 export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent) {
   switch (input.header.eventType) {
