@@ -23,6 +23,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         let [type, id] = this.channelId.split(':');
         const recvId = id;
         const recvType = type === 'private' ? 'user' : type;
+
         // 初始化 payload
         this.payload = {
             recvId,
@@ -58,6 +59,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         }
         session.app.emit(session, 'send', session);
     }
+
     // 发送缓冲区内的消息
     async flush()
     {
@@ -74,6 +76,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.markdown = "";
             this.message = [];
         }
+
         if (!this.payload.content.text && !this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey)
         {
             if (this.text || this.markdown || this.html)
@@ -96,6 +99,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         {
             this.payload.content.text = this.html;
         }
+
         this.bot.logInfo('send payload：', this.payload);
         const response = await this.bot.internal.sendMessage(this.payload);
 
@@ -112,6 +116,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
     {
         const { type, attrs, children } = element;
         this.message.push(element);
+
         try
         {
             if (type === 'text')
@@ -273,7 +278,6 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                 }
 
             }
-
             else if (type === 'yunhu:markdown')
             {
                 await this.flush();

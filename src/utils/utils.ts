@@ -27,7 +27,7 @@ function decodeYunhuEmoji(text: string): string
   });
 }
 
-async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
+export async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yunhu.Sender): Promise<string>
 {
   let textContent = message.content.text || '';
   const atUserIds = message.content.at;

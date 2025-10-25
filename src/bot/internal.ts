@@ -1,6 +1,6 @@
 import { HTTP, Dict, Universal } from 'koishi';
 
-import { FormatType } from '../utils/utils';
+import { FormatType, clearMsg } from '../utils/utils';
 import * as Types from '../utils/types';
 import { YunhuBot } from './bot';
 
@@ -168,9 +168,17 @@ export class Internal
     if (res.code === 1 && res.data.list.length > 0)
     {
       const msg = res.data.list[0];
+      const sender: Types.Sender = {
+        senderId: msg.senderId,
+        senderNickname: msg.senderNickname,
+        //  下面两个属性无实际作用，仅用于内部处理。
+        senderType: msg.senderType as 'user',
+        senderUserLevel: 'unknown',
+      };
+      const content = await clearMsg(this.bot, msg, sender);
       return {
         id: msg.msgId,
-        content: msg.content.text,
+        content: content,
         user: {
           id: msg.senderId,
           name: msg.senderNickname,
