@@ -17,9 +17,11 @@ export abstract class BaseUploader
     )
     {
         // 设置不同资源类型的最大大小限制
-        this.MAX_SIZE = resourceType === 'image' ? 10 * 1024 * 1024 :
-            resourceType === 'video' ? 20 * 1024 * 1024 :
-                100 * 1024 * 1024;
+        this.MAX_SIZE = resourceType === 'image'
+            ? 10 * 1024 * 1024
+            : resourceType === 'video'
+                ? 20 * 1024 * 1024
+                : 100 * 1024 * 1024;
     }
 
     protected async sendFormData(form: FormData): Promise<string>

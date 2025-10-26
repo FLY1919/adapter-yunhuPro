@@ -10,7 +10,8 @@ export class ImageUploader extends BaseUploader
 {
     constructor(http: HTTP, token: string, apiendpoint: string, bot: YunhuBot)
     {
-        super(http, token, apiendpoint, 'image', bot);
+        super(http, token, apiendpoint,
+            'image', bot);
     }
 
     async upload(url: string): Promise<string>
@@ -34,8 +35,17 @@ export class ImageUploader extends BaseUploader
         this.bot.logInfo(`检测到的MIME类型: ${mimeType}`);
 
         // 验证图片格式
-        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
-            'image/bmp', 'image/tiff', 'image/svg+xml', 'image/x-icon', "image/jpg"];
+        const validImageTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/bmp',
+            'image/tiff',
+            'image/svg+xml',
+            'image/x-icon',
+            "image/jpg"
+        ];
 
         if (!validImageTypes.includes(mimeType))
         {

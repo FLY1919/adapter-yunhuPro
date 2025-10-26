@@ -31,74 +31,67 @@ export class VideoUploader extends BaseUploader
 
         let finalBuffer = buffer;
 
-        // 如果视频需要压缩且大小超过限制，使用 ffmpeg 服务进行压缩
+        // 单次快速压缩
         if (originalSize > this.MAX_SIZE)
         {
-            this.bot.logInfo(`视频超过20MB限制，启动压缩...`);
+            this.bot.logInfo(`视频超过20MB限制，启动快速压缩...`);
 
             let tempInput: string | null = null;
             let tempOutput: string | null = null;
 
             try
             {
-                // 创建临时文件
                 tempInput = join(tmpdir(), `input_${Date.now()}.mp4`);
-                tempOutput = join(tmpdir(), `output_${Date.now()}.mp4`);
-
-                // 写入原始视频数据
                 writeFileSync(tempInput, buffer);
 
-                // 使用文件路径作为输入，输出到文件
+                // CRF每增加6，码率大约减半
+                const sizeRatio = originalSize / (this.MAX_SIZE * 0.9);
+                // 根据大小比例增加CRF
+                const crfIncrement = 6 * Math.log2(sizeRatio);
+                // 目标CRF，向上取整
+                // 设置一个上限(e.g., 45)防止质量过低
+                const targetCrf = Math.min(Math.ceil(28 + crfIncrement), 45);
+
+                this.bot.logInfo(`原始/目标大小比例: ${sizeRatio.toFixed(2)}x, 估算目标CRF: ${targetCrf}`);
+
+                // 执行单次压缩
+                tempOutput = join(tmpdir(), `output_${Date.now()}.mp4`);
                 await (this.bot.ctx as Context).ffmpeg.builder()
                     .input(tempInput)
                     .outputOption('-c:v', 'libx264')
-                    .outputOption('-crf', '28')
-                    .outputOption('-preset', 'fast')
+                    .outputOption('-crf', String(targetCrf))
+                    .outputOption('-preset', 'fast') // 速度优先
                     .outputOption('-c:a', 'aac')
                     .outputOption('-b:a', '64k')
-                    .run('file', tempOutput); // 使用 'file' 类型并指定输出路径
+                    .run('file', tempOutput);
 
                 // 读取压缩后的视频
                 finalBuffer = readFileSync(tempOutput);
-
                 const compressedSize = finalBuffer.length;
                 const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2);
                 this.bot.logInfo(`压缩后视频大小: ${compressedMB}MB`);
 
-                // 检查压缩是否有效
                 if (compressedSize === 0)
                 {
                     throw new Error('压缩后的视频为空');
                 }
+
+                // 检查压缩后的大小
+                if (compressedSize > this.MAX_SIZE)
+                {
+                    this.bot.logInfo(`单次压缩后文件仍然过大 (${compressedMB}MB)，将放弃上传。`);
+                    throw new Error(`视频压缩后大小为 ${compressedMB}MB，仍然超过20MB限制`);
+                }
             } catch (error)
             {
                 this.bot.loggerError('视频压缩失败:', error);
-                // 如果压缩失败，使用原始视频
-                this.bot.logInfo('使用原始视频进行上传（可能超过大小限制）');
-                finalBuffer = buffer;
+                // 如果压缩失败，直接抛出错误
+                throw new Error(`视频处理失败: ${error.message}`);
             } finally
             {
                 // 清理临时文件
-                if (tempInput)
-                {
-                    try
-                    {
-                        unlinkSync(tempInput);
-                    } catch (e)
-                    {
-                        this.bot.logInfo('删除临时输入文件失败:', e);
-                    }
-                }
-                if (tempOutput)
-                {
-                    try
-                    {
-                        unlinkSync(tempOutput);
-                    } catch (e)
-                    {
-                        this.bot.logInfo('删除临时输出文件失败:', e);
-                    }
-                }
+                if (tempInput) { try { unlinkSync(tempInput); } catch (e) { this.bot.logInfo('删除临时输入文件失败:', e); } }
+                if (tempOutput) { try { unlinkSync(tempOutput); } catch (e) { this.bot.logInfo('删除临时输出文件失败:', e); } }
             }
         }
 
