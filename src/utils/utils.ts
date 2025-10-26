@@ -1,8 +1,12 @@
-import { h, Universal, HTTP } from 'koishi';
+import { h, Universal, HTTP, Context } from 'koishi';
 import { yunhuEmojiMap } from './emoji';
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
 import { logger } from '..';
+
+import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export * from './types';
 
@@ -374,5 +378,80 @@ export async function getImageAsBase64(url: string, http: HTTP): Promise<string>
   {
     logger.error(`无法获取图片: ${url}, 错误: ${error.message}`);
     return url;
+  }
+}
+
+/**
+ * 将 rgba 颜色字符串转换为 ffmpeg 使用的 0xRRGGBB 格式
+ * @param rgbaColor - 例如 "rgba(128, 0, 128, 1)"
+ * @returns ffmpeg兼容的十六进制颜色, 例如 "0x800080"
+ */
+export function parseRgbaToHex(rgbaColor: string): string
+{
+  const match = rgbaColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match)
+  {
+    // 如果格式不匹配，返回一个默认颜色（例如紫色）
+    return '0x800080';
+  }
+  const r = parseInt(match[1]).toString(16).padStart(2, '0');
+  const g = parseInt(match[2]).toString(16).padStart(2, '0');
+  const b = parseInt(match[3]).toString(16).padStart(2, '0');
+  return `0x${r}${g}${b}`;
+}
+
+/**
+ * 封装的视频压缩函数
+ * @param bot - YunhuBot 实例
+ * @param videoBuffer - 需要压缩的视频 Buffer
+ * @param maxSize - 最大允许大小
+ * @returns 压缩后的视频 Buffer
+ */
+export async function compressVideo(bot: YunhuBot, videoBuffer: Buffer, maxSize: number): Promise<Buffer>
+{
+  bot.logInfo(`视频文件大小超过限制，启动快速压缩...`);
+
+  let tempInput: string | null = null;
+  let tempOutput: string | null = null;
+
+  try
+  {
+    tempInput = join(tmpdir(), `compress_input_${Date.now()}.mp4`);
+    writeFileSync(tempInput, videoBuffer);
+
+    const originalSize = videoBuffer.length;
+    const sizeRatio = originalSize / (maxSize * 0.9);
+    const crfIncrement = 6 * Math.log2(sizeRatio);
+    const targetCrf = Math.min(Math.ceil(28 + crfIncrement), 45);
+
+    bot.logInfo(`原始/目标大小比例: ${sizeRatio.toFixed(2)}x, 估算目标CRF: ${targetCrf}`);
+
+    tempOutput = join(tmpdir(), `compress_output_${Date.now()}.mp4`);
+
+    await (bot.ctx as Context).ffmpeg.builder()
+      .input(tempInput)
+      .outputOption('-c:v', 'libx264')
+      .outputOption('-crf', String(targetCrf))
+      .outputOption('-preset', 'fast')
+      .outputOption('-c:a', 'copy') // 默认保留原音频流
+      .run('file', tempOutput);
+
+    const compressedBuffer = readFileSync(tempOutput);
+    bot.logInfo(`压缩后视频大小: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+    if (compressedBuffer.length > maxSize)
+    {
+      throw new Error(`视频压缩后大小仍然超过限制`);
+    }
+
+    return compressedBuffer;
+  } catch (error)
+  {
+    bot.loggerError('视频压缩过程中发生错误:', error);
+    throw error; // 将错误向上抛出
+  } finally
+  {
+    if (tempInput) { try { unlinkSync(tempInput); } catch (e) { } }
+    if (tempOutput) { try { unlinkSync(tempOutput); } catch (e) { } }
   }
 }

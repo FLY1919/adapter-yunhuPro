@@ -7,12 +7,14 @@ import { YunhuBot } from './bot';
 import { ImageUploader } from '../internal/ImageUploader';
 import { VideoUploader } from '../internal/VideoUploader';
 import { FileUploader } from '../internal/FileUploader';
+import { AudioUploader } from '../internal/AudioUploader';
 
 export class Internal
 {
   private imageUploader: ImageUploader;
   private videoUploader: VideoUploader;
   private fileUploader: FileUploader;
+  private audioUploader: AudioUploader;
   private bot: YunhuBot;
 
   constructor(
@@ -27,6 +29,7 @@ export class Internal
     this.imageUploader = new ImageUploader(http, token, apiendpoint, bot);
     this.videoUploader = new VideoUploader(http, token, apiendpoint, bot);
     this.fileUploader = new FileUploader(http, token, apiendpoint, bot);
+    this.audioUploader = new AudioUploader(http, token, apiendpoint, bot);
   }
 
   async sendMessage(payload: Dict): Promise<Types.YunhuResponse>
@@ -46,6 +49,11 @@ export class Internal
   async uploadVideo(video: string | Buffer | any): Promise<string>
   {
     return this.videoUploader.upload(video);
+  }
+
+  async uploadAudio(audio: string | Buffer | any): Promise<string>
+  {
+    return this.audioUploader.upload(audio);
   }
 
   async uploadFile(fileData: string | Buffer | any): Promise<string>

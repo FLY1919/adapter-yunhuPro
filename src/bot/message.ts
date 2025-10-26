@@ -315,6 +315,24 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                 }
 
             }
+            else if (type === 'audio')
+            {
+                await this.flush();
+                this.sendType = 'video'; // 最终发送的是视频
+                try
+                {
+                    // 尝试上传音频（它会被转换为视频）获取videoKey
+                    const videokey = await this.bot.internal.uploadAudio(element.attrs.src);
+                    this.payload.content.videoKey = videokey;
+                    await this.flush();
+                } catch (error)
+                {
+                    this.bot.loggerError(`音频上传失败: ${error}`);
+                    this.sendType = 'text';
+                    this.text += `[音频上传失败]`;
+                    await this.flush();
+                }
+            }
             else if (type === 'yunhu:markdown')
             {
                 await this.flush();

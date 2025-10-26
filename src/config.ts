@@ -16,6 +16,7 @@ export interface Config
     resourceEndpoint?: string;
     loggerinfo: boolean;
     botTable: BotTableItem[];
+    audioBackgroundColor?: string;
 }
 
 export const Config: Schema<Config> =
@@ -47,6 +48,13 @@ export const Config: Schema<Config> =
                 }])
                 .description('机器人配置列表。<br>需填写机器人的ID、Token、监听路径。<br>**注意**：不同机器人 需要设置 **不同的接收路径**，否则视为无效'),
         }).description('基础设置'),
+
+        Schema.object({
+            audioBackgroundColor: Schema.string()
+                .role('color')
+                .default('rgba(144,116,244,1)')
+                .description('音频转为视频时使用的背景颜色。<br>仅RGB通道生效，A通道（透明度）不生效'),
+        }).description('进阶设置'),
 
         Schema.object({
             endpoint: Schema.string()
