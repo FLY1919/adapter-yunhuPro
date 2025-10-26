@@ -1,6 +1,6 @@
 import { HTTP, Dict, Universal } from 'koishi';
 
-import { FormatType, clearMsg } from '../utils/utils';
+import { FormatType, clearMsg, getImageAsBase64 } from '../utils/utils';
 import * as Types from '../utils/types';
 import { YunhuBot } from './bot';
 
@@ -89,7 +89,7 @@ export class Internal
       return {
         id: _payload.data.group.groupId,
         name: _payload.data.group.name,
-        avatar: _payload.data.group.avatarUrl
+        avatar: await getImageAsBase64(_payload.data.group.avatarUrl, this.bot.ctx.http)
       };
     } catch (error)
     {
@@ -114,7 +114,7 @@ export class Internal
         return {
           id: userPayload.data.user.userId,
           name: userPayload.data.user.nickname,
-          avatar: userPayload.data.user.avatarUrl,
+          avatar: await getImageAsBase64(userPayload.data.user.avatarUrl, this.bot.ctx.http),
           isBot: false, // 这是一个普通用户
         };
       }
@@ -127,7 +127,7 @@ export class Internal
           return {
             id: botPayload.data.bot.botId,
             name: botPayload.data.bot.nickname,
-            avatar: botPayload.data.bot.avatarUrl,
+            avatar: await getImageAsBase64(botPayload.data.bot.avatarUrl, this.bot.ctx.http),
             isBot: true, // 这是一个机器人
           };
         }
