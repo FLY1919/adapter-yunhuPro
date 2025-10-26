@@ -26,8 +26,6 @@ export class ImageUploader extends BaseUploader
     // 私有方法，处理上传逻辑
     private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
     {
-        this.bot.logInfo(`开始处理图片上传，URL: ${url}`);
-
         // 从URL获取文件
         const { data, filename, type: mimeType } = await this.http.file(url, { timeout: 30000 });
         const buffer = Buffer.from(data);

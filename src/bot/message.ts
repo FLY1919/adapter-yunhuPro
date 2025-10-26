@@ -9,6 +9,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
     private html = "";
     private text = "";
     private markdown = "";
+    private atPayload: string[] = [];
     private message: Dict = [];
     private switch_message: boolean = true;
     private messageId: string;
@@ -75,20 +76,21 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.text = "";
             this.markdown = "";
             this.message = [];
+            this.atPayload = [];
+            delete this.payload.content.at; // Remove at from content.
         }
 
-        if (!this.payload.content.text && !this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey)
+        if (!this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey && !this.text && !this.markdown && !this.html)
         {
-            if (this.text || this.markdown || this.html)
-            {
-                // do nothing and continue
-            } else
-            {
-                return;
-            }
+            return; // Nothing to send.
         }
 
+        if (!this.sendType)
+        {
+            this.sendType = 'text';
+        }
         this.payload.contentType = this.sendType;
+
         if (this.sendType === 'text')
         {
             this.payload.content.text = this.text;
@@ -100,7 +102,14 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.payload.content.text = this.html;
         }
 
-        this.bot.logInfo('send payload：', this.payload);
+        if (this.atPayload.length > 0)
+        {
+            this.payload.content.at = this.atPayload;
+            this.payload.contentType = 'markdown';
+            this.payload.content.text = this.markdown || this.text;
+        }
+
+        this.bot.logInfo('将发送 payload：\n', JSON.stringify(this.payload, null, 2));
         const response = await this.bot.internal.sendMessage(this.payload);
 
         if (response.code === 1 && response.data?.messageInfo?.msgId)
@@ -173,16 +182,46 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             }
             else if (type === 'at')
             {
-                // 处理@用户元素
-                if (this.sendType == undefined)
+                if (this.sendType === 'image')
                 {
-                    this.sendType = 'markdown';
-                } else if (this.sendType === 'image')
-                {
-                    this.sendType = 'markdown';
+                    // 如果缓冲区中已有图片，先发送
+                    await this.flush();
                 }
-                this.markdown += this.sendType != 'html' ? `[@${element.attrs.name || element.attrs.id}](https://www.yhchat.com/user/homepage/${element.attrs.id}) ` : '';
-                this.html += `<a href="https://www.yhchat.com/user/homepage/${element.attrs.id}}">@${element.attrs.name || element.attrs.id}</a>`;
+                // 将sendType设置为基于文本的
+                if (this.sendType === undefined)
+                {
+                    this.sendType = 'text';
+                }
+
+                const userId = attrs.id;
+                if (!userId)
+                {
+                    await this.render(children);
+                    return;
+                }
+
+                this.atPayload.push(userId);
+
+                // 获取要显示的用户名
+                let userName = attrs.name;
+                if (!userName)
+                {
+                    try
+                    {
+                        const user = await this.bot.getUser(userId);
+                        userName = user.name;
+                    } catch (error)
+                    {
+                        this.bot.logger.warn(`获取用户ID ${userId} 的信息失败，将回退到ID`, error);
+                        userName = userId; // 如果获取名称失败，则回退到id
+                    }
+                }
+
+                // 附加文本表示形式：@username，后跟一个空格和一个零宽度空格以确保安全
+                const atText = `@${userName}​ `;
+                this.text += atText;
+                this.markdown += atText;
+                this.html += `<span>${atText}</span>`;
             }
             else if (type === 'br')
             {
