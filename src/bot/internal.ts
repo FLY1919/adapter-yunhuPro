@@ -107,10 +107,8 @@ export class Internal
   {
     try
     {
-      // 1. 尝试作为普通用户获取信息
       const userPayload = await this._getUser(userId);
 
-      // 2. 检查返回的用户数据是否有效（userId不为空）
       if (userPayload.data?.user?.userId)
       {
         return {
@@ -121,7 +119,6 @@ export class Internal
         };
       }
 
-      // 3. 如果用户数据为空，则可能是机器人，尝试获取机器人信息
       try
       {
         const botPayload = await this.getBotInfo(userId);
@@ -136,11 +133,9 @@ export class Internal
         }
       } catch (botError)
       {
-        // 如果获取机器人信息也失败，记录警告
-        this.bot.logger.warn(`作为机器人获取信息失败 (ID: ${userId})，这可能是个无效ID`, botError);
+        this.bot.loggerError(`作为机器人获取信息失败 (ID: ${userId})，这可能是个无效ID`, botError);
       }
 
-      // 4. 如果两种尝试都失败，则抛出错误
       throw new Error(`无法获取ID为 ${userId} 的用户或机器人信息`);
 
     } catch (error)

@@ -105,8 +105,6 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         if (this.atPayload.length > 0)
         {
             this.payload.content.at = this.atPayload;
-            this.payload.contentType = 'markdown';
-            this.payload.content.text = this.markdown || this.text;
         }
 
         this.bot.logInfo('将发送 payload：\n', JSON.stringify(this.payload, null, 2));
