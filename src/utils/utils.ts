@@ -186,9 +186,11 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         {
           try
           {
+            //  图片引用
             const imageUrl = bot.config.resourceEndpoint + message.content.parentImgName;
             const base64 = await getImageAsBase64(imageUrl, bot.ctx.http);
-            const content = h.image(base64).toString();
+            const imageElement = h.image(base64);
+            const content = imageElement.toString();
 
             let quoteMessage: Universal.Message;
             try
@@ -196,7 +198,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
               quoteMessage = await bot.getMessage(session.channelId, message.parentId);
             } catch (e)
             {
-              // ignore
+              // 忽略未找到的引用消息
             }
 
             if (quoteMessage)
@@ -204,7 +206,15 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
               session.quote = {
                 ...quoteMessage,
                 content,
-                elements: h.parse(content),
+                elements: [imageElement], // 直接使用元素，避免序列化再解析
+              };
+            } else
+            {
+              // 如果原始引用消息获取失败，也附带上图片信息
+              session.quote = {
+                id: message.parentId,
+                content,
+                elements: [imageElement],
               };
             }
           } catch (error)
@@ -217,9 +227,14 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           // 普通引用
           try
           {
+            // 普通文本或at引用
             const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
             if (quoteMessage)
             {
+              if (quoteMessage.content && !quoteMessage.elements?.length)
+              {
+                quoteMessage.elements = h.parse(quoteMessage.content);
+              }
               session.quote = quoteMessage;
             } else
             {
