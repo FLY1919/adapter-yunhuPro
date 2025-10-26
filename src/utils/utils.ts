@@ -46,8 +46,8 @@ export async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yu
     if (validUserIds.length > 0)
     {
       // @用户名
-      // 正则表达式匹配 @后跟非@、非空白、非零宽字符的用户名，直到遇到一个空格或零宽字符
-      const mentionRegex = /@([^@\s\u200b\u2068\u2069\u2066\u2067]+)[\s\u200b\u2068\u2069\u2066\u2067]/g;
+      // 正则表达式匹配 @后跟用户名（可以包含空格），直到遇到一个零宽字符
+      const mentionRegex = /@([^@\u200b\u2068\u2069\u2066\u2067]+)[\u200b\u2068\u2069\u2066\u2067]/g;
       let match;
       const mentionedNames: string[] = [];
       while ((match = mentionRegex.exec(textContent)) !== null)
@@ -71,7 +71,7 @@ export async function clearMsg(bot: YunhuBot, message: Yunhu.Message, sender: Yu
       nameToIdMap.forEach((id, name) =>
       {
         const escapedName = escapeRegExp(name);
-        const replaceRegex = new RegExp(`@${escapedName}[\\s\\u200b\\u2068\\u2069\\u2066\\u2067]`, 'g');
+        const replaceRegex = new RegExp(`@${escapedName}[\\u200b\\u2068\\u2069\\u2066\\u2067]`, 'g');
         textContent = textContent.replace(replaceRegex, h.at(id, { name }).toString());
       });
     }
