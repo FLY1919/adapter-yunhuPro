@@ -165,6 +165,10 @@
                     {
                         "text": "Emoji映射表",
                         "link": "/markdown/dev/additional/3"
+                    },
+                    {
+                        "text": "实现细节",
+                        "link": "/markdown/dev/additional/4"
                     }
                 ]
             }
