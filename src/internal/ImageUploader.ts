@@ -28,7 +28,7 @@ export class ImageUploader extends BaseUploader
     private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
     {
         // 从URL获取文件
-        const { data, filename, type: mimeType } = await this.http.file(url, { timeout: 30000 });
+        const { data, filename, type: mimeType } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
         const buffer = Buffer.from(data);
 
         // 记录检测到的MIME类型

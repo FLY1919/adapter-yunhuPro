@@ -446,7 +446,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                     this.html += `</${type}>`;
                     break;
                 default:
-                    this.bot.loggerError(`未知消息元素类型: ${type}`);
+                    this.bot.loggerError(`未知消息元素类型: ${type}`, element);
                     await this.render(children);
                     break;
             }

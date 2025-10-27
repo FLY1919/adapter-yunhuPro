@@ -14,7 +14,7 @@ export class FileUploader extends BaseUploader
     async upload(url: string): Promise<string>
     {
         // 从URL获取文件
-        const { data, filename, type } = await this.http.file(url);
+        const { data, filename, type } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
         const buffer = Buffer.from(data);
 
         // 大小验证

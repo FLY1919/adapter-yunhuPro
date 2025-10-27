@@ -30,7 +30,7 @@ export abstract class BaseUploader
 
         try
         {
-            const res = await this.http.post(uploadUrl, form);
+            const res = await this.http.post(uploadUrl, form, { timeout: this.bot.config.uploadTimeout * 1000 });
 
             if (res.code !== 1)
             {

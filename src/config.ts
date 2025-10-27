@@ -18,6 +18,7 @@ export interface Config
     botTable: BotTableItem[];
     audioBackgroundColor?: string;
     showConsole?: boolean;
+    uploadTimeout: number;
 }
 
 export const Config: Schema<Config> =
@@ -51,9 +52,15 @@ export const Config: Schema<Config> =
         }).description('基础设置'),
 
         Schema.object({
+            uploadTimeout: Schema.number()
+                .default(120)
+                .min(30)
+                .max(3600)
+                .step(1)
+                .description('下载/上传文件的超时时间（秒）。'),
             audioBackgroundColor: Schema.string()
                 .role('color')
-                .default('rgba(144,116,244,1)')
+                .default("rgba(0, 0, 0, 1)")
                 .description('音频转为视频时使用的背景颜色。<br>仅RGB通道生效，A通道（透明度）不生效'),
         }).description('进阶设置'),
 
