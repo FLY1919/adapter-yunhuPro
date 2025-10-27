@@ -1,6 +1,9 @@
+
+import { defineComponent, h, ref, resolveComponent } from 'vue';
 import { Context } from '@koishijs/client';
-import { defineComponent, ref, h, resolveComponent, watch } from 'vue';
 import './index.scss';
+import './icons';
+
 export default (ctx: Context) =>
 {
     ctx.page({
@@ -8,6 +11,7 @@ export default (ctx: Context) =>
         path: '/yunhu-control',
         desc: "",
         authority: 4,
+        icon: 'activity:yunhu',
         component: defineComponent({
             setup()
             {
