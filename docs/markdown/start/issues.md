@@ -85,3 +85,7 @@ export function apply(ctx: Context) {
 ```
 
 *   关于所有可用的 API 方法，请参考 [**开发文档 / APIs**](./../dev/apis.md) 章节。
+
+### Q6 `h("html")`为什么发出的是图片？
+
+解决方法见 [#html-消息](./../dev/additional/4.md#html-消息)
