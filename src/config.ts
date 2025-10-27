@@ -17,6 +17,7 @@ export interface Config
     loggerinfo: boolean;
     botTable: BotTableItem[];
     audioBackgroundColor?: string;
+    showConsole?: boolean;
 }
 
 export const Config: Schema<Config> =
@@ -55,6 +56,12 @@ export const Config: Schema<Config> =
                 .default('rgba(144,116,244,1)')
                 .description('音频转为视频时使用的背景颜色。<br>仅RGB通道生效，A通道（透明度）不生效'),
         }).description('进阶设置'),
+
+        Schema.object({
+            showConsole: Schema.boolean()
+                .default(false)
+                .description('是否在侧边栏显示云湖控制台入口。'),
+        }).description('界面设置'),
 
         Schema.object({
             endpoint: Schema.string()

@@ -1,5 +1,6 @@
 import { Context, Logger, Universal, sleep } from 'koishi';
 import { } from '@koishijs/plugin-server';
+import { } from '@koishijs/plugin-console';
 
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
@@ -22,7 +23,11 @@ export const inject = {
 
 export const logger = new Logger('adapter-yunhupro');
 export const usage = `
----
+<hr>
+
+<a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank" rel="noopener noreferrer">点击此处查看文档！</a>
+
+<hr>
 `;
 
 export function apply(ctx: Context, config: Config)
@@ -37,6 +42,17 @@ export function apply(ctx: Context, config: Config)
       await sleep(1 * 1000);  // 神秘步骤，可以保佑dev模式
     }
     if (isDisposing) return;
+
+    if (config.showConsole)
+    {
+      ctx.inject(['console'], (ctx) =>
+      {
+        ctx.console.addEntry({
+          dev: path.resolve(__dirname, './../client/index.ts'),
+          prod: path.resolve(__dirname, './../dist'),
+        });
+      });
+    }
 
     // 筛选出启用的机器人，并去除 path 重复的机器人
     const uniqueBotsConfig = config.botTable
