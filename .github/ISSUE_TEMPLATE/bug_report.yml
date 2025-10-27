@@ -53,7 +53,7 @@ body:
     attributes:
       label: 插件版本
       description: koishi-plugin-adapter-yunhupro 版本
-      placeholder: "例如: 0.4.17"
+      placeholder: "例如: 2.0.0"
     validations:
       required: true
 
@@ -61,7 +61,7 @@ body:
     id: screenshots-logs
     attributes:
       label: 📸 截图和日志
-      description: 请提供相关截图、错误日志等（记得移除敏感信息如 UID、Cookie）
+      description: 请提供相关截图、错误日志等（记得移除敏感信息）
       placeholder: |
         拖拽截图到这里，或粘贴错误日志...
     validations:
