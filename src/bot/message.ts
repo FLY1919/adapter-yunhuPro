@@ -445,6 +445,9 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
                     await this.render(children);
                     this.html += `</${type}>`;
                     break;
+                case 'pre':
+                    await this.render(children);
+                    break;
                 default:
                     this.bot.loggerError(`未知消息元素类型: ${type}`, element);
                     await this.render(children);
