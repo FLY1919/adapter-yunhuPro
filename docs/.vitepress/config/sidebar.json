@@ -169,6 +169,10 @@
                     {
                         "text": "实现细节",
                         "link": "/markdown/dev/additional/4"
+                    },
+                    {
+                        "text": "平台特性",
+                        "link": "/markdown/dev/additional/5"
                     }
                 ]
             }
