@@ -21,7 +21,6 @@ export class VideoUploader extends BaseUploader
     async upload(url: string): Promise<string>
     {
         // 从URL获取文件
-        this.bot.logInfo('检测到 HTTP/HTTPS URL，开始下载视频');
         const { data, filename, type } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
         const buffer = Buffer.from(data);
 

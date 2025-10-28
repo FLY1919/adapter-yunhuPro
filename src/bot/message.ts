@@ -1,5 +1,70 @@
+import { Fragment } from 'koishi';
 import { Context, h, Dict, MessageEncoder } from 'koishi';
 import { YunhuBot } from './bot';
+
+export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Promise<{ contentType: string; content: any; }>
+{
+    const elements = h.normalize(fragment);
+    if (!elements.length) return null;
+
+    // 创建一个模拟的上下文，用于收集状态
+    const context = {
+        bot,
+        sendType: undefined,
+        text: '',
+        markdown: '',
+        html: '',
+        atPayload: [],
+        imageKey: undefined,
+        fileKey: undefined,
+        videoKey: undefined,
+        // editMessage不支持分段发送，所以flush是空操作
+        flush: async () => { },
+        // render需要递归调用_visit
+        render: async (children) =>
+        {
+            for (const child of children)
+            {
+                await _visit(context, child);
+            }
+        },
+    };
+
+    await context.render(elements);
+
+    const { sendType, text, markdown, html, atPayload, imageKey, fileKey, videoKey } = context;
+
+    if (!imageKey && !fileKey && !videoKey && !text.trim() && !markdown.trim() && !html.trim())
+    {
+        return null;
+    }
+
+    const finalContentType = sendType || 'text';
+    const finalContent: any = {};
+
+    if (finalContentType === 'text')
+    {
+        finalContent.text = text;
+    } else if (finalContentType === 'markdown')
+    {
+        finalContent.text = markdown;
+    } else if (finalContentType === 'html')
+    {
+        finalContent.text = html;
+    }
+
+    if (imageKey) finalContent.imageKey = imageKey;
+    if (fileKey) finalContent.fileKey = fileKey;
+    if (videoKey) finalContent.videoKey = videoKey;
+    if (atPayload.length > 0) finalContent.at = atPayload;
+
+    if (!finalContent.text)
+    {
+        finalContent.text = '';
+    }
+
+    return { contentType: finalContentType, content: finalContent };
+}
 
 export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
 {
@@ -118,344 +183,321 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         await reset.call(this);
     }
 
-    // 遍历消息元素
     async visit(element: h)
     {
-        const { type, attrs, children } = element;
-        this.message.push(element);
+        await _visit(this, element);
+    }
+}
 
-        try
+async function _visit(ctx: any, element: h)
+{
+    const { type, attrs, children } = element;
+    if (ctx.message)
+    {
+        ctx.message.push(element);
+    }
+
+    try
+    {
+        switch (type)
         {
-            switch (type)
-            {
-                case 'text':
-                    if (this.sendType == undefined)
+            case 'text':
+                if (ctx.sendType == undefined)
+                {
+                    ctx.sendType = 'text';
+                } else if (ctx.sendType === 'image')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.text += ctx.sendType === "text" ? element.attrs.content : '';
+                ctx.markdown += ctx.sendType != "html" ? element.attrs.content : '';
+                ctx.html += element.attrs.content;
+                break;
+            case 'img':
+            case 'image':
+                if (ctx.sendType == undefined)
+                {
+                    ctx.sendType = 'image';
+                } else if (ctx.sendType === 'text' || ctx.sendType === 'image')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                try
+                {
+                    const img = await ctx.bot.internal.uploadImageUrl(element.attrs.src ? element.attrs.src : element.attrs.url);
+                    ctx.markdown += ctx.sendType != "html" ? `\n![美少女大失败](${img.imageurl})\n` : '';
+                    ctx.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`;
+                    if (ctx.sendType === 'image')
                     {
-                        this.sendType = 'text';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
+                        // 区分YunhuMessageEncoder和fragmentToPayload的上下文
+                        if (ctx.payload?.content)
+                        {
+                            ctx.payload.content.imageKey = img.imagekey;
+                            ctx.payload.contentType = 'image';
+                        } else
+                        {
+                            ctx.imageKey = img.imagekey;
+                        }
                     }
-                    // 处理文本元素
-                    this.text += this.sendType === "text" ? element.attrs.content : '';
-                    this.markdown += this.sendType != "html" ? element.attrs.content : '';
-                    this.html += element.attrs.content;
-                    break;
-                case 'img':
-                case 'image':
-                    if (this.sendType == undefined)
+                } catch (error)
+                {
+                    ctx.bot.loggerError(`图片上传失败: ${error}`);
+                    ctx.markdown += ctx.sendType != "html" ? '~~[图片上传失败]~~ ' : '';
+                    ctx.html += `<span style ="color: red;">美少女大失败</span>`;
+                    if (ctx.sendType === 'image')
                     {
-                        this.sendType = 'image';
-                    } else if (this.sendType === 'text')
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
+                        ctx.sendType = 'text';
+                        ctx.text += `[图片上传失败]`;
                     }
+                }
+                break;
+            case 'at':
+                if (ctx.sendType === 'image')
+                {
+                    await ctx.flush();
+                }
+                if (ctx.sendType === undefined)
+                {
+                    ctx.sendType = 'text';
+                }
+                const userId = attrs.id;
+                if (!userId)
+                {
+                    await ctx.render(children);
+                    return;
+                }
+                ctx.atPayload.push(userId);
+                let userName = attrs.name;
+                if (!userName)
+                {
                     try
                     {
-                        // 尝试上传图片获取imageKey
-                        const img = await this.bot.internal.uploadImageUrl(element.attrs.src ? element.attrs.src : element.attrs.url);
-                        this.markdown += this.sendType != "html" ? `\n![美少女大失败](${img.imageurl})\n` : '';
-                        this.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`;
-                        if (this.sendType === 'image')
-                        {
-                            this.payload.content.imageKey = img.imagekey;
-                            this.payload.contentType = 'image';
-                        }
+                        const user = await ctx.bot.getUser(userId);
+                        userName = user.name;
                     } catch (error)
                     {
-                        this.bot.loggerError(`图片上传失败: ${error}`);
-                        // 降级为文本处理
-                        this.markdown += this.sendType != "html" ? '~~[图片上传失败]~~ ' : '';
-                        this.html += `<span style ="color: red;">美少女大失败</span>`;
-                        if (this.sendType === 'image')
-                        {
-                            this.sendType = 'text';
-                            this.text += `[图片上传失败]`;
-                        }
+                        ctx.bot.logger.warn(`获取用户ID ${userId} 的信息失败，将回退到ID`, error);
+                        userName = userId;
                     }
-                    break;
-                case 'at':
-                    if (this.sendType === 'image')
+                }
+                const atText = `@${userName}​ `;
+                ctx.text += atText;
+                ctx.markdown += atText;
+                ctx.html += `<span>${atText}</span>`;
+                break;
+            case 'br':
+                if (ctx.sendType == undefined)
+                {
+                    ctx.sendType = 'text';
+                } else if (ctx.sendType === 'image')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.text += ctx.sendType === "text" ? "\n" : '';
+                ctx.markdown += ctx.sendType != "html" ? "\n" : '';
+                ctx.html += `<br>`;
+                break;
+            case 'p':
+                if (ctx.sendType == undefined)
+                {
+                    ctx.sendType = 'text';
+                } else if (ctx.sendType === 'image')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.html += '<p>';
+                await ctx.render(children);
+                ctx.html += '</p>';
+                ctx.text += ctx.sendType === "text" ? "\n" : '';
+                ctx.markdown += ctx.sendType != "html" ? "\n" : '';
+                break;
+            case 'a':
+                if (ctx.sendType == undefined)
+                {
+                    ctx.sendType = 'text';
+                } else if (ctx.sendType === 'image')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.text += ctx.sendType === "markdown" ? element.attrs.href + " " : '';
+                ctx.markdown += ctx.sendType != "html" ? `**[链接](${element.attrs.href})** ` : '';
+                ctx.html += `<a href="${element.attrs.href}">`;
+                await ctx.render(children);
+                ctx.html += '</a>';
+                break;
+            case 'file':
+                await ctx.flush();
+                ctx.sendType = 'file';
+                try
+                {
+                    const filekey = await ctx.bot.internal.uploadFile(element.attrs.src);
+                    if (ctx.payload?.content)
                     {
-                        // 如果缓冲区中已有图片，先发送
-                        await this.flush();
+                        ctx.payload.content.fileKey = filekey;
+                    } else
+                    {
+                        ctx.fileKey = filekey;
                     }
-                    // 将sendType设置为基于文本的
-                    if (this.sendType === undefined)
+                } catch (error)
+                {
+                    ctx.bot.loggerError(`文件上传失败: ${error}`);
+                    ctx.sendType = 'text';
+                    ctx.text += `[文件上传失败]`;
+                }
+                await ctx.flush();
+                break;
+            case 'video':
+                await ctx.flush();
+                ctx.sendType = 'video';
+                try
+                {
+                    const videokey = await ctx.bot.internal.uploadVideo(element.attrs.src);
+                    if (ctx.payload?.content)
                     {
-                        this.sendType = 'text';
+                        ctx.payload.content.videoKey = videokey;
+                    } else
+                    {
+                        ctx.videoKey = videokey;
                     }
-
-                    const userId = attrs.id;
-                    if (!userId)
+                    await ctx.flush();
+                } catch (error)
+                {
+                    ctx.bot.loggerError(`视频上传失败: ${error}`);
+                    ctx.sendType = 'text';
+                    ctx.text += `[视频上传失败]`;
+                    await ctx.flush();
+                }
+                break;
+            case 'audio':
+                await ctx.flush();
+                ctx.sendType = 'video'; // 最终发送的是视频
+                try
+                {
+                    const videokey = await ctx.bot.internal.uploadAudio(element.attrs.src);
+                    if (ctx.payload?.content)
                     {
-                        await this.render(children);
-                        return;
+                        ctx.payload.content.videoKey = videokey;
+                    } else
+                    {
+                        ctx.videoKey = videokey;
                     }
-
-                    this.atPayload.push(userId);
-
-                    // 获取要显示的用户名
-                    let userName = attrs.name;
-                    if (!userName)
+                    await ctx.flush();
+                } catch (error)
+                {
+                    ctx.bot.loggerError(`音频上传失败: ${error}`);
+                    ctx.sendType = 'text';
+                    ctx.text += `[音频上传失败]`;
+                    await ctx.flush();
+                }
+                break;
+            case 'markdown':
+            case 'yunhu:markdown':
+                await ctx.flush();
+                ctx.sendType = 'markdown';
+                await ctx.render(children);
+                await ctx.flush();
+                break;
+            case 'html':
+            case 'yunhu:html':
+                await ctx.flush();
+                ctx.sendType = 'html';
+                await ctx.render(children);
+                await ctx.flush();
+                break;
+            case 'message':
+                if (attrs.forward)
+                {
+                    if (ctx.message.length > 0)
                     {
-                        try
-                        {
-                            const user = await this.bot.getUser(userId);
-                            userName = user.name;
-                        } catch (error)
-                        {
-                            this.bot.logger.warn(`获取用户ID ${userId} 的信息失败，将回退到ID`, error);
-                            userName = userId; // 如果获取名称失败，则回退到id
-                        }
+                        await ctx.flush();
                     }
-
-                    // 附加文本表示形式：@username，后跟一个空格和一个零宽度空格以确保安全
-                    const atText = `@${userName}​ `;
-                    this.text += atText;
-                    this.markdown += atText;
-                    this.html += `<span>${atText}</span>`;
-                    break;
-                case 'br':
-                    // 处理换行符
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'text';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.text += this.sendType === "text" ? "\n" : '';
-                    this.markdown += this.sendType != "html" ? "\n" : '';
-                    this.html += `<br>`;
-                    break;
-                case 'i18n':
-                    // i18n 元素只渲染子元素
-                    await this.render(children);
-                    break;
-                case 'p':
-                    // 处理段落
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'text';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.html += '<p>';
-                    await this.render(children);
-                    this.html += '</p>';
-                    this.text += this.sendType === "text" ? "\n" : '';
-                    this.markdown += this.sendType != "html" ? "\n" : '';
-                    break;
-                case 'a':
-                    // 处理链接
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'text';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.text += this.sendType === "markdown" ? element.attrs.href + " " : '';
-                    this.markdown += this.sendType != "html" ? `**[链接](${element.attrs.href})** ` : '';
-                    this.html += `<a href="${element.attrs.href}">`;
-                    await this.render(children);
-                    this.html += '</a>';
-                    break;
-                case 'file':
-                    await this.flush();
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'file';
-                    }
-                    try
-                    {
-                        // 尝试上传文件获取fileKey
-                        const filekey = await this.bot.internal.uploadFile(element.attrs.src);
-                        if (this.sendType === 'file')
-                        {
-                            this.payload.content.fileKey = filekey;
-                        }
-                    } catch (error)
-                    {
-                        this.bot.loggerError(`文件上传失败: ${error}`);
-                        this.sendType = 'text';
-                        this.text += `[文件上传失败]`;
-                    }
-                    await this.flush();
-                    break;
-                case 'video':
-                    await this.flush();
-                    this.sendType = 'video';
-                    // 处理视频
-                    try
-                    {
-                        // 尝试上传视频获取videoKey
-                        const videokey = await this.bot.internal.uploadVideo(element.attrs.src);
-                        this.payload.content.videoKey = videokey;
-                        await this.flush();
-                    } catch (error)
-                    {
-                        this.bot.loggerError(`视频上传失败: ${error}`);
-                        this.sendType = 'text';
-                        this.text += `[视频上传失败]`;
-                        await this.flush();
-                    }
-                    break;
-                case 'audio':
-                    await this.flush();
-                    this.sendType = 'video'; // 最终发送的是视频
-                    try
-                    {
-                        // 尝试上传音频（它会被转换为视频）获取videoKey
-                        const videokey = await this.bot.internal.uploadAudio(element.attrs.src);
-                        this.payload.content.videoKey = videokey;
-                        await this.flush();
-                    } catch (error)
-                    {
-                        this.bot.loggerError(`音频上传失败: ${error}`);
-                        this.sendType = 'text';
-                        this.text += `[音频上传失败]`;
-                        await this.flush();
-                    }
-                    break;
-                // 处理 markdown 元素
-                case 'markdown':
-                case 'yunhu:markdown':
-                    await this.flush();
-                    this.sendType = 'markdown';
-                    await this.render(children);
-                    await this.flush();
-                    break;
-                // 处理 html 元素
-                case 'html':
-                case 'yunhu:html':
-                    await this.flush();
-                    this.sendType = 'html';
-                    await this.render(children);
-                    await this.flush();
-                    break;
-                case 'message':
-                    if (attrs.forward)
-                    {
-                        if (this.message.length > 0)
-                        {
-                            await this.flush();
-                        }
-                        this.switch_message = false;
-                        await this.render(children);
-                        this.switch_message = true;
-                    } else if (!this.switch_message)
-                    {
-                        await this.render(children);
-
-                    }
-                    else
-                    {
-
-                        await this.flush();
-                        await this.render(children);
-                        await this.flush();
-                    }
-                    break;
-                case 'quote':
-                    this.payload.parentId = attrs.id;
-                    await this.render(children);
-                    break;
-                case 'author':
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'text')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.markdown += this.sendType != "html" ? `\n**${attrs.name}(${attrs.id})**\n` : '';
-                    this.html += `\n<strong>${attrs.name}</strong><sub>${attrs.id}</sub><br>`;
-                    await this.render(children);
-                    break;
-                case 'h1':
-                case 'h2':
-                case 'h3':
-                case 'h4':
-                case 'h5':
-                case 'h6':
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'text')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    const level = parseInt(type.substring(1));
-                    this.markdown += this.sendType != "html" ? `${'#'.repeat(level)} ` : '';
-                    this.html += `<${type}>`;
-                    await this.render(children);
-                    this.html += `</${type}>`;
-                    break;
-                case 'b':
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'text')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.markdown += this.sendType != "html" ? '**' : '';
-                    this.html += '<b>';
-                    await this.render(children);
-                    this.markdown += this.sendType != "html" ? '**' : '';
-                    this.html += '</b>';
-                    break;
-                case 'i':
-                    if (this.sendType == undefined)
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'image')
-                    {
-                        this.sendType = 'markdown';
-                    } else if (this.sendType === 'text')
-                    {
-                        this.sendType = 'markdown';
-                    }
-                    this.markdown += this.sendType != "html" ? '*' : '';
-                    this.html += '<em>';
-                    await this.render(children);
-                    this.markdown += this.sendType != "html" ? '*' : '';
-                    this.html += '</em>';
-                    break;
-                case 'u':
-                case 'sup':
-                case 'sub':
-                    this.sendType = 'html';
-                    this.html += `<${type}>`;
-                    await this.render(children);
-                    this.html += `</${type}>`;
-                    break;
-                case 'pre':
-                    await this.render(children);
-                    break;
-                default:
-                    this.bot.loggerError(`未知消息元素类型: ${type}`, element);
-                    await this.render(children);
-                    break;
-            }
-        } catch (error)
-        {
-            this.bot.loggerError(error);
+                    ctx.switch_message = false;
+                    await ctx.render(children);
+                    ctx.switch_message = true;
+                } else if (!ctx.switch_message)
+                {
+                    await ctx.render(children);
+                }
+                else
+                {
+                    await ctx.flush();
+                    await ctx.render(children);
+                    await ctx.flush();
+                }
+                break;
+            case 'quote':
+                if (ctx.payload)
+                {
+                    ctx.payload.parentId = attrs.id;
+                }
+                await ctx.render(children);
+                break;
+            case 'author':
+                if (ctx.sendType == undefined || ctx.sendType === 'image' || ctx.sendType === 'text')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.markdown += ctx.sendType != "html" ? `\n**${attrs.name}(${attrs.id})**\n` : '';
+                ctx.html += `\n<strong>${attrs.name}</strong><sub>${attrs.id}</sub><br>`;
+                await ctx.render(children);
+                break;
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+                if (ctx.sendType == undefined || ctx.sendType === 'image' || ctx.sendType === 'text')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                const level = parseInt(type.substring(1));
+                ctx.markdown += ctx.sendType != "html" ? `${'#'.repeat(level)} ` : '';
+                ctx.html += `<${type}>`;
+                await ctx.render(children);
+                ctx.html += `</${type}>`;
+                break;
+            case 'b':
+                if (ctx.sendType == undefined || ctx.sendType === 'image' || ctx.sendType === 'text')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.markdown += ctx.sendType != "html" ? '**' : '';
+                ctx.html += '<b>';
+                await ctx.render(children);
+                ctx.markdown += ctx.sendType != "html" ? '**' : '';
+                ctx.html += '</b>';
+                break;
+            case 'i':
+                if (ctx.sendType == undefined || ctx.sendType === 'image' || ctx.sendType === 'text')
+                {
+                    ctx.sendType = 'markdown';
+                }
+                ctx.markdown += ctx.sendType != "html" ? '*' : '';
+                ctx.html += '<em>';
+                await ctx.render(children);
+                ctx.markdown += ctx.sendType != "html" ? '*' : '';
+                ctx.html += '</em>';
+                break;
+            case 'pre':
+            case 'i18n':
+                await ctx.render(children);
+                break;
+            case 'u':
+            case 'sup':
+            case 'sub':
+                ctx.sendType = 'html';
+                ctx.html += `<${type}>`;
+                await ctx.render(children);
+                ctx.html += `</${type}>`;
+                break;
+            default:
+                ctx.bot.loggerError(`未知消息元素类型: ${type}`, element);
+                await ctx.render(children);
+                break;
         }
+    } catch (error)
+    {
+        ctx.bot.loggerError(error);
     }
 }

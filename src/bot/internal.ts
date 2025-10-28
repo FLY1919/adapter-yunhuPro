@@ -37,6 +37,17 @@ export class Internal
     return this.http.post(`/bot/send?token=${this.token}`, payload);
   }
 
+  async editMessage(payload: Dict): Promise<Types.YunhuResponse>
+  {
+    if (!payload || !payload.content || Object.keys(payload.content).length === 0)
+    {
+      this.bot.loggerError('editMessage 接口调用失败，content 内容不能为空', payload);
+      throw new Error('editMessage: content 内容不能为空');
+    }
+
+    return this.http.post(`/bot/edit?token=${this.token}`, payload);
+  }
+
   async uploadImageUrl(image: string | Buffer | any): Promise<Dict>
   {
     return this.imageUploader.uploadGetUrl(image);

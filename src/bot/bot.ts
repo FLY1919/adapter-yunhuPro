@@ -3,6 +3,7 @@ import { Bot, Context, Fragment, Logger } from 'koishi';
 import { SendOptions } from '@satorijs/protocol';
 import { BotTableItem, Config } from '../config';
 import { YunhuMessageEncoder } from './message';
+import { fragmentToPayload } from './message';
 import { Internal } from './internal';
 
 const logger = new Logger('adapter-yunhupro');
@@ -140,6 +141,37 @@ export class YunhuBot extends Bot<Context, Config>
         {
             return [];
         }
+    }
+
+    async editMessage(channelId: string, messageId: string, content: Fragment): Promise<void>
+    {
+        if (!content)
+        {
+            this.loggerError('editMessage 调用失败，content不能为空');
+            return;
+        }
+
+        const [type, id] = channelId.split(':');
+        const recvType = type === 'private' ? 'user' : type;
+        const recvId = id;
+
+        const messagePayload = await fragmentToPayload(this, content);
+
+        if (!messagePayload)
+        {
+            this.loggerError('editMessage失败: 解析后的消息内容为空，无法发送');
+            return;
+        }
+        const payload = {
+            msgId: messageId,
+            recvId,
+            recvType,
+            contentType: messagePayload.contentType,
+            content: messagePayload.content,
+        };
+
+        this.logInfo(`editMessage payload: ${JSON.stringify(payload, null, 2)}`);
+        await this.internal.editMessage(payload);
     }
 
     logInfo(...args: any[])
