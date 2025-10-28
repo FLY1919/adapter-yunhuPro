@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { compressVideo, parseRgbaToHex } from '../utils/utils';
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
+import { SizeLimitError } from '../utils/types';
 
 // 音频上传器
 export class AudioUploader extends BaseUploader
@@ -64,6 +65,13 @@ export class AudioUploader extends BaseUploader
             } else
             {
                 finalBuffer = convertedVideoBuffer;
+            }
+
+            // 最终大小验证
+            if (finalBuffer.length > this.MAX_SIZE)
+            {
+                const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2);
+                throw new SizeLimitError(`音频转换后的视频大小${sizeMB}MB超过${this.MAX_SIZE / (1024 * 1024)}MB限制`);
             }
 
             // 上传最终的视频文件

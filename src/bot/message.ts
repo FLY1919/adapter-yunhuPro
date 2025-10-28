@@ -1,5 +1,6 @@
 import { Context, h, Dict, MessageEncoder, Fragment } from 'koishi';
 import { YunhuBot } from './bot';
+import { SizeLimitError } from '../utils/types';
 
 export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Promise<{ contentType: string; content: any; }>
 {
@@ -240,13 +241,15 @@ async function _visit(ctx: any, element: h)
                     }
                 } catch (error)
                 {
-                    ctx.bot.loggerError(`图片上传失败: ${error}`);
-                    ctx.markdown += ctx.sendType != "html" ? '~~[图片上传失败]~~ ' : '';
-                    ctx.html += `<span style ="color: red;">美少女大失败</span>`;
+                    const isSizeLimitError = error instanceof SizeLimitError;
+                    const errorMsg = isSizeLimitError ? '[图片大小超限]' : '[图片上传失败]';
+                    ctx.bot.loggerError(`${errorMsg}: ${error}`);
+                    ctx.markdown += ctx.sendType != "html" ? `~~${errorMsg}~~ ` : '';
+                    ctx.html += `<span style ="color: red;">${errorMsg}</span>`;
                     if (ctx.sendType === 'image')
                     {
                         ctx.sendType = 'text';
-                        ctx.text += `[图片上传失败]`;
+                        ctx.text += errorMsg;
                     }
                 }
                 break;
@@ -339,9 +342,11 @@ async function _visit(ctx: any, element: h)
                     }
                 } catch (error)
                 {
-                    ctx.bot.loggerError(`文件上传失败: ${error}`);
+                    const isSizeLimitError = error instanceof SizeLimitError;
+                    const errorMsg = isSizeLimitError ? '[文件大小超限]' : '[文件上传失败]';
+                    ctx.bot.loggerError(`${errorMsg}: ${error}`);
                     ctx.sendType = 'text';
-                    ctx.text += `[文件上传失败]`;
+                    ctx.text += errorMsg;
                 }
                 await ctx.flush();
                 break;
@@ -361,9 +366,11 @@ async function _visit(ctx: any, element: h)
                     await ctx.flush();
                 } catch (error)
                 {
-                    ctx.bot.loggerError(`视频上传失败: ${error}`);
+                    const isSizeLimitError = error instanceof SizeLimitError;
+                    const errorMsg = isSizeLimitError ? '[视频大小超限]' : '[视频上传失败]';
+                    ctx.bot.loggerError(`${errorMsg}: ${error}`);
                     ctx.sendType = 'text';
-                    ctx.text += `[视频上传失败]`;
+                    ctx.text += errorMsg;
                     await ctx.flush();
                 }
                 break;
@@ -383,9 +390,11 @@ async function _visit(ctx: any, element: h)
                     await ctx.flush();
                 } catch (error)
                 {
-                    ctx.bot.loggerError(`音频上传失败: ${error}`);
+                    const isSizeLimitError = error instanceof SizeLimitError;
+                    const errorMsg = isSizeLimitError ? '[音频大小超限]' : '[音频上传失败]';
+                    ctx.bot.loggerError(`${errorMsg}: ${error}`);
                     ctx.sendType = 'text';
-                    ctx.text += `[音频上传失败]`;
+                    ctx.text += errorMsg;
                     await ctx.flush();
                 }
                 break;

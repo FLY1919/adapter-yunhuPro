@@ -355,3 +355,12 @@ export interface ApiResponse
   data: ResponseData;
   msg: string;
 }
+// 自定义错误类型，用于表示文件大小超限
+export class SizeLimitError extends Error
+{
+  constructor(message: string)
+  {
+    super(message);
+    this.name = 'SizeLimitError';
+  }
+}

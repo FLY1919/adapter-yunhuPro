@@ -2,6 +2,7 @@ import { HTTP } from 'koishi';
 
 import { ResourceType } from '../utils/utils';
 import { YunhuBot } from '../bot/bot';
+import { SizeLimitError } from '../utils/types';
 
 // 上传基类
 export abstract class BaseUploader
@@ -34,6 +35,11 @@ export abstract class BaseUploader
 
             if (res.code !== 1)
             {
+                // 检查是否是文件大小超限的特定错误
+                if (res.msg && (res.msg.includes('大小') || res.msg.toLowerCase().includes('size')))
+                {
+                    throw new SizeLimitError(`${this.resourceType}上传失败：${res.msg}`);
+                }
                 throw new Error(`${this.resourceType}上传失败：${res.msg}，响应码${res.code}`);
             }
 

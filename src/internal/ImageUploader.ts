@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
+import { SizeLimitError } from '../utils/types';
 
 // 图片上传器
 export class ImageUploader extends BaseUploader
@@ -63,7 +64,7 @@ export class ImageUploader extends BaseUploader
         {
             const sizeMB = (originalSize / (1024 * 1024)).toFixed(2);
             this.bot.loggerError(`图片大小${sizeMB}MB，超过10MB限制，无法上传`);
-            throw new Error(`图片大小${sizeMB}MB，超过10MB限制，无法上传`);
+            throw new SizeLimitError(`图片大小${sizeMB}MB，超过10MB限制，无法上传`);
         }
 
         // 创建表单并上传

@@ -2,6 +2,7 @@ import { HTTP } from 'koishi';
 
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
+import { SizeLimitError } from '../utils/types';
 
 // 文件上传器
 export class FileUploader extends BaseUploader
@@ -20,7 +21,7 @@ export class FileUploader extends BaseUploader
         // 大小验证
         if (buffer.length > this.MAX_SIZE)
         {
-            throw new Error(`文件大小超过${this.MAX_SIZE / (1024 * 1024)}MB限制`);
+            throw new SizeLimitError(`文件大小超过${this.MAX_SIZE / (1024 * 1024)}MB限制`);
         }
 
         // 创建表单并上传

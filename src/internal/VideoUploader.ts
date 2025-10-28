@@ -3,6 +3,7 @@ import { HTTP } from 'koishi';
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
 import { compressVideo } from '../utils/utils';
+import { SizeLimitError } from '../utils/types';
 
 // 视频上传器
 export class VideoUploader extends BaseUploader
@@ -42,7 +43,7 @@ export class VideoUploader extends BaseUploader
         if (finalBuffer.length > this.MAX_SIZE)
         {
             const sizeMB = (finalBuffer.length / (1024 * 1024)).toFixed(2);
-            throw new Error(`视频大小${sizeMB}MB超过${this.MAX_SIZE / (1024 * 1024)}MB限制`);
+            throw new SizeLimitError(`视频大小${sizeMB}MB超过${this.MAX_SIZE / (1024 * 1024)}MB限制`);
         }
 
         // 创建表单并上传
