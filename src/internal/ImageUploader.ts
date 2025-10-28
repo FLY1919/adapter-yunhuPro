@@ -78,7 +78,7 @@ export class ImageUploader extends BaseUploader
             const hash = createHash('md5');
             hash.update(buffer);
             const imageHash = hash.digest('hex');
-            const extension = mimeType.split('/')[1] || 'png';
+            const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1] || 'png';
             this.bot.logInfo(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
 
             const imagekey = await this.sendFormData(form);
