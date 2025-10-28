@@ -1,11 +1,14 @@
 import { Context, HTTP } from 'koishi';
+
 import { } from 'koishi-plugin-ffmpeg';
+
 import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import { compressVideo, parseRgbaToHex } from '../utils/utils';
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
-import { compressVideo, parseRgbaToHex } from '../utils/utils';
 
 // 音频上传器
 export class AudioUploader extends BaseUploader

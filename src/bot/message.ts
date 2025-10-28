@@ -1,5 +1,4 @@
-import { Fragment } from 'koishi';
-import { Context, h, Dict, MessageEncoder } from 'koishi';
+import { Context, h, Dict, MessageEncoder, Fragment } from 'koishi';
 import { YunhuBot } from './bot';
 
 export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Promise<{ contentType: string; content: any; }>

@@ -1,10 +1,4 @@
-import { Context, HTTP } from 'koishi';
-
-import { } from 'koishi-plugin-ffmpeg';
-
-import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { HTTP } from 'koishi';
 
 import { BaseUploader } from './BaseUploader';
 import { YunhuBot } from '../bot/bot';
