@@ -469,6 +469,11 @@ async function _visit(context: any, element: h)
                 await context.render(children);
                 context.html += `</${type}>`;
                 break;
+            case 'pre':
+            case 'i18n':
+                await context.render(children);
+                break;
+            case 'strong':
             case 'b':
                 if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
                 {
@@ -481,6 +486,7 @@ async function _visit(context: any, element: h)
                 context.html += '</b>';
                 break;
             case 'i':
+            case 'em':
                 if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
                 {
                     context.sendType = 'markdown';
@@ -491,17 +497,65 @@ async function _visit(context: any, element: h)
                 context.markdown += context.sendType != "html" ? '*' : '';
                 context.html += '</em>';
                 break;
-            case 'pre':
-            case 'i18n':
-                await context.render(children);
-                break;
             case 'u':
-            case 'sup':
-            case 'sub':
-                context.sendType = 'html';
-                context.html += `<${type}>`;
+            case 'ins':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'html';
+                }
+                context.html += '<u>';
                 await context.render(children);
-                context.html += `</${type}>`;
+                context.html += '</u>';
+                break;
+            case 's':
+            case 'del':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'markdown';
+                }
+                context.markdown += context.sendType != "html" ? '~~' : '';
+                context.html += '<del>';
+                await context.render(children);
+                context.markdown += context.sendType != "html" ? '~~' : '';
+                context.html += '</del>';
+                break;
+            case 'spl':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'html';
+                }
+                context.html += '<details><summary>点击展开查看</summary>';
+                await context.render(children);
+                context.html += '</details>';
+                break;
+            case 'code':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'markdown';
+                }
+                context.markdown += context.sendType != "html" ? '`' : '';
+                context.html += '<code>';
+                await context.render(children);
+                context.markdown += context.sendType != "html" ? '`' : '';
+                context.html += '</code>';
+                break;
+            case 'sup':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'html';
+                }
+                context.html += '<sup>';
+                await context.render(children);
+                context.html += '</sup>';
+                break;
+            case 'sub':
+                if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
+                {
+                    context.sendType = 'html';
+                }
+                context.html += '<sub>';
+                await context.render(children);
+                context.html += '</sub>';
                 break;
             default:
                 context.bot.loggerError(`未知消息元素类型: ${type}`, element);
