@@ -30,7 +30,7 @@
         ]
     },
     {
-        "text": "开发文档",
+        "text": "适配器文档",
         "items": [
             {
                 "text": "事件",
@@ -47,14 +47,19 @@
             {
                 "text": "文档开发",
                 "link": "/markdown/dev/development-docs"
-            },
+            }
+        ]
+    },
+    {
+        "text": "开发文档",
+        "items": [
             {
                 "text": "云湖官方文档",
                 "collapsed": true,
                 "items": [
                     {
                         "text": "介绍",
-                        "link": "/markdown/dev/yunhu-official"
+                        "link": "/markdown/dev/yunhu-official/yunhu-official"
                     },
                     {
                         "text": "接入准备",
@@ -163,7 +168,7 @@
                         "link": "/markdown/dev/additional/2"
                     },
                     {
-                        "text": "Emoji映射表",
+                        "text": "Emoji表",
                         "link": "/markdown/dev/additional/3"
                     },
                     {
