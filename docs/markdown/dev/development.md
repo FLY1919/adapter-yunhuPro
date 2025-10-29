@@ -33,10 +33,3 @@ yarn dev
 ## 开发适配器
 
 请参考文档 以开发此适配器 -> [开发文档](./yunhu-official/yunhu-official.md)
-
----
-
-## 更多文档
-
-### 非官方参考文档
-- https://github.com/yh-Tpdev/yhchatAPI
