@@ -45,7 +45,7 @@ export const Config: Schema<Config> =
                 .role('table')
                 .default([{
                     "enable": false,
-                    "botName": "方便识别的名称，无实际作用。记得勾选左侧的开关。",
+                    "botName": "方便识别的名称，无实际作用。记得勾选左侧的开关",
                     "botId": "填入你的机器人ID",
                     "token": "填入你的机器人Token",
                     "path": "/yunhu"
@@ -59,7 +59,7 @@ export const Config: Schema<Config> =
                 .min(30)
                 .max(3600)
                 .step(1)
-                .description('下载/上传文件的超时时间（秒）。'),
+                .description('下载/上传文件的超时时间（秒）'),
             audioBackgroundColor: Schema.string()
                 .role('color')
                 .default("rgba(0, 0, 0, 1)")
@@ -69,7 +69,7 @@ export const Config: Schema<Config> =
         Schema.object({
             enableStream: Schema.boolean()
                 .default(false)
-                .description('是否开启流式消息。<br>开启后，文本、Markdown消息 将以流式消息方式发送。'),
+                .description('是否开启流式消息。<br>开启后，文本、Markdown消息 将以流式消息方式发送'),
         }).description('流式消息设置'),
         Schema.union([
             Schema.object({
@@ -84,14 +84,14 @@ export const Config: Schema<Config> =
                     .max(10)
                     .step(1)
                     .default(2)
-                    .description("流式消息总时长（秒）。数值越小 发消息越快。<br>流式消息将被标记为`本内容为AI生成，仅供参考`。"),
+                    .description("流式消息总时长（秒）。数值越小 发消息越快。<br>流式消息将被标记为`本内容为AI生成，仅供参考`"),
             }),
         ]),
 
         Schema.object({
             showConsole: Schema.boolean()
                 .default(false)
-                .description('是否在侧边栏显示云湖控制台入口。'),
+                .description('是否在侧边栏显示云湖控制台入口'),
         }).description('界面设置'),
 
         Schema.object({
