@@ -213,9 +213,11 @@ async function _visit(context: any, element: h)
                 {
                     context.sendType = 'markdown';
                 }
-                context.text += context.sendType === "text" ? element.attrs.content : '';
-                context.markdown += context.sendType != "html" ? element.attrs.content : '';
-                context.html += element.attrs.content;
+                // 将 <br> 替换为换行符
+                const content = element.attrs.content.replace(/<br>/g, '\n');
+                context.text += context.sendType === "text" ? content : '';
+                context.markdown += context.sendType != "html" ? content : '';
+                context.html += content;
                 break;
             case 'img':
             case 'image':
@@ -290,18 +292,6 @@ async function _visit(context: any, element: h)
                 context.text += atText;
                 context.markdown += atText;
                 context.html += `<span>${atText}</span>`;
-                break;
-            case 'br':
-                if (context.sendType == undefined)
-                {
-                    context.sendType = 'text';
-                } else if (context.sendType === 'image')
-                {
-                    context.sendType = 'markdown';
-                }
-                context.text += context.sendType === "text" ? "\n" : '';
-                context.markdown += context.sendType != "html" ? "\n" : '';
-                context.html += `<br>`;
                 break;
             case 'p':
                 if (context.sendType == undefined)
