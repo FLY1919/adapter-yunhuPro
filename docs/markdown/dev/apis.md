@@ -5,7 +5,8 @@
 以下所有 bot 均通过这样获取：
 
 ```typescript
-const bot = Object.values(ctx.bots).find(b => b.selfId === "your_bot_uid" || b.user?.id === "your_bot_uid");
+//  import { Universal, Bot } from "koishi";
+const bot = (Object.values(ctx.bots) as Bot[]).find(b => b.selfId === "botId" || b.user?.id === "botId");
 if (!bot || bot.status !== Universal.Status.ONLINE) {
   ctx.logger.error(`机器人离线或未找到。`);
   return;
@@ -39,6 +40,19 @@ bot.deleteMessage(channelId: string, messageId: string): Promise<void>
 
 *   **`channelId`**: 消息所在的频道 ID。
 *   **`messageId`**: 要删除的消息 ID。
+*   **返回值**: `Promise<void>`。
+
+### editMessage()
+
+编辑已发送的消息。
+
+```typescript
+bot.editMessage(channelId: string, messageId: string, content: Fragment): Promise<void>
+```
+
+*   **`channelId`**: 消息所在的频道 ID。
+*   **`messageId`**: 要编辑的消息 ID。
+*   **`content`**: 新的消息内容，可以是字符串或使用 `h()` 创建的消息元素。
 *   **返回值**: `Promise<void>`。
 
 ### getMessage()
@@ -101,7 +115,18 @@ bot.uploadFile(fileData: string | Buffer): Promise<string>
 ```
 
 *   **`fileData`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的 `fileKey`。
+*   **返回值**: `Promise<any>`，上传成功后返回的文件数据。
+
+### uploadImageUrl()
+
+上传一张图片（仅支持 URL 格式），获取 `imageKey`，用于发送图片消息。
+
+```typescript
+bot.uploadImageUrl(image: string): Promise<any>
+```
+
+*   **`image`**: 图片 URL (字符串)。
+*   **返回值**: `Promise<any>`，上传成功后返回的图片数据。
 
 ## 用户与群组 (User & Guild)
 
@@ -126,6 +151,17 @@ bot.getGuild(guildId: string): Promise<Universal.Guild>
 
 *   **`guildId`**: 要查询的群组 ID。
 *   **返回值**: `Promise<Universal.Guild>`，一个符合 Koishi 规范的群组对象。
+
+### getBotInfo()
+
+获取机器人的详细信息。
+
+```typescript
+bot.getBotInfo(botId: string): Promise<any>
+```
+
+*   **`botId`**: 要查询的机器人 ID。
+*   **返回值**: `Promise<any>`，API 返回的机器人信息数据。
 
 ### getGuildMember()
 
@@ -208,3 +244,71 @@ bot.dismissAllBoard(): Promise<any>
 ```
 
 *   **返回值**: `Promise<any>`，API 返回的原始数据。
+
+## 机器人控制 (Bot Control)
+
+### start()
+
+启动机器人。
+
+```typescript
+bot.start(): Promise<void>
+```
+
+*   **返回值**: `Promise<void>`。
+
+### stop()
+
+停止机器人。
+
+```typescript
+bot.stop(): Promise<void>
+```
+
+*   **返回值**: `Promise<void>`。
+
+### setDisposing()
+
+设置机器人状态。
+
+```typescript
+bot.setDisposing(disposing: boolean): void
+```
+
+*   **`disposing`**: 是否正在处理中。
+*   **返回值**: `void`。
+
+## 日志记录 (Logging)
+
+### logInfo()
+
+记录信息日志（仅在配置开启时记录）。
+
+```typescript
+bot.logInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerInfo()
+
+记录信息日志。
+
+```typescript
+bot.loggerInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerError()
+
+记录错误日志。
+
+```typescript
+bot.loggerError(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
