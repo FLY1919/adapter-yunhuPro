@@ -39,4 +39,4 @@ yarn dev
 ## 更多文档
 
 ### 非官方参考文档
-- https://yh-api.yyyyt.top/ 
+- https://github.com/yh-Tpdev/yhchatAPI
