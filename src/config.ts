@@ -19,6 +19,8 @@ export interface Config
     audioBackgroundColor?: string;
     showConsole?: boolean;
     uploadTimeout: number;
+    enableStream: boolean;
+    streamDuration?: number;
 }
 
 export const Config: Schema<Config> =
@@ -63,6 +65,28 @@ export const Config: Schema<Config> =
                 .default("rgba(0, 0, 0, 1)")
                 .description('音频转为视频时使用的背景颜色。<br>仅RGB通道生效，A通道（透明度）不生效'),
         }).description('进阶设置'),
+
+        Schema.object({
+            enableStream: Schema.boolean()
+                .default(false)
+                .description('是否开启流式消息。<br>开启后，文本、Markdown消息 将以流式消息方式发送。'),
+        }).description('流式消息设置'),
+        Schema.union([
+            Schema.object({
+                enableStream: Schema.const(false),
+            }),
+            Schema.object({
+                enableStream: Schema.const(true)
+                    .required(),
+                streamDuration: Schema.number()
+                    .role('slider')
+                    .min(1)
+                    .max(10)
+                    .step(1)
+                    .default(2)
+                    .description("流式消息总时长（秒）。数值越小 发消息越快。<br>流式消息将被标记为`本内容为AI生成，仅供参考`。"),
+            }),
+        ]),
 
         Schema.object({
             showConsole: Schema.boolean()

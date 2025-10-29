@@ -173,7 +173,11 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         }
 
         this.bot.logInfo('将发送 payload：\n', JSON.stringify(this.payload, null, 2));
-        const response = await this.bot.internal.sendMessage(this.payload);
+        const useStream = this.bot.config.enableStream && (this.payload.contentType === 'text' || this.payload.contentType === 'markdown');
+
+        const response = useStream
+            ? await this.bot.internal.sendStreamMessage(this.payload)
+            : await this.bot.internal.sendMessage(this.payload);
 
         if (response.code === 1 && response.data?.messageInfo?.msgId)
         {

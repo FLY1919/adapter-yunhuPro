@@ -1,5 +1,7 @@
 import { HTTP, Dict, Universal } from 'koishi';
 
+import { Readable } from 'node:stream';
+
 import { FormatType, clearMsg, getImageAsBase64 } from '../utils/utils';
 import * as Types from '../utils/types';
 import { YunhuBot } from './bot';
@@ -35,6 +37,71 @@ export class Internal
   async sendMessage(payload: Dict): Promise<Types.YunhuResponse>
   {
     return this.http.post(`/bot/send?token=${this.token}`, payload);
+  }
+
+  // 发送流式消息
+  async sendStreamMessage(payload: Dict): Promise<Types.YunhuResponse>
+  {
+    const { recvId, recvType, contentType, content } = payload;
+    const textContent = content.text;
+
+    const url = new URL(`${this.apiendpoint}/bot/send-stream`);
+    url.searchParams.set('token', this.token);
+    url.searchParams.set('recvId', recvId);
+    url.searchParams.set('recvType', recvType);
+    url.searchParams.set('contentType', contentType);
+
+    const body = new Readable({ read() { } });
+
+    // 使用异步 IIFE 来处理逐字推送和延迟
+    (async () =>
+    {
+      const totalDuration = (this.bot.config.streamDuration || 3) * 1000;
+      const textLength = textContent.length;
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      if (textLength === 0)
+      {
+        body.push(null);
+        return;
+      }
+
+      const delay = totalDuration / textLength;
+      for (const char of textContent)
+      {
+        body.push(char, 'utf-8');
+        await sleep(delay);
+      }
+      // null 表示流结束
+      body.push(null);
+    })();
+
+    try
+    {
+      const response = await fetch(url.toString(), {  //  此处不适用 ctx.http
+        method: 'POST',
+        headers: {
+          'Content-Type': contentType === 'markdown' ? 'text/markdown' : 'text/plain',
+        },
+        body: body as any,
+        // @ts-ignore
+        duplex: 'half',
+      });
+
+      if (!response.ok)
+      {
+        const errorText = await response.text();
+        this.bot.loggerError(`流式消息发送失败，状态码: ${response.status}: ${errorText}`);
+        return { code: -response.status, msg: `HTTP Error: ${errorText}`, data: null };
+      }
+
+      return await response.json() as Types.YunhuResponse;
+
+    } catch (error)
+    {
+      this.bot.loggerError('流式消息发送时发生异常:', error);
+      return { code: -1, msg: error.message, data: null };
+    }
   }
 
   async editMessage(payload: Dict): Promise<Types.YunhuResponse>
