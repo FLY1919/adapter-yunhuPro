@@ -186,69 +186,56 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
 
       if (message.parentId)
       {
-        if (message.content.parentImgName)  //  图片引用
+        try
         {
+          let quote: Universal.Message;
           try
           {
-            //  图片引用
-            const imageUrl = bot.config.resourceEndpoint + message.content.parentImgName;
-            const base64 = await getImageAsBase64(imageUrl, bot.ctx.http);
-            const imageElement = h.image(base64);
-            const content = imageElement.toString();
-
-            let quoteMessage: Universal.Message;
-            try
+            quote = await bot.getMessage(session.channelId, message.parentId);
+            if (quote.content && !quote.elements?.length)
             {
-              quoteMessage = await bot.getMessage(session.channelId, message.parentId);
-            } catch (e)
-            {
-              // 忽略未找到的引用消息
-            }
-
-            if (quoteMessage)
-            {
-              session.quote = {
-                ...quoteMessage,
-                content,
-                elements: [imageElement], // 直接使用元素，避免序列化再解析
-              };
-            } else
-            {
-              // 如果原始引用消息获取失败，也附带上图片信息
-              session.quote = {
-                id: message.parentId,
-                content,
-                elements: [imageElement],
-              };
-            }
-          } catch (error)
-          {
-            bot.logger.warn(`Failed to process quoted image ${message.parentId}:`, error);
-            session.quote = { id: message.parentId }; // Fallback
-          }
-        } else
-        {
-          // 普通引用
-          try
-          {
-            // 普通文本或at引用
-            const quoteMessage = await bot.getMessage(session.channelId, message.parentId);
-            if (quoteMessage)
-            {
-              if (quoteMessage.content && !quoteMessage.elements?.length)
-              {
-                quoteMessage.elements = h.parse(quoteMessage.content);
-              }
-              session.quote = quoteMessage;
-            } else
-            {
-              session.quote = { id: message.parentId };
+              quote.elements = h.parse(quote.content);
             }
           } catch (error)
           {
             bot.logger.warn(`Failed to get quote message ${message.parentId}:`, error);
-            session.quote = { id: message.parentId };
+            quote = { id: message.parentId };
           }
+
+          if (message.content.parentImgName)
+          {
+            try
+            {
+              const imageUrl = bot.config.resourceEndpoint + message.content.parentImgName;
+              const base64 = await getImageAsBase64(imageUrl, bot.ctx.http);
+              const imageElement = h.image(base64);
+              quote.content = imageElement.toString();
+              quote.elements = [imageElement];
+            } catch (error)
+            {
+              bot.logger.warn(`Failed to process quoted image content for ${message.parentId}:`, error);
+            }
+          }
+
+          if (!quote.channel)
+          {
+            quote.channel = { id: session.channelId, type: 0 };
+          }
+
+          if (message.chatType === 'bot')
+          { // isDirect
+            quote.channel.type = 1; // DIRECT	1	私聊频道
+          } else
+          { // isGroup
+            quote.channel.type = 0; // TEXT	0	文本频道
+          }
+
+          session.quote = quote;
+
+        } catch (error)
+        {
+          bot.logger.warn(`Failed to process quote ${message.parentId}:`, error);
+          session.quote = { id: message.parentId }; // Final fallback.
         }
       }
 
