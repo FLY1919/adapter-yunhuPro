@@ -69,7 +69,8 @@ export const Config: Schema<Config> =
         Schema.object({
             enableStream: Schema.boolean()
                 .default(false)
-                .description('是否开启流式消息。<br>开启后，文本、Markdown消息 将以流式消息方式发送'),
+                .experimental()
+                .description('是否开启流式消息。<br>开启后，文本、Markdown消息 将以流式消息方式发送<br>注：实验性功能，不推荐开启'),
         }).description('流式消息设置'),
         Schema.union([
             Schema.object({
@@ -91,8 +92,7 @@ export const Config: Schema<Config> =
         Schema.object({
             showConsole: Schema.boolean()
                 .default(false)
-                .description('是否在侧边栏显示云湖控制台入口<br>实验性功能，不推荐开启')
-                .experimental(),
+                .description('是否在侧边栏显示云湖控制台入口')
         }).description('界面设置'),
 
         Schema.object({
