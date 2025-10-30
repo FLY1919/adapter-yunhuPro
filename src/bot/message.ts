@@ -1,6 +1,6 @@
 import { Context, h, Dict, MessageEncoder, Fragment } from 'koishi';
 import { YunhuBot } from './bot';
-import { SizeLimitError } from '../utils/types';
+import { Button, SizeLimitError } from '../utils/types';
 
 export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Promise<{ contentType: string; content: any; }>
 {
@@ -77,7 +77,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
     private text = "";
     private markdown = "";
     private atPayload: string[] = [];
-    private buttons: any[] = [];
+    private buttons: Button[] = [];
     private message: Dict = [];
     private switch_message: boolean = true;
     private messageId: string;
@@ -423,7 +423,7 @@ async function _visit(context: any, element: h)
                     buttonLabel = attrs.text;
                 }
 
-                const yunhuButton: any = {};
+                const yunhuButton: Partial<Button> = {};
                 switch (attrs.type)
                 {
                     case 'action':
@@ -453,7 +453,7 @@ async function _visit(context: any, element: h)
                     {
                         context.buttons = [];
                     }
-                    context.buttons.push(yunhuButton);
+                    context.buttons.push(yunhuButton as Button);
                 }
                 break;
             }
