@@ -91,7 +91,8 @@ export const Config: Schema<Config> =
         Schema.object({
             showConsole: Schema.boolean()
                 .default(false)
-                .description('是否在侧边栏显示云湖控制台入口'),
+                .description('是否在侧边栏显示云湖控制台入口<br>实验性功能，不推荐开启')
+                .experimental(),
         }).description('界面设置'),
 
         Schema.object({

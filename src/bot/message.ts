@@ -15,6 +15,7 @@ export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Prom
         markdown: '',
         html: '',
         atPayload: [],
+        buttons: [],
         imageKey: undefined,
         fileKey: undefined,
         videoKey: undefined,
@@ -32,9 +33,9 @@ export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Prom
 
     await context.render(elements);
 
-    const { sendType, text, markdown, html, atPayload, imageKey, fileKey, videoKey } = context;
+    const { sendType, text, markdown, html, atPayload, imageKey, fileKey, videoKey, buttons } = context;
 
-    if (!imageKey && !fileKey && !videoKey && !text.trim() && !markdown.trim() && !html.trim())
+    if (!imageKey && !fileKey && !videoKey && !text.trim() && !markdown.trim() && !html.trim() && !buttons.length)
     {
         return null;
     }
@@ -57,6 +58,7 @@ export async function fragmentToPayload(bot: YunhuBot, fragment: Fragment): Prom
     if (fileKey) finalContent.fileKey = fileKey;
     if (videoKey) finalContent.videoKey = videoKey;
     if (atPayload.length > 0) finalContent.at = atPayload;
+    if (buttons.length > 0) finalContent.buttons = [buttons];
 
     if (!finalContent.text)
     {
@@ -75,6 +77,7 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
     private text = "";
     private markdown = "";
     private atPayload: string[] = [];
+    private buttons: any[] = [];
     private message: Dict = [];
     private switch_message: boolean = true;
     private messageId: string;
@@ -142,10 +145,12 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
             this.markdown = "";
             this.message = [];
             this.atPayload = [];
-            delete this.payload.content.at; // Remove at from content.
+            this.buttons = [];
+            delete this.payload.content.at;
+            delete this.payload.content.buttons;
         }
 
-        if (!this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey && !this.text && !this.markdown && !this.html)
+        if (!this.payload.content.imageKey && !this.payload.content.fileKey && !this.payload.content.videoKey && !this.text && !this.markdown && !this.html && !this.buttons.length)
         {
             return; // Nothing to send.
         }
@@ -170,6 +175,11 @@ export class YunhuMessageEncoder extends MessageEncoder<Context, YunhuBot>
         if (this.atPayload.length > 0)
         {
             this.payload.content.at = this.atPayload;
+        }
+
+        if (this.buttons.length > 0)
+        {
+            this.payload.content.buttons = [this.buttons];
         }
 
         this.bot.logInfo('将发送 payload：\n', JSON.stringify(this.payload, null, 2));
@@ -392,6 +402,56 @@ async function _visit(context: any, element: h)
                     await context.flush();
                 }
                 break;
+            case 'button': {
+                let buttonText = '';
+                const queue: h[] = [...children];
+                while (queue.length > 0)
+                {
+                    const element = queue.shift();
+                    if (element.type === 'text')
+                    {
+                        buttonText += element.attrs.content;
+                    } else if (element.children)
+                    {
+                        queue.unshift(...element.children);
+                    }
+                }
+                buttonText = buttonText.trim();
+
+                const yunhuButton: any = {};
+                switch (attrs.type)
+                {
+                    case 'action':
+                        yunhuButton.actionType = 3; // 3: 点击汇报
+                        yunhuButton.value = attrs.id;
+                        if (!buttonText) buttonText = '确认点击';
+                        break;
+                    case 'link':
+                        yunhuButton.actionType = 1; // 1: 跳转URL
+                        yunhuButton.url = attrs.href;
+                        if (!buttonText) buttonText = '跳转链接';
+                        break;
+                    case 'input':
+                        yunhuButton.actionType = 2; // 2: 复制
+                        yunhuButton.value = attrs.text;
+                        if (!buttonText) buttonText = '复制';
+                        break;
+                    default:
+                        // just ignore.
+                        break;
+                }
+
+                if (yunhuButton.actionType)
+                {
+                    yunhuButton.text = buttonText;
+                    if (!context.buttons)
+                    {
+                        context.buttons = [];
+                    }
+                    context.buttons.push(yunhuButton);
+                }
+                break;
+            }
             case 'markdown':
             case 'yunhu:markdown':
                 await context.flush();
