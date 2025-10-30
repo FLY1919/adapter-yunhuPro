@@ -403,47 +403,52 @@ async function _visit(context: any, element: h)
                 }
                 break;
             case 'button': {
-                let buttonText = '';
+                let buttonLabel = '';
                 const queue: h[] = [...children];
                 while (queue.length > 0)
                 {
                     const element = queue.shift();
                     if (element.type === 'text')
                     {
-                        buttonText += element.attrs.content;
+                        buttonLabel += element.attrs.content;
                     } else if (element.children)
                     {
                         queue.unshift(...element.children);
                     }
                 }
-                buttonText = buttonText.trim();
+                buttonLabel = buttonLabel.trim();
+
+                if (!buttonLabel && typeof attrs.text === 'string')
+                {
+                    buttonLabel = attrs.text;
+                }
 
                 const yunhuButton: any = {};
                 switch (attrs.type)
                 {
                     case 'action':
                         yunhuButton.actionType = 3; // 3: 点击汇报
-                        yunhuButton.value = attrs.id;
-                        if (!buttonText) buttonText = '确认点击';
+                        yunhuButton.value = attrs.text;
+                        if (!buttonLabel) buttonLabel = '确认点击';
                         break;
                     case 'link':
                         yunhuButton.actionType = 1; // 1: 跳转URL
                         yunhuButton.url = attrs.href;
-                        if (!buttonText) buttonText = '跳转链接';
+                        if (!buttonLabel) buttonLabel = '跳转链接';
                         break;
                     case 'input':
                         yunhuButton.actionType = 2; // 2: 复制
                         yunhuButton.value = attrs.text;
-                        if (!buttonText) buttonText = '复制';
+                        if (!buttonLabel) buttonLabel = '复制';
                         break;
                     default:
-                        // just ignore.
+                        // Ignore unknown types
                         break;
                 }
 
                 if (yunhuButton.actionType)
                 {
-                    yunhuButton.text = buttonText;
+                    yunhuButton.text = buttonLabel;
                     if (!context.buttons)
                     {
                         context.buttons = [];
