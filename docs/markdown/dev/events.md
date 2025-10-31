@@ -23,13 +23,13 @@
 
 ## 成员变动事件 (Guild Member Events)
 
-| 云湖事件类型           | Koishi 事件            | 触发时机                     |
-| :--------------------- | :--------------------- | :--------------------------- |
-| `bot.followed`         | `friend-added`         | 机器人被用户关注（添加好友） |
-| `group.member.joined`  | `guild-member-added`   | 新成员通过链接或搜索加入群组 |
-| `group.member.invited` | `guild-member-added`   | 成员被邀请加入群组           |
-| `group.member.leaved`  | `guild-member-removed` | 成员主动退出群组             |
-| `group.member.kicked`  | `guild-member-removed` | 成员被管理员踢出群组         |
+| 云湖事件类型      | Koishi 事件            | 触发时机                     |
+| :---------------- | :--------------------- | :--------------------------- |
+| `bot.followed`    | `friend-added`         | 机器人被用户关注（添加机器人） |
+| `bot.unfollowed`  | `friend-deleted`       | 用户取消关注机器人（删除机器人） |
+| `group.join`      | `guild-member-added`   | 新成员加入群组               |
+| `group.leave`     | `guild-member-removed` | 成员退出群组                 |
+
 
 ## 群组变动事件 (Guild Events)
 
