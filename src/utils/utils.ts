@@ -239,7 +239,6 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         }
       }
 
-      //  分发session
       bot.logInfo('分发session内容：', session);
       bot.dispatch(session);
       return;
@@ -251,58 +250,44 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       session.setInternal(bot.platform, input);
       switch (input.header.eventType)
       {
+        // 机器人被关注事件
         case 'bot.followed': {
           session.type = 'friend-added';
-          const { sender } = input.event as Yunhu.MessageEvent;
-          session.userId = sender.senderId;
-          session.event.user.name = sender.senderNickname;
+          const event = input.event as Yunhu.BotStatusEvent;
+          session.userId = event.userId;
+          session.event.user.name = event.nickname;
           break;
         }
+        // 机器人被取消关注事件
+        case 'bot.unfollowed': {
+          session.type = 'friend-deleted';
+          const event = input.event as Yunhu.BotStatusEvent;
+          session.userId = event.userId;
+          session.event.user.name = event.nickname;
+          break;
+        }
+        // 用户加入群聊事件
         case 'group.join': {
-          const { sender, chat, joinedMember } = input.event as Yunhu.GroupMemberJoinedEvent;
+          const event = input.event as Yunhu.GroupMemberJoinedEvent;
           session.type = 'guild-member-added';
-          session.userId = joinedMember.memberId;
-          session.event.user.name = joinedMember.memberNickname;
-          session.guildId = chat.chatId;
-          session.operatorId = sender.senderId;
+          session.userId = event.userId;
+          session.event.user.name = event.nickname;
+          session.guildId = event.chatId;
+          session.operatorId = event.userId; // 载荷中没有操作者，假定是自己加入
           break;
         }
+        // 用户退出群聊事件
         case 'group.leave': {
-          const { sender, chat, leavedMember, leaveType } = input.event as Yunhu.GroupMemberLeavedEvent;
+          const event = input.event as Yunhu.GroupMemberLeavedEvent;
           session.type = 'guild-member-removed';
-          session.userId = leavedMember.memberId;
-          session.event.user.name = leavedMember.memberNickname;
-          session.guildId = chat.chatId;
-          session.operatorId = sender.senderId;
-          session.subtype = leaveType === 'self' ? 'leave' : 'kick';
+          session.userId = event.userId;
+          session.event.user.name = event.nickname;
+          session.guildId = event.chatId;
+          session.operatorId = event.userId; // 载荷中没有操作者，假定是自己退出
+          session.subtype = 'leave';
           break;
         }
-        case 'group.member.invited': {
-          const { sender, chat, invitedMember, inviter } = input.event as Yunhu.GroupMemberInvitedEvent;
-          session.type = 'guild-member-added';
-          session.userId = invitedMember.memberId;
-          session.event.user.name = invitedMember.memberNickname;
-          session.guildId = chat.chatId;
-          session.operatorId = inviter.inviterId;
-          session.subtype = 'invite';
-          break;
-        }
-        case 'group.member.kicked': {
-          const { sender, chat, kickedMember, operator } = input.event as Yunhu.GroupMemberKickedEvent;
-          session.type = 'guild-member-removed';
-          session.userId = kickedMember.memberId;
-          session.event.user.name = kickedMember.memberNickname;
-          session.guildId = chat.chatId;
-          session.operatorId = operator.operatorId;
-          break;
-        }
-        case 'group.disbanded': {
-          const { sender, chat, operator } = input.event as Yunhu.GroupDisbandedEvent;
-          session.type = 'guild-deleted';
-          session.guildId = chat.chatId;
-          session.operatorId = operator.operatorId;
-          break;
-        }
+        // 快捷菜单事件
         case 'bot.shortcut.menu': {
           session.type = 'interaction/button';
           const event = input.event as Yunhu.BotShortcutMenuEvent;
@@ -312,6 +297,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           session.event.button = { id: event.menuId };
           break;
         }
+        // 按钮点击事件
         case 'button.report.inline': {
           session.type = 'interaction/button';
           const event = input.event as Yunhu.ButtonReportInlineEvent;
@@ -326,6 +312,8 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           bot.loggerError(`未处理的事件类型: ${input.header.eventType}`, input);
           return;
       }
+
+      bot.logInfo('分发session内容：', session);
       bot.dispatch(session);
       return;
     }

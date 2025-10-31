@@ -198,65 +198,23 @@ export interface MessageEvent
 // 加群事件
 export interface GroupMemberJoinedEvent
 {
-  sender: Sender;
-  chat: Chat;
-  joinedMember: {
-    memberId: string;
-    memberNickname: string;
-  };
+  time: number;
+  chatId: string;
+  chatType: 'group';
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
 }
 
 // 退群事件
 export interface GroupMemberLeavedEvent
 {
-  sender: Sender;
-  chat: Chat;
-  leavedMember: {
-    memberId: string;
-    memberNickname: string;
-  };
-  leaveType: 'self' | 'kicked'; // 自行退出或被踢出
-}
-
-// 成员被邀请加入群聊事件
-export interface GroupMemberInvitedEvent
-{
-  sender: Sender;
-  chat: Chat;
-  invitedMember: {
-    memberId: string;
-    memberNickname: string;
-  };
-  inviter: {
-    inviterId: string;
-    inviterNickname: string;
-  };
-}
-
-// 成员被踢出群聊事件
-export interface GroupMemberKickedEvent
-{
-  sender: Sender;
-  chat: Chat;
-  kickedMember: {
-    memberId: string;
-    memberNickname: string;
-  };
-  operator: {
-    operatorId: string;
-    operatorNickname: string;
-  };
-}
-
-// 群聊被解散事件
-export interface GroupDisbandedEvent
-{
-  sender: Sender;
-  chat: Chat;
-  operator: {
-    operatorId: string;
-    operatorNickname: string;
-  };
+  time: number;
+  chatId: string;
+  chatType: 'group';
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
 }
 
 // 快捷菜单事件
@@ -285,9 +243,19 @@ export interface ButtonReportInlineEvent
   buttonId: string;
 }
 
+// 机器人关注/取消关注事件
+export interface BotStatusEvent
+{
+  time: number;
+  chatId: string;
+  chatType: 'bot';
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
+}
+
 // 联合类型，表示所有可能的事件
-export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent |
-  GroupMemberInvitedEvent | GroupMemberKickedEvent | GroupDisbandedEvent | BotShortcutMenuEvent | ButtonReportInlineEvent;
+export type Event = MessageEvent | GroupMemberJoinedEvent | GroupMemberLeavedEvent | BotShortcutMenuEvent | ButtonReportInlineEvent | BotStatusEvent;
 
 export interface Chat
 {
