@@ -30,13 +30,6 @@
 | `group.join`      | `guild-member-added`   | 新成员加入群组               |
 | `group.leave`     | `guild-member-removed` | 成员退出群组                 |
 
-
-## 群组变动事件 (Guild Events)
-
-| 云湖事件类型      | Koishi 事件     | 触发时机   |
-| :---------------- | :-------------- | :--------- |
-| `group.disbanded` | `guild-deleted` | 群组被解散 |
-
 ## 交互事件 (Interaction Events)
 
 | 云湖事件类型           | Koishi 事件          | 触发时机                   |
