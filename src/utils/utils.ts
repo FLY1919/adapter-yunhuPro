@@ -258,7 +258,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           session.event.user.name = sender.senderNickname;
           break;
         }
-        case 'group.member.joined': {
+        case 'group.join': {
           const { sender, chat, joinedMember } = input.event as Yunhu.GroupMemberJoinedEvent;
           session.type = 'guild-member-added';
           session.userId = joinedMember.memberId;
@@ -267,7 +267,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
           session.operatorId = sender.senderId;
           break;
         }
-        case 'group.member.leaved': {
+        case 'group.leave': {
           const { sender, chat, leavedMember, leaveType } = input.event as Yunhu.GroupMemberLeavedEvent;
           session.type = 'guild-member-removed';
           session.userId = leavedMember.memberId;
