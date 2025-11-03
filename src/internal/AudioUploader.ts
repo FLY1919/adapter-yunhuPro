@@ -23,6 +23,10 @@ export class AudioUploader extends BaseUploader
     async upload(url: string): Promise<string>
     {
         // 下载音频文件
+        if (url.length < 500)
+        {
+            this.bot.logInfo(url);
+        }
         const { data, filename, type } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
         const audioBuffer = Buffer.from(data);
         const audioFilename = filename || 'audio.mp3';
