@@ -27,7 +27,9 @@ export class FileUploader extends BaseUploader
         // 创建表单并上传
         const form = new FormData();
         const blob = new Blob([data], { type: type || 'application/octet-stream' });
-        form.append('file', blob, filename || 'file');
+        const extension = (type && type.split('/')[1]) || 'dat';
+        const finalFilename = filename && filename.includes('.') ? filename : `${filename || 'file'}.${extension}`;
+        form.append('file', blob, finalFilename);
         return this.sendFormData(form);
     }
 }

@@ -49,7 +49,9 @@ export class VideoUploader extends BaseUploader
         // 创建表单并上传
         const form = new FormData();
         const blob = new Blob([finalBuffer], { type: type || 'video/mp4' });
-        form.append('video', blob, filename || 'video.mp4');
+        const extension = (type && type.split('/')[1]) || 'mp4';
+        const finalFilename = filename && filename.includes('.') ? filename : `${filename || 'video'}.${extension}`;
+        form.append('video', blob, finalFilename);
         return this.sendFormData(form);
     }
 }

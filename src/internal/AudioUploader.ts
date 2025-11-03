@@ -78,7 +78,8 @@ export class AudioUploader extends BaseUploader
             const form = new FormData();
             const blob = new Blob([Buffer.from(finalBuffer)], { type: 'video/mp4' });
             // 保持原始音频文件名，但后缀改为.mp4
-            const videoFilename = audioFilename.substring(0, audioFilename.lastIndexOf('.')) + '.mp4';
+            const videoFilenameBase = audioFilename.includes('.') ? audioFilename.substring(0, audioFilename.lastIndexOf('.')) : audioFilename;
+            const videoFilename = `${videoFilenameBase}.mp4`;
             form.append('video', blob, videoFilename);
             return this.sendFormData(form);
 

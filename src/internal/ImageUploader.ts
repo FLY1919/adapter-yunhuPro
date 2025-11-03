@@ -29,7 +29,11 @@ export class ImageUploader extends BaseUploader
     private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
     {
         // 从URL获取文件
-        const { data, filename, type: mimeType } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
+        if (url.length < 500)
+        {
+            this.bot.logInfo(url);
+        }
+        const { data, filename: originalFilename, type: mimeType } = await this.http.file(url, { timeout: this.bot.config.uploadTimeout * 1000 });
         const buffer = Buffer.from(data);
 
         // 记录检测到的MIME类型
@@ -70,6 +74,8 @@ export class ImageUploader extends BaseUploader
         // 创建表单并上传
         const form = new FormData();
         const blob = new Blob([buffer], { type: mimeType });
+        const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1] || 'png';
+        const filename = originalFilename && originalFilename.includes('.') ? originalFilename : `${originalFilename || 'image'}.${extension}`;
         form.append('image', blob, filename);
 
         if (returnUrl)
