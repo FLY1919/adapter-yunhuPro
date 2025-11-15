@@ -2,110 +2,110 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koishi Adapter for Yunhu Pro</title>
-    <style>
-        :root {
-            --bg-color: #433952;
-            --card-bg-color: #231b23;
-            --text-color: #dcdcdc;
-            --primary-color: #3d4cab;
-            --code-bg-color: #5a5f96;
-            --success-color: #66bb6a;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koishi Adapter for Yunhu Pro</title>
+  <style>
+    :root {
+      --bg-color: #433952;
+      --card-bg-color: #231b23;
+      --text-color: #dcdcdc;
+      --primary-color: #3d4cab;
+      --code-bg-color: #5a5f96;
+      --success-color: #66bb6a;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 2em;
-            box-sizing: border-box;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2em;
+      box-sizing: border-box;
+    }
 
-        .container {
-            background-color: var(--card-bg-color);
-            border-radius: 12px;
-            padding: 2.5em;
-            text-align: center;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
+    .container {
+      background-color: var(--card-bg-color);
+      border-radius: 12px;
+      padding: 2.5em;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
 
-        .title {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75em;
-            font-size: 1.8em;
-            font-weight: 600;
-            margin-bottom: 1em;
-            color: #fff;
-        }
+    .title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75em;
+      font-size: 1.8em;
+      font-weight: 600;
+      margin-bottom: 1em;
+      color: #fff;
+    }
 
-        .title svg {
-            width: 1.2em;
-            height: 1.2em;
-            fill: var(--success-color);
-        }
+    .title svg {
+      width: 1.2em;
+      height: 1.2em;
+      fill: var(--success-color);
+    }
 
-        p {
-            line-height: 1.7;
-            font-size: 1.1em;
-            margin: 1em 0;
-        }
+    p {
+      line-height: 1.7;
+      font-size: 1.1em;
+      margin: 1em 0;
+    }
 
-        code {
-            background-color: var(--code-bg-color);
-            color: var(--text-color);
-            padding: 0.3em 0.6em;
-            border-radius: 6px;
-            font-size: 0.95em;
-        }
+    code {
+      background-color: var(--code-bg-color);
+      color: var(--text-color);
+      padding: 0.3em 0.6em;
+      border-radius: 6px;
+      font-size: 0.95em;
+    }
 
-        .button {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: #fff;
-            padding: 0.8em 1.6em;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1em;
-            margin-top: 1.5em;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
+    .button {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: #fff;
+      padding: 0.8em 1.6em;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-top: 1.5em;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
 
-        .button:hover {
-            background-color: #3c9cf5;
-            transform: translateY(-2px);
-        }
-    </style>
+    .button:hover {
+      background-color: #3c9cf5;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 
 <body>
-    <div class="container">
-        <h2 class="title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-            <span>适配器已成功启动</span>
-        </h2>
-        <p>这是一个用于接收云湖消息的 Webhook 地址。</p>
-        <p>请复制浏览器地址栏中的当前地址，</p>
-        <p>将其粘贴到你的机器人后台的 【Webhook订阅地址】 中。</p>
-        <p>如需了解更多配置详情或遇到问题，请查阅插件文档。</p>
-        <a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank" rel="noopener noreferrer" class="button">
-            查看文档
-        </a>
-    </div>
+  <div class="container">
+    <h2 class="title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+      </svg>
+      <span>适配器已成功启动</span>
+    </h2>
+    <p>这是一个用于接收云湖消息的 Webhook 地址。</p>
+    <p>请复制浏览器地址栏中的当前地址，</p>
+    <p>将其粘贴到你的机器人后台的 【Webhook订阅地址】 中。</p>
+    <p>如需了解更多配置详情或遇到问题，请查阅插件文档。</p>
+    <a href="https://fly1919.github.io/adapter-yunhupro/" target="_blank" rel="noopener noreferrer" class="button">
+      查看文档
+    </a>
+  </div>
 </body>
 
 </html>
