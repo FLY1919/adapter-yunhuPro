@@ -242,7 +242,7 @@ async function _visit(context: any, element: h)
         try
         {
           const uploadImage = await context.bot.internal.uploadImageKey(element.attrs.src ? element.attrs.src : element.attrs.url);
-          context.markdown += context.sendType != "html" ? `\n![美少女大失败](${uploadImage.url})\n` : '';
+          context.markdown += context.sendType != "html" ? `\n![美少女大成功](${uploadImage.url})\n` : '';
           context.html += `<img src="${uploadImage.url}" alt="FLY可爱~[图片]">`;
           if (context.sendType === 'image')
           {
