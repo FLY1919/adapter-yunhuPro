@@ -29,7 +29,7 @@
 | `group.join`     | `guild-member-added`   | 新成员加入群组         |
 | `group.leave`    | `guild-member-removed` | 成员退出群组           |
 
-:::warning
+:::tip
 `friend-added` 、`friend-deleted`事件不存在于 [Satori 官方文档](https://koishi.chat/zh-CN/api/resources/user.html#%E4%BA%8B%E4%BB%B6) 中。
 
 不过你可以在这里找到他们的实际应用 -> https://github.com/satorijs/satori/blob/main/adapters/qq/src/utils.ts#L186
