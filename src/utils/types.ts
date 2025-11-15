@@ -133,7 +133,7 @@ export interface Message
   sendTime: number; // 毫秒级时间戳
   chatId: string;
   chatType: 'group' | 'bot';
-  contentType: 'text' | 'image' | 'markdown' | 'file' | 'form';
+  contentType: 'text' | 'image' | 'markdown' | 'file' | 'form' | 'tip';
   content: Content;
   commandId?: number;
   commandName?: string;

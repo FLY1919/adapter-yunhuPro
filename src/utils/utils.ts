@@ -1,4 +1,4 @@
-import { h, Universal, HTTP, Context } from 'koishi';
+import { h, Universal, HTTP, Context, Session } from 'koishi';
 import { yunhuEmojiMap } from './emoji';
 import { YunhuBot } from '../bot/bot';
 import * as Yunhu from './types';
@@ -117,6 +117,30 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
       const { sender, message, chat } = input.event as Yunhu.MessageEvent;
       let content: string;
 
+      if (message.contentType === 'tip' && message.content.text &&
+        (message.content.text.includes('添加为群管理员')))
+      {
+        const session: Session = bot.session({
+          type: 'guild-role-updated',
+          platform: 'yunhu',
+          selfId: bot.selfId,
+          timestamp: message.sendTime,
+          member: { roles: [sender.senderUserLevel] },
+          user: {
+            id: sender.senderId,
+            name: sender.senderNickname,
+          },
+          message: {
+            id: message.msgId,
+            content: message.content.text,
+            elements: h.parse(message.content.text),
+          },
+        });
+        bot.logInfo('触发 guild-role-updated 事件：', session);
+        bot.dispatch(session);
+        return;
+      }
+
       // 指令
       if (message.commandName)
       {
@@ -150,11 +174,10 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         platform: 'yunhu',
         selfId: bot.selfId,
         timestamp: message.sendTime,
+        member: { roles: [sender.senderUserLevel] },
         user: {
           id: sender.senderId,
-          type: sender.senderType,
           name: sender.senderNickname,
-          role: sender.senderUserLevel
         },
         message: {
           id: message.msgId,
@@ -163,7 +186,7 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         },
       };
 
-      const session = bot.session(sessionPayload);
+      const session: Session = bot.session(sessionPayload);
       session.content = content;
 
       if (message.chatType === 'bot')
