@@ -14,6 +14,16 @@ export class FileUploader extends BaseUploader
 
   async upload(url: string): Promise<string>
   {
+    return this.processUpload(url);
+  }
+
+  async uploadGetKey(url: string): Promise<{ url: string; key: string; }>
+  {
+    return this.processUpload(url, true);
+  }
+
+  private async processUpload(url: string, returnKey: boolean = false): Promise<any>
+  {
     // 从URL获取文件
     if (url.length < 500)
     {
@@ -34,6 +44,18 @@ export class FileUploader extends BaseUploader
     const extension = (type && type.split('/')[1]) || 'dat';
     const finalFilename = filename && filename.includes('.') ? filename : `${filename || 'file'}.${extension}`;
     form.append('file', blob, finalFilename);
-    return this.sendFormData(form);
+    const fileKey = await this.sendFormData(form);
+
+
+    const fileUrl = `${this.bot.config.resourceEndpoint}${fileKey}.${extension}`;
+    this.bot.logInfo(`生成的文件URL: ${fileUrl}`);
+    if (returnKey)
+    {
+      return {
+        url: fileUrl,
+        key: fileKey
+      };
+    }
+    return fileUrl;
   }
 }

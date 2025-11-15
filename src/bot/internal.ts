@@ -133,6 +133,12 @@ export class Internal
     return this.audioUploader.uploadGetKey(audio);
   }
 
+  // 获取文件的URL和key
+  async uploadFileKey(file: string | Buffer | any): Promise<{ url: string; key: string; }>
+  {
+    return this.fileUploader.uploadGetKey(file);
+  }
+
   // 上传图片，仅返回URL
   async uploadImage(image: string | Buffer | any): Promise<string>
   {
@@ -151,7 +157,7 @@ export class Internal
     return this.audioUploader.upload(audio);
   }
 
-  // 上传文件，返回key，保持不变
+  // 上传文件，仅返回URL
   async uploadFile(fileData: string | Buffer | any): Promise<string>
   {
     return this.fileUploader.upload(fileData);

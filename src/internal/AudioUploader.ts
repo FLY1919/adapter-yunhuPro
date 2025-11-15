@@ -30,7 +30,7 @@ export class AudioUploader extends BaseUploader
     return this.processUpload(url, true);
   }
 
-  private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
+  private async processUpload(url: string, returnKey: boolean = false): Promise<any>
   {
     // 下载音频文件
     if (url.length < 500)
@@ -101,7 +101,7 @@ export class AudioUploader extends BaseUploader
       // 音频最终作为视频处理，使用视频的URL格式
       const audioUrl = `${this.bot.config.resourceEndpoint}${audioKey}.mp4`;
       this.bot.logInfo(`生成的音频URL: ${audioUrl}`);
-      if (returnUrl)
+      if (returnKey)
       {
         return {
           url: audioUrl,

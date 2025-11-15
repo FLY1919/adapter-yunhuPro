@@ -26,7 +26,7 @@ export class ImageUploader extends BaseUploader
   }
 
   // 私有方法，处理上传逻辑
-  private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
+  private async processUpload(url: string, returnKey: boolean = false): Promise<any>
   {
     // 从URL获取文件
     if (url.length < 500)
@@ -91,7 +91,7 @@ export class ImageUploader extends BaseUploader
     this.bot.logInfo(`生成的图片URL: ${imageUrl}`);
 
 
-    if (returnUrl)
+    if (returnKey)
     {
       return {
         url: imageUrl,

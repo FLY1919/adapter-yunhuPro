@@ -23,7 +23,7 @@ export class VideoUploader extends BaseUploader
     return this.processUpload(url, true);
   }
 
-  private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
+  private async processUpload(url: string, returnKey: boolean = false): Promise<any>
   {
     // 从URL获取文件
     if (url.length < 500)
@@ -71,7 +71,7 @@ export class VideoUploader extends BaseUploader
 
     // 视频和音频最终都作为视频处理，使用视频的URL格式
     const videoUrl = `${this.bot.config.resourceEndpoint}${videoKey}.mp4`;
-    if (returnUrl)
+    if (returnKey)
     {
       return {
         url: videoUrl,

@@ -394,7 +394,8 @@ async function _visit(context: any, element: h)
         context.sendType = 'file';
         try
         {
-          const filekey = await context.bot.internal.uploadFile(element.attrs.src);
+          const uploadFile = await context.bot.internal.uploadFileKey(element.attrs.src);
+          const filekey = uploadFile.key;
           if (context.payload?.content)
           {
             context.payload.content.fileKey = filekey;
