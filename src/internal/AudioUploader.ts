@@ -22,6 +22,16 @@ export class AudioUploader extends BaseUploader
 
   async upload(url: string): Promise<string>
   {
+    return this.processUpload(url);
+  }
+
+  async uploadGetUrl(url: string): Promise<{ url: string; key: string; }>
+  {
+    return this.processUpload(url, true);
+  }
+
+  private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
+  {
     // 下载音频文件
     if (url.length < 500)
     {
@@ -85,7 +95,20 @@ export class AudioUploader extends BaseUploader
       const videoFilenameBase = audioFilename.includes('.') ? audioFilename.substring(0, audioFilename.lastIndexOf('.')) : audioFilename;
       const videoFilename = `${videoFilenameBase}.mp4`;
       form.append('video', blob, videoFilename);
-      return this.sendFormData(form);
+      const audioKey = await this.sendFormData(form);
+
+
+      // 音频最终作为视频处理，使用视频的URL格式
+      const audioUrl = `${this.bot.config.resourceEndpoint}${audioKey}.mp4`;
+      this.bot.logInfo(`生成的音频URL: ${audioUrl}`);
+      if (returnUrl)
+      {
+        return {
+          url: audioUrl,
+          key: audioKey
+        };
+      }
+      return audioUrl;
 
     } catch (error)
     {

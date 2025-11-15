@@ -15,6 +15,16 @@ export class VideoUploader extends BaseUploader
 
   async upload(url: string): Promise<string>
   {
+    return this.processUpload(url);
+  }
+
+  async uploadGetUrl(url: string): Promise<{ url: string; key: string; }>
+  {
+    return this.processUpload(url, true);
+  }
+
+  private async processUpload(url: string, returnUrl: boolean = false): Promise<any>
+  {
     // 从URL获取文件
     if (url.length < 500)
     {
@@ -56,6 +66,19 @@ export class VideoUploader extends BaseUploader
     const extension = (type && type.split('/')[1]) || 'mp4';
     const finalFilename = filename && filename.includes('.') ? filename : `${filename || 'video'}.${extension}`;
     form.append('video', blob, finalFilename);
-    return this.sendFormData(form);
+    const videoKey = await this.sendFormData(form);
+
+
+    // 视频和音频最终都作为视频处理，使用视频的URL格式
+    const videoUrl = `${this.bot.config.resourceEndpoint}${videoKey}.mp4`;
+    this.bot.logInfo(`生成的视频URL: ${videoUrl}`);
+    if (returnUrl)
+    {
+      return {
+        url: videoUrl,
+        key: videoKey
+      };
+    }
+    return videoUrl;
   }
 }

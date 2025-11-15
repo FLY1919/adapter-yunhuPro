@@ -115,26 +115,43 @@ export class Internal
     return this.http.post(`/bot/edit?token=${this.token}`, payload);
   }
 
-  async uploadImageUrl(image: string | Buffer | any): Promise<Dict>
+  // 获取图片的URL和key，供其他插件使用
+  async uploadImageUrl(image: string | Buffer | any): Promise<{ url: string; key: string; }>
   {
     return this.imageUploader.uploadGetUrl(image);
   }
 
-  async uploadImage(image: string | Buffer | any): Promise<string | undefined>
+  // 获取视频的URL和key，供其他插件使用
+  async uploadVideoUrl(video: string | Buffer | any): Promise<{ url: string; key: string; }>
+  {
+    return this.videoUploader.uploadGetUrl(video);
+  }
+
+  // 获取音频的URL和key，供其他插件使用
+  async uploadAudioUrl(audio: string | Buffer | any): Promise<{ url: string; key: string; }>
+  {
+    return this.audioUploader.uploadGetUrl(audio);
+  }
+
+  // 上传图片，仅返回URL，供其他插件使用
+  async uploadImage(image: string | Buffer | any): Promise<string>
   {
     return this.imageUploader.upload(image);
   }
 
+  // 上传视频，仅返回URL，供其他插件使用
   async uploadVideo(video: string | Buffer | any): Promise<string>
   {
     return this.videoUploader.upload(video);
   }
 
+  // 上传音频，仅返回URL，供其他插件使用
   async uploadAudio(audio: string | Buffer | any): Promise<string>
   {
     return this.audioUploader.upload(audio);
   }
 
+  // 上传文件，返回key，保持不变
   async uploadFile(fileData: string | Buffer | any): Promise<string>
   {
     return this.fileUploader.upload(fileData);

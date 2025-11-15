@@ -241,18 +241,18 @@ async function _visit(context: any, element: h)
         try
         {
           const img = await context.bot.internal.uploadImageUrl(element.attrs.src ? element.attrs.src : element.attrs.url);
-          context.markdown += context.sendType != "html" ? `\n![美少女大失败](${img.imageurl})\n` : '';
+          context.markdown += context.sendType != "html" ? `\n![美少女大失败](${img.url})\n` : '';
           context.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`;
           if (context.sendType === 'image')
           {
             // 区分YunhuMessageEncoder和fragmentToPayload的上下文
             if (context.payload?.content)
             {
-              context.payload.content.imageKey = img.imagekey;
+              context.payload.content.imageKey = img.key;
               context.payload.contentType = 'image';
             } else
             {
-              context.imageKey = img.imagekey;
+              context.imageKey = img.key;
             }
           }
         } catch (error)

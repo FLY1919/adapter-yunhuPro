@@ -20,7 +20,7 @@ export class ImageUploader extends BaseUploader
     return this.processUpload(url);
   }
 
-  async uploadGetUrl(url: string): Promise<Dict>
+  async uploadGetUrl(url: string): Promise<{ url: string; key: string; }>
   {
     return this.processUpload(url, true);
   }
