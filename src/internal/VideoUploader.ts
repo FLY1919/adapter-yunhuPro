@@ -18,7 +18,7 @@ export class VideoUploader extends BaseUploader
     return this.processUpload(url);
   }
 
-  async uploadGetUrl(url: string): Promise<{ url: string; key: string; }>
+  async uploadGetKey(url: string): Promise<{ url: string; key: string; }>
   {
     return this.processUpload(url, true);
   }

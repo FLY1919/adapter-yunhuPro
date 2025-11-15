@@ -115,37 +115,37 @@ export class Internal
     return this.http.post(`/bot/edit?token=${this.token}`, payload);
   }
 
-  // 获取图片的URL和key，供其他插件使用
-  async uploadImageUrl(image: string | Buffer | any): Promise<{ url: string; key: string; }>
+  // 获取图片的URL和key
+  async uploadImageKey(image: string | Buffer | any): Promise<{ url: string; key: string; }>
   {
-    return this.imageUploader.uploadGetUrl(image);
+    return this.imageUploader.uploadGetKey(image);
   }
 
-  // 获取视频的URL和key，供其他插件使用
-  async uploadVideoUrl(video: string | Buffer | any): Promise<{ url: string; key: string; }>
+  // 获取视频的URL和key
+  async uploadVideoKey(video: string | Buffer | any): Promise<{ url: string; key: string; }>
   {
-    return this.videoUploader.uploadGetUrl(video);
+    return this.videoUploader.uploadGetKey(video);
   }
 
-  // 获取音频的URL和key，供其他插件使用
-  async uploadAudioUrl(audio: string | Buffer | any): Promise<{ url: string; key: string; }>
+  // 获取音频的URL和key
+  async uploadAudioKey(audio: string | Buffer | any): Promise<{ url: string; key: string; }>
   {
-    return this.audioUploader.uploadGetUrl(audio);
+    return this.audioUploader.uploadGetKey(audio);
   }
 
-  // 上传图片，仅返回URL，供其他插件使用
+  // 上传图片，仅返回URL
   async uploadImage(image: string | Buffer | any): Promise<string>
   {
     return this.imageUploader.upload(image);
   }
 
-  // 上传视频，仅返回URL，供其他插件使用
+  // 上传视频，仅返回URL
   async uploadVideo(video: string | Buffer | any): Promise<string>
   {
     return this.videoUploader.upload(video);
   }
 
-  // 上传音频，仅返回URL，供其他插件使用
+  // 上传音频，仅返回URL
   async uploadAudio(audio: string | Buffer | any): Promise<string>
   {
     return this.audioUploader.upload(audio);

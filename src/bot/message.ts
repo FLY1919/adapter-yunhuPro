@@ -240,7 +240,7 @@ async function _visit(context: any, element: h)
         }
         try
         {
-          const img = await context.bot.internal.uploadImageUrl(element.attrs.src ? element.attrs.src : element.attrs.url);
+          const img = await context.bot.internal.uploadImageKey(element.attrs.src ? element.attrs.src : element.attrs.url);
           context.markdown += context.sendType != "html" ? `\n![美少女大失败](${img.url})\n` : '';
           context.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`;
           if (context.sendType === 'image')
@@ -359,7 +359,7 @@ async function _visit(context: any, element: h)
         context.sendType = 'video';
         try
         {
-          const videokey = await context.bot.internal.uploadVideo(element.attrs.src);
+          const videokey = await context.bot.internal.uploadVideoKey(element.attrs.src).key;
           if (context.payload?.content)
           {
             context.payload.content.videoKey = videokey;
@@ -383,7 +383,7 @@ async function _visit(context: any, element: h)
         context.sendType = 'video'; // 最终发送的是视频
         try
         {
-          const videokey = await context.bot.internal.uploadAudio(element.attrs.src);
+          const videokey = await context.bot.internal.uploadAudioKey(element.attrs.src).key;
           if (context.payload?.content)
           {
             context.payload.content.videoKey = videokey;
