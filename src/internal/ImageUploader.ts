@@ -74,7 +74,8 @@ export class ImageUploader extends BaseUploader
     // 创建表单并上传
     const form = new FormData();
     const blob = new Blob([buffer], { type: mimeType });
-    const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1] || 'png';
+    let extension = mimeType.split('/')[1];
+    if (extension === "jpeg") { extension = "jpg"; } // 云湖后缀名校验。使用.jpeg上传后，需要使用.jpg后缀名才能访问。
     const filename = originalFilename && originalFilename.includes('.') ? originalFilename : `${originalFilename || 'image'}.${extension}`;
     form.append('image', blob, filename);
 
@@ -84,7 +85,6 @@ export class ImageUploader extends BaseUploader
       const hash = createHash('md5');
       hash.update(buffer);
       const imageHash = hash.digest('hex');
-      const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1] || 'png';
       this.bot.logInfo(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
 
       const imagekey = await this.sendFormData(form);
