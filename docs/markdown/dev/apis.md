@@ -16,7 +16,7 @@ if (bot == null) return;
 // 在这里继续使用 bot.方法
 ```
 
-## 消息相关 (Message)
+## Bot 方法
 
 ### sendMessage()
 
@@ -28,6 +28,8 @@ bot.sendMessage(channelId: string, content: Fragment, guildId?: string, options?
 
 *   **`channelId`**: 频道 ID。对于私聊，格式为 `private:USER_ID`；对于群聊，格式为 `group:GROUP_ID`。
 *   **`content`**: 要发送的消息内容，可以是字符串或使用 `h()` 创建的消息元素。
+*   **`guildId`**: (可选) 群组 ID。
+*   **`options`**: (可选) 发送选项。
 *   **返回值**: `Promise<string[]>`，包含已发送消息的 ID 列表。
 
 ### deleteMessage()
@@ -67,6 +69,118 @@ bot.getMessage(channelId: string, messageId: string): Promise<Universal.Message>
 *   **`messageId`**: 要获取的消息 ID。
 *   **返回值**: `Promise<Universal.Message>`，一个符合 Koishi 规范的消息对象。
 
+### getUser()
+
+获取用户的详细信息。
+
+```typescript
+bot.getUser(userId: string): Promise<Universal.User>
+```
+
+*   **`userId`**: 要查询的用户 ID。
+*   **返回值**: `Promise<Universal.User>`，一个符合 Koishi 规范的用户对象。
+
+### getGuild()
+
+获取群组（服务器）的详细信息。
+
+```typescript
+bot.getGuild(guildId: string): Promise<Universal.Guild>
+```
+
+*   **`guildId`**: 要查询的群组 ID。
+*   **返回值**: `Promise<Universal.Guild>`，一个符合 Koishi 规范的群组对象。
+
+### getGuildMember()
+
+获取群组成员的详细信息。
+
+```typescript
+bot.getGuildMember(guildId: string, userId: string): Promise<Universal.GuildMember>
+```
+
+*   **`guildId`**: 成员所在的群组 ID。
+*   **`userId`**: 要查询的成员的用户 ID。
+*   **返回值**: `Promise<Universal.GuildMember>`，一个符合 Koishi 规范的群组成员对象。
+
+### getChannel()
+
+获取频道（子频道）的详细信息。在云湖中，一个群组就是一个频道。
+
+```typescript
+bot.getChannel(channelId: string, guildId?: string): Promise<Universal.Channel>
+```
+
+*   **`channelId`**: 要查询的频道 ID。
+*   **`guildId`**: (可选) 频道所在的群组 ID。
+*   **返回值**: `Promise<Universal.Channel>`，一个符合 Koishi 规范的频道对象。
+
+### start()
+
+启动机人。
+
+```typescript
+bot.start(): Promise<void>
+```
+
+*   **返回值**: `Promise<void>`。
+
+### stop()
+
+停止机器人。
+
+```typescript
+bot.stop(): Promise<void>
+```
+
+*   **返回值**: `Promise<void>`。
+
+### setDisposing()
+
+设置机器人状态。
+
+```typescript
+bot.setDisposing(disposing: boolean): void
+```
+
+*   **`disposing`**: 是否正在处理中。
+*   **返回值**: `void`。
+
+### logInfo()
+
+记录信息日志（仅在配置开启时记录）。
+
+```typescript
+bot.logInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerInfo()
+
+记录信息日志。
+
+```typescript
+bot.loggerInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerError()
+
+记录错误日志。
+
+```typescript
+bot.loggerError(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+## Bot.Internal 方法
+
 ### getYunhuMessageList()
 
 获取云湖原始的消息列表。
@@ -81,8 +195,6 @@ bot.internal.getYunhuMessageList(channelId: string, messageId: string, options?:
     *   `before`: 获取 `messageId` 之前的消息数量。
     *   `after`: 获取 `messageId` 之后的消息数量。
 *   **返回值**: `Promise<any>`，云湖 API 返回的原始消息列表数据。
-
-## 资源上传 (Resource Upload)
 
 ### uploadImage()
 
@@ -111,7 +223,7 @@ bot.internal.uploadImageUrl(image: string): Promise<any>
 
 其中 `imagekey` 用于云湖客户端展示图片的时候使用，一般情况下，其他插件无需获取此属性。
 
-因此一般使用的是 `bot.internal.uploadImage` 方法
+因此一般仅会使用 `bot.internal.uploadImage()` 方法
 
 ### uploadVideo()
 
@@ -135,30 +247,6 @@ bot.internal.uploadFile(fileData: string | Buffer): Promise<string>
 *   **`fileData`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<any>`，上传成功后返回的文件数据。
 
-## 用户与群组 (User & Guild)
-
-### getUser()
-
-获取用户的详细信息。
-
-```typescript
-bot.getUser(userId: string): Promise<Universal.User>
-```
-
-*   **`userId`**: 要查询的用户 ID。
-*   **返回值**: `Promise<Universal.User>`，一个符合 Koishi 规范的用户对象。
-
-### getGuild()
-
-获取群组（服务器）的详细信息。
-
-```typescript
-bot.getGuild(guildId: string): Promise<Universal.Guild>
-```
-
-*   **`guildId`**: 要查询的群组 ID。
-*   **返回值**: `Promise<Universal.Guild>`，一个符合 Koishi 规范的群组对象。
-
 ### getBotInfo()
 
 获取机器人的详细信息。
@@ -170,35 +258,10 @@ bot.internal.getBotInfo(botId: string): Promise<any>
 *   **`botId`**: 要查询的机器人 ID。
 *   **返回值**: `Promise<any>`，API 返回的机器人信息数据。
 
-### getGuildMember()
-
-获取群组成员的详细信息。
-
-```typescript
-bot.getGuildMember(guildId: string, userId: string): Promise<Universal.GuildMember>
-```
-
-*   **`guildId`**: 成员所在的群组 ID。
-*   **`userId`**: 要查询的成员的用户 ID。
-*   **返回值**: `Promise<Universal.GuildMember>`，一个符合 Koishi 规范的群组成员对象。
-
-### getChannel()
-
-获取频道（子频道）的详细信息。在云湖中，一个群组就是一个频道。
-
-```typescript
-bot.getChannel(channelId: string, guildId?: string): Promise<Universal.Channel>
-```
-
-*   **`channelId`**: 要查询的频道 ID。
-*   **`guildId`**: (可选) 频道所在的群组 ID。
-*   **返回值**: `Promise<Universal.Channel>`，一个符合 Koishi 规范的频道对象。
-
-## 看板 (Board)
-
-看板是云湖平台提供的一种置顶消息功能，像群公告。
 
 ### setBoard()
+
+看板是云湖平台提供的一种置顶消息功能，像群公告。
 
 为指定用户设置看板（个人看板）。
 
@@ -251,104 +314,3 @@ bot.internal.dismissAllBoard(): Promise<any>
 ```
 
 *   **返回值**: `Promise<any>`，API 返回的原始数据。
-
-## 机器人控制 (Bot Control)
-
-### start()
-
-启动机器人。
-
-```typescript
-bot.start(): Promise<void>
-```
-
-*   **返回值**: `Promise<void>`。
-
-### stop()
-
-停止机器人。
-
-```typescript
-bot.stop(): Promise<void>
-```
-
-*   **返回值**: `Promise<void>`。
-
-### setDisposing()
-
-设置机器人状态。
-
-```typescript
-bot.setDisposing(disposing: boolean): void
-```
-
-*   **`disposing`**: 是否正在处理中。
-*   **返回值**: `void`。
-
-## 日志记录 (Logging)
-
-### logInfo()
-
-记录信息日志（仅在配置开启时记录）。
-
-```typescript
-bot.logInfo(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
-
-### loggerInfo()
-
-记录信息日志。
-
-```typescript
-bot.loggerInfo(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
-
-### loggerError()
-
-记录错误日志。
-
-```typescript
-bot.loggerError(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
-
-### logInfo()
-
-记录信息日志（仅在配置开启时记录）。
-
-```typescript
-bot.logInfo(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
-
-### loggerInfo()
-
-记录信息日志。
-
-```typescript
-bot.loggerInfo(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
-
-### loggerError()
-
-记录错误日志。
-
-```typescript
-bot.loggerError(...args: any[]): void
-```
-
-*   **`args`**: 日志参数。
-*   **返回值**: `void`。
