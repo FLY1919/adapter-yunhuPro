@@ -71,7 +71,6 @@ export class VideoUploader extends BaseUploader
 
     // 视频和音频最终都作为视频处理，使用视频的URL格式
     const videoUrl = `${this.bot.config.resourceEndpoint}${videoKey}.mp4`;
-    this.bot.logInfo(`生成的视频URL: ${videoUrl}`);
     if (returnUrl)
     {
       return {

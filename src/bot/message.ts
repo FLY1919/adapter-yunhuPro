@@ -229,6 +229,7 @@ async function _visit(context: any, element: h)
         context.markdown += context.sendType != "html" ? content : '';
         context.html += content;
         break;
+
       case 'img':
       case 'image':
         if (context.sendType == undefined)
@@ -240,19 +241,19 @@ async function _visit(context: any, element: h)
         }
         try
         {
-          const img = await context.bot.internal.uploadImageKey(element.attrs.src ? element.attrs.src : element.attrs.url);
-          context.markdown += context.sendType != "html" ? `\n![美少女大失败](${img.url})\n` : '';
-          context.html += `<img src="${img.url}" alt="FLY可爱~[图片]">`;
+          const uploadImage = await context.bot.internal.uploadImageKey(element.attrs.src ? element.attrs.src : element.attrs.url);
+          context.markdown += context.sendType != "html" ? `\n![美少女大失败](${uploadImage.url})\n` : '';
+          context.html += `<img src="${uploadImage.url}" alt="FLY可爱~[图片]">`;
           if (context.sendType === 'image')
           {
             // 区分YunhuMessageEncoder和fragmentToPayload的上下文
             if (context.payload?.content)
             {
-              context.payload.content.imageKey = img.key;
+              context.payload.content.imageKey = uploadImage.key;
               context.payload.contentType = 'image';
             } else
             {
-              context.imageKey = img.key;
+              context.imageKey = uploadImage.key;
             }
           }
         } catch (error)
@@ -269,6 +270,60 @@ async function _visit(context: any, element: h)
           }
         }
         break;
+
+      case 'video':
+        await context.flush();
+        context.sendType = 'video';
+        try
+        {
+          const uploadVideo = await context.bot.internal.uploadVideoKey(element.attrs.src);
+          const videokey = uploadVideo.key;
+
+          if (context.payload?.content)
+          {
+            context.payload.content.videoKey = videokey;
+          } else
+          {
+            context.videoKey = videokey;
+          }
+          await context.flush();
+        } catch (error)
+        {
+          const isSizeLimitError = error instanceof SizeLimitError;
+          const errorMsg = isSizeLimitError ? '[视频大小超限]' : '[视频上传失败]';
+          context.bot.loggerError(`${errorMsg}: ${error}`);
+          context.sendType = 'text';
+          context.text += errorMsg;
+          await context.flush();
+        }
+        break;
+
+      case 'audio':
+        await context.flush();
+        context.sendType = 'video'; // 最终发送的是视频
+        try
+        {
+          const uploadAudio = await context.bot.internal.uploadAudioKey(element.attrs.src);
+          const audiokey = uploadAudio.key;
+          if (context.payload?.content)
+          {
+            context.payload.content.videoKey = audiokey;
+          } else
+          {
+            context.videoKey = audiokey;
+          }
+          await context.flush();
+        } catch (error)
+        {
+          const isSizeLimitError = error instanceof SizeLimitError;
+          const errorMsg = isSizeLimitError ? '[音频大小超限]' : '[音频上传失败]';
+          context.bot.loggerError(`${errorMsg}: ${error}`);
+          context.sendType = 'text';
+          context.text += errorMsg;
+          await context.flush();
+        }
+        break;
+
       case 'at':
         if (context.sendType === 'image')
         {
@@ -303,6 +358,7 @@ async function _visit(context: any, element: h)
         context.markdown += atText;
         context.html += `<span>${atText}</span>`;
         break;
+
       case 'p':
         if (context.sendType == undefined)
         {
@@ -317,6 +373,7 @@ async function _visit(context: any, element: h)
         context.text += context.sendType === "text" ? "\n" : '';
         context.markdown += context.sendType != "html" ? "\n" : '';
         break;
+
       case 'a':
         if (context.sendType == undefined)
         {
@@ -331,6 +388,7 @@ async function _visit(context: any, element: h)
         await context.render(children);
         context.html += '</a>';
         break;
+
       case 'file':
         await context.flush();
         context.sendType = 'file';
@@ -354,54 +412,7 @@ async function _visit(context: any, element: h)
         }
         await context.flush();
         break;
-      case 'video':
-        await context.flush();
-        context.sendType = 'video';
-        try
-        {
-          const videokey = await context.bot.internal.uploadVideoKey(element.attrs.src).key;
-          if (context.payload?.content)
-          {
-            context.payload.content.videoKey = videokey;
-          } else
-          {
-            context.videoKey = videokey;
-          }
-          await context.flush();
-        } catch (error)
-        {
-          const isSizeLimitError = error instanceof SizeLimitError;
-          const errorMsg = isSizeLimitError ? '[视频大小超限]' : '[视频上传失败]';
-          context.bot.loggerError(`${errorMsg}: ${error}`);
-          context.sendType = 'text';
-          context.text += errorMsg;
-          await context.flush();
-        }
-        break;
-      case 'audio':
-        await context.flush();
-        context.sendType = 'video'; // 最终发送的是视频
-        try
-        {
-          const videokey = await context.bot.internal.uploadAudioKey(element.attrs.src).key;
-          if (context.payload?.content)
-          {
-            context.payload.content.videoKey = videokey;
-          } else
-          {
-            context.videoKey = videokey;
-          }
-          await context.flush();
-        } catch (error)
-        {
-          const isSizeLimitError = error instanceof SizeLimitError;
-          const errorMsg = isSizeLimitError ? '[音频大小超限]' : '[音频上传失败]';
-          context.bot.loggerError(`${errorMsg}: ${error}`);
-          context.sendType = 'text';
-          context.text += errorMsg;
-          await context.flush();
-        }
-        break;
+
       case 'button': {
         let buttonLabel = '';
         const queue: h[] = [...children];
@@ -426,16 +437,19 @@ async function _visit(context: any, element: h)
         const yunhuButton: Partial<Button> = {};
         switch (attrs.type)
         {
+
           case 'action':
             yunhuButton.actionType = 3; // 3: 点击汇报
             yunhuButton.value = attrs.text;
             if (!buttonLabel) buttonLabel = '确认点击';
             break;
+
           case 'link':
             yunhuButton.actionType = 1; // 1: 跳转URL
             yunhuButton.url = attrs.href;
             if (!buttonLabel) buttonLabel = '跳转链接';
             break;
+
           case 'input':
             yunhuButton.actionType = 2; // 2: 复制
             yunhuButton.value = attrs.text;
@@ -457,20 +471,25 @@ async function _visit(context: any, element: h)
         }
         break;
       }
+
       case 'markdown':
+
       case 'yunhu:markdown':
         await context.flush();
         context.sendType = 'markdown';
         await context.render(children);
         await context.flush();
         break;
+
       case 'html':
+
       case 'yunhu:html':
         await context.flush();
         context.sendType = 'html';
         await context.render(children);
         await context.flush();
         break;
+
       case 'message':
         if (attrs.forward)
         {
@@ -492,6 +511,7 @@ async function _visit(context: any, element: h)
           await context.flush();
         }
         break;
+
       case 'quote':
         if (context.payload)
         {
@@ -499,6 +519,7 @@ async function _visit(context: any, element: h)
         }
         await context.render(children);
         break;
+
       case 'author':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -508,11 +529,17 @@ async function _visit(context: any, element: h)
         context.html += `\n<strong>${attrs.name}</strong><sub>${attrs.id}</sub><br>`;
         await context.render(children);
         break;
+
       case 'h1':
+
       case 'h2':
+
       case 'h3':
+
       case 'h4':
+
       case 'h5':
+
       case 'h6':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -524,11 +551,15 @@ async function _visit(context: any, element: h)
         await context.render(children);
         context.html += `</${type}>`;
         break;
+
       case 'pre':
+
       case 'i18n':
         await context.render(children);
         break;
+
       case 'strong':
+
       case 'b':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -540,7 +571,9 @@ async function _visit(context: any, element: h)
         context.markdown += context.sendType != "html" ? '**' : '';
         context.html += '</b>';
         break;
+
       case 'i':
+
       case 'em':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -552,7 +585,9 @@ async function _visit(context: any, element: h)
         context.markdown += context.sendType != "html" ? '*' : '';
         context.html += '</em>';
         break;
+
       case 'u':
+
       case 'ins':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -562,7 +597,9 @@ async function _visit(context: any, element: h)
         await context.render(children);
         context.html += '</u>';
         break;
+
       case 's':
+
       case 'del':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -574,6 +611,7 @@ async function _visit(context: any, element: h)
         context.markdown += context.sendType != "html" ? '~~' : '';
         context.html += '</del>';
         break;
+
       case 'spl':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -583,6 +621,7 @@ async function _visit(context: any, element: h)
         await context.render(children);
         context.html += '</details>';
         break;
+
       case 'code':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -594,6 +633,7 @@ async function _visit(context: any, element: h)
         context.markdown += context.sendType != "html" ? '`' : '';
         context.html += '</code>';
         break;
+
       case 'sup':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
@@ -603,6 +643,7 @@ async function _visit(context: any, element: h)
         await context.render(children);
         context.html += '</sup>';
         break;
+
       case 'sub':
         if (context.sendType == undefined || context.sendType === 'image' || context.sendType === 'text')
         {
