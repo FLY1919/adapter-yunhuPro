@@ -119,6 +119,7 @@ export class Internal
   {
     return this.imageUploader.uploadGetUrl(image);
   }
+
   async uploadImage(image: string | Buffer | any): Promise<string | undefined>
   {
     return this.imageUploader.upload(image);

@@ -79,25 +79,27 @@ export class ImageUploader extends BaseUploader
     const filename = originalFilename && originalFilename.includes('.') ? originalFilename : `${originalFilename || 'image'}.${extension}`;
     form.append('image', blob, filename);
 
+
+    // 计算图片哈希用于生成URL
+    const hash = createHash('md5');
+    hash.update(buffer);
+    const imageHash = hash.digest('hex');
+    this.bot.logInfo(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
+
+    const imagekey = await this.sendFormData(form);
+    const imageUrl = `${this.bot.config.resourceEndpoint}${imageHash}.${extension}`;
+    this.bot.logInfo(`生成的图片URL: ${imageUrl}`);
+
+
     if (returnUrl)
     {
-      // 计算图片哈希用于生成URL
-      const hash = createHash('md5');
-      hash.update(buffer);
-      const imageHash = hash.digest('hex');
-      this.bot.logInfo(`图片哈希: ${imageHash}, 扩展名: ${extension}`);
-
-      const imagekey = await this.sendFormData(form);
-      const imageUrl = `${this.bot.config.resourceEndpoint}${imageHash}.${extension}`;
-      this.bot.logInfo(`生成的图片URL: ${imageUrl}`);
-
       return {
         imageurl: imageUrl,
         imagekey
       };
     } else
     {
-      return this.sendFormData(form);
+      return imageUrl;
     }
   }
 }
