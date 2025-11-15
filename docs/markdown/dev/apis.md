@@ -181,7 +181,7 @@ bot.loggerError(...args: any[]): void
 
 ## Bot.Internal 方法
 
-#### uploadImage()
+###  uploadImage()
 
 上传一张图片，仅返回URL。
 
@@ -192,7 +192,7 @@ bot.internal.uploadImage(image: string | Buffer): Promise<string>
 *   **`image`**: 图片资源，可以是图片的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<string>`，上传成功后返回的图片URL。
 
-#### uploadImageKey()
+###  uploadImageKey()
 
 上传一张图片，获取图片的URL和key。
 
@@ -203,7 +203,7 @@ bot.internal.uploadImageKey(image: string | Buffer): Promise<{ url: string; key:
 *   **`image`**: 图片资源，可以是图片的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的图片URL和key。
 
-#### uploadVideo()
+###  uploadVideo()
 
 上传一个视频，仅返回URL。
 
@@ -214,7 +214,7 @@ bot.internal.uploadVideo(video: string | Buffer): Promise<string>
 *   **`video`**: 视频资源，可以是视频的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<string>`，上传成功后返回的视频URL。
 
-#### uploadVideoKey()
+###  uploadVideoKey()
 
 上传一个视频，获取视频的URL和key。
 
@@ -225,7 +225,7 @@ bot.internal.uploadVideoKey(video: string | Buffer): Promise<{ url: string; key:
 *   **`video`**: 视频资源，可以是视频的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的视频URL和key。
 
-#### uploadAudio()
+###  uploadAudio()
 
 上传一个音频，仅返回URL。
 
@@ -236,7 +236,7 @@ bot.internal.uploadAudio(audio: string | Buffer): Promise<string>
 *   **`audio`**: 音频资源，可以是音频的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<string>`，上传成功后返回的音频URL。
 
-#### uploadAudioKey()
+###  uploadAudioKey()
 
 上传一个音频，获取音频的URL和key。
 
@@ -247,18 +247,29 @@ bot.internal.uploadAudioKey(audio: string | Buffer): Promise<{ url: string; key:
 *   **`audio`**: 音频资源，可以是音频的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的音频URL和key。
 
-#### uploadFile()
+###  uploadFile()
 
-上传一个文件，返回key。
+上传一个文件，仅返回URL。
 
 ```typescript
-bot.internal.uploadFile(fileData: string | Buffer): Promise<string>
+bot.internal.uploadFile(file: string | Buffer): Promise<string>
 ```
 
-*   **`fileData`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的文件key。
+*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
+*   **返回值**: `Promise<string>`，上传成功后返回的文件URL。
 
-#### getYunhuMessageList()
+###  uploadFileKey()
+
+上传一个文件，获取文件的URL和key。
+
+```typescript
+bot.internal.uploadFileKey(file: string | Buffer): Promise<{ url: string; key: string; }>
+```
+
+*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
+*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的文件URL和key。
+
+###  getYunhuMessageList()
 
 获取云湖原始的消息列表。
 
