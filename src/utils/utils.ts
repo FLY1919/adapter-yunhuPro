@@ -169,6 +169,31 @@ export async function adaptSession(bot: YunhuBot, input: Yunhu.YunhuEvent)
         content = await clearMsg(bot, message, sender);
       }
 
+      // 触发 interaction/command 事件
+      if (message.commandName)
+      {
+        const interactionSessionPayload = {
+          type: 'interaction/command',
+          platform: 'yunhu',
+          selfId: bot.selfId,
+          userId: sender.senderId,
+          channelId: message.chatType === 'bot' ? `private:${sender.senderId}` : `group:${chat.chatId}`,
+          guildId: message.chatType === 'group' ? chat.chatId : undefined,
+          message: {
+            id: message.msgId,
+            content: content,
+            elements: h.parse(content),
+          },
+          event: {
+            command: message.commandName,
+            argv: content,
+          },
+        };
+        const interactionSession = bot.session(interactionSessionPayload);
+        bot.logInfo('触发 interaction/command 事件：', interactionSession);
+        bot.dispatch(interactionSession);
+      }
+
       const sessionPayload = {
         type: 'message',
         platform: 'yunhu',
