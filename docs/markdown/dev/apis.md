@@ -181,95 +181,7 @@ bot.loggerError(...args: any[]): void
 
 ## Bot.Internal 方法
 
-###  uploadImage()
-
-上传一张图片，仅返回URL。
-
-```typescript
-bot.internal.uploadImage(image: string | Buffer): Promise<string>
-```
-
-*   **`image`**: 图片资源，可以是图片的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的图片URL。
-
-###  uploadImageKey()
-
-上传一张图片，获取图片的URL和key。
-
-```typescript
-bot.internal.uploadImageKey(image: string | Buffer): Promise<{ url: string; key: string; }>
-```
-
-*   **`image`**: 图片资源，可以是图片的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的图片URL和key。
-
-###  uploadVideo()
-
-上传一个视频，仅返回URL。
-
-```typescript
-bot.internal.uploadVideo(video: string | Buffer): Promise<string>
-```
-
-*   **`video`**: 视频资源，可以是视频的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的视频URL。
-
-###  uploadVideoKey()
-
-上传一个视频，获取视频的URL和key。
-
-```typescript
-bot.internal.uploadVideoKey(video: string | Buffer): Promise<{ url: string; key: string; }>
-```
-
-*   **`video`**: 视频资源，可以是视频的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的视频URL和key。
-
-###  uploadAudio()
-
-上传一个音频，仅返回URL。
-
-```typescript
-bot.internal.uploadAudio(audio: string | Buffer): Promise<string>
-```
-
-*   **`audio`**: 音频资源，可以是音频的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的音频URL。
-
-###  uploadAudioKey()
-
-上传一个音频，获取音频的URL和key。
-
-```typescript
-bot.internal.uploadAudioKey(audio: string | Buffer): Promise<{ url: string; key: string; }>
-```
-
-*   **`audio`**: 音频资源，可以是音频的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的音频URL和key。
-
-###  uploadFile()
-
-上传一个文件，仅返回URL。
-
-```typescript
-bot.internal.uploadFile(file: string | Buffer): Promise<string>
-```
-
-*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的文件URL。
-
-###  uploadFileKey()
-
-上传一个文件，获取文件的URL和key。
-
-```typescript
-bot.internal.uploadFileKey(file: string | Buffer): Promise<{ url: string; key: string; }>
-```
-
-*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的文件URL和key。
-
-###  getYunhuMessageList()
+### getYunhuMessageList()
 
 获取云湖原始的消息列表。
 
@@ -352,14 +264,25 @@ bot.internal.uploadAudioKey(audio: string | Buffer): Promise<{ url: string; key:
 
 ### uploadFile()
 
-上传一个文件，返回key。
+上传一个文件，仅返回URL。
 
 ```typescript
-bot.internal.uploadFile(fileData: string | Buffer): Promise<string>
+bot.internal.uploadFile(file: string | Buffer): Promise<string>
 ```
 
-*   **`fileData`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的文件key。
+*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
+*   **返回值**: `Promise<string>`，上传成功后返回的文件URL。
+
+### uploadFileKey()
+
+上传一个文件，获取文件的URL和key。
+
+```typescript
+bot.internal.uploadFileKey(file: string | Buffer): Promise<{ url: string; key: string; }>
+```
+
+*   **`file`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
+*   **返回值**: `Promise<{ url: string; key: string; }>`，上传成功后返回的文件URL和key。
 
 ### getBotInfo()
 
@@ -372,10 +295,7 @@ bot.internal.getBotInfo(botId: string): Promise<any>
 *   **`botId`**: 要查询的机器人 ID。
 *   **返回值**: `Promise<any>`，API 返回的机器人信息数据。
 
-
 ### setBoard()
-
-看板是云湖平台提供的一种置顶消息功能，像群公告。
 
 为指定用户设置看板（个人看板）。
 
