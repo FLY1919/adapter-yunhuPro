@@ -16,3 +16,4 @@ tsconfig.tsbuildinfo
 *.sln
 .yarn
 docs/.vitepress/cache/*
+adapter-yunhupro/src/*

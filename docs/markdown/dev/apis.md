@@ -72,7 +72,7 @@ bot.getMessage(channelId: string, messageId: string): Promise<Universal.Message>
 获取云湖原始的消息列表。
 
 ```typescript
-bot.getYunhuMessageList(channelId: string, messageId: string, options?: { before?: number; after?: number }): Promise<any>
+bot.internal.getYunhuMessageList(channelId: string, messageId: string, options?: { before?: number; after?: number }): Promise<any>
 ```
 
 *   **`channelId`**: 消息所在的频道 ID。
@@ -89,18 +89,36 @@ bot.getYunhuMessageList(channelId: string, messageId: string, options?: { before
 上传一张图片，获取 `imageKey`，用于发送图片消息。
 
 ```typescript
-bot.uploadImage(image: string | Buffer): Promise<string>
+bot.internal.uploadImage(image: string | Buffer): Promise<string>
 ```
 
 *   **`image`**: 图片资源，可以是图片的 URL (字符串) 或 Buffer。
-*   **返回值**: `Promise<string>`，上传成功后返回的 `imageKey`。
+*   **返回值**: `Promise<string>`，上传成功后返回的 `imageURL`。
+
+### uploadImageUrl()
+
+上传一张图片（仅支持 URL 格式），获取 `imageKey`，用于发送图片消息。
+
+```typescript
+bot.internal.uploadImageUrl(image: string): Promise<any>
+```
+
+*   **`image`**: 图片 URL (字符串)。
+*   **返回值**: `Promise<any>`，上传成功后返回的图片数据。
+```json
+{ "imageurl": "https://chat-img.jwznb.com/c91bb351c5fc283dfd9c95d0ec5d6c88.jpg", "imagekey": "FomJTBFYHFp6XGG1Cn53alAVryOU" }
+```
+
+其中 `imagekey` 用于云湖客户端展示图片的时候使用，一般情况下，其他插件无需获取此属性。
+
+因此一般使用的是 `bot.internal.uploadImage` 方法
 
 ### uploadVideo()
 
 上传一个视频，获取 `videoKey`，用于发送视频消息。
 
 ```typescript
-bot.uploadVideo(video: string | Buffer): Promise<string>
+bot.internal.uploadVideo(video: string | Buffer): Promise<string>
 ```
 
 *   **`video`**: 视频资源，可以是视频的 URL (字符串) 或 Buffer。
@@ -111,22 +129,11 @@ bot.uploadVideo(video: string | Buffer): Promise<string>
 上传一个文件，获取 `fileKey`，用于发送文件消息。
 
 ```typescript
-bot.uploadFile(fileData: string | Buffer): Promise<string>
+bot.internal.uploadFile(fileData: string | Buffer): Promise<string>
 ```
 
 *   **`fileData`**: 文件资源，可以是文件的 URL (字符串) 或 Buffer。
 *   **返回值**: `Promise<any>`，上传成功后返回的文件数据。
-
-### uploadImageUrl()
-
-上传一张图片（仅支持 URL 格式），获取 `imageKey`，用于发送图片消息。
-
-```typescript
-bot.uploadImageUrl(image: string): Promise<any>
-```
-
-*   **`image`**: 图片 URL (字符串)。
-*   **返回值**: `Promise<any>`，上传成功后返回的图片数据。
 
 ## 用户与群组 (User & Guild)
 
@@ -157,7 +164,7 @@ bot.getGuild(guildId: string): Promise<Universal.Guild>
 获取机器人的详细信息。
 
 ```typescript
-bot.getBotInfo(botId: string): Promise<any>
+bot.internal.getBotInfo(botId: string): Promise<any>
 ```
 
 *   **`botId`**: 要查询的机器人 ID。
@@ -196,7 +203,7 @@ bot.getChannel(channelId: string, guildId?: string): Promise<Universal.Channel>
 为指定用户设置看板（个人看板）。
 
 ```typescript
-bot.setBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', content: string, options?: { memberId?: string; expireTime?: number }): Promise<any>
+bot.internal.setBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', content: string, options?: { memberId?: string; expireTime?: number }): Promise<any>
 ```
 
 *   **`chatId`**: 对话 ID (私聊为用户 ID，群聊为群组 ID)。
@@ -212,7 +219,7 @@ bot.setBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', content:
 设置全局看板（对群内所有人生效）。
 
 ```typescript
-bot.setAllBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', content: string, options?: { expireTime?: number }): Promise<any>
+bot.internal.setAllBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', content: string, options?: { expireTime?: number }): Promise<any>
 ```
 
 *   **`chatId`**: 群组 ID。
@@ -227,7 +234,7 @@ bot.setAllBoard(chatId: string, contentType: 'text' | 'markdown' | 'html', conte
 取消指定用户的看板。
 
 ```typescript
-bot.dismissBoard(chatId: string, chatType: 'user' | 'group', memberId?: string): Promise<any>
+bot.internal.dismissBoard(chatId: string, chatType: 'user' | 'group', memberId?: string): Promise<any>
 ```
 
 *   **`chatId`**: 对话 ID。
@@ -240,7 +247,7 @@ bot.dismissBoard(chatId: string, chatType: 'user' | 'group', memberId?: string):
 取消全局看板。
 
 ```typescript
-bot.dismissAllBoard(): Promise<any>
+bot.internal.dismissAllBoard(): Promise<any>
 ```
 
 *   **返回值**: `Promise<any>`，API 返回的原始数据。
@@ -279,6 +286,39 @@ bot.setDisposing(disposing: boolean): void
 *   **返回值**: `void`。
 
 ## 日志记录 (Logging)
+
+### logInfo()
+
+记录信息日志（仅在配置开启时记录）。
+
+```typescript
+bot.logInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerInfo()
+
+记录信息日志。
+
+```typescript
+bot.loggerInfo(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
+
+### loggerError()
+
+记录错误日志。
+
+```typescript
+bot.loggerError(...args: any[]): void
+```
+
+*   **`args`**: 日志参数。
+*   **返回值**: `void`。
 
 ### logInfo()
 
