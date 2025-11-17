@@ -1,5 +1,5 @@
-import { FormatType, getImageAsBase64 } from '../utils/utils';
-import { Bot, Context, Fragment, Logger } from 'koishi';
+import { getImageAsBase64 } from '../utils/utils';
+import { Bot, Context, Fragment, Logger, Universal } from 'koishi';
 import { SendOptions } from '@satorijs/protocol';
 import { BotTableItem, Config } from '../config';
 import { YunhuMessageEncoder } from './message';
@@ -49,9 +49,24 @@ export class YunhuBot extends Bot<Context, Config>
     return this.internal.getGuild(guildId);
   }
 
+  async getGuildList(next?: string): Promise<Universal.List<Universal.Guild>>
+  {
+    return null;
+  }
+
+  async getGuildMemberList(guildId: string, next?: string): Promise<Universal.List<Universal.GuildMember>>
+  {
+    return null;
+  }
+
   async getChannel(channelId: string, guildId?: string)
   {
     return this.internal.getChannel(channelId, guildId);
+  }
+
+  async getChannelList(guildId: string, next?: string): Promise<Universal.List<Universal.Channel>>
+  {
+    return null;
   }
 
   async deleteMessage(channelId: string, messageId: string)
@@ -76,6 +91,11 @@ export class YunhuBot extends Bot<Context, Config>
     {
       return [];
     }
+  }
+
+  async sendPrivateMessage(userId: string, content: Fragment, guildId?: string, options?: SendOptions): Promise<string[]>
+  {
+    return this.sendMessage(`private:${userId}`, content);
   }
 
   async editMessage(channelId: string, messageId: string, content: Fragment): Promise<void>

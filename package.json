@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-adapter-yunhupro",
   "description": "Yunhu Adapter",
-  "version": "2.0.15",
+  "version": "2.0.16",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -22,7 +22,7 @@
   ],
   "contributors": [
     "FLY1919 <qw687255511@163.com>",
-    "shangxueink <1919892171@qq.com>"
+    "shangxueink <akuuma@qq.com>"
   ],
   "scripts": {
     "build": "tsc",
