@@ -217,6 +217,7 @@ export class Internal
   {
     try
     {
+      if (!userId) return;
       const userPayload = await this._getUser(userId);
 
       if (userPayload.data?.user?.userId)
